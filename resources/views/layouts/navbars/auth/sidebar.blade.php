@@ -20,14 +20,39 @@
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder text-white">Operação</h6>
       </li>
+
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('evidencias') ? 'active' : '') }} " href="{{ url('evidencias') }}">
-            <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
-                <i class="fas fa-file-export"></i>
-            </div>
-            <span class="nav-link-text ms-1">Evidências</span>
+        <a class="nav-link collapsed {{ (Request::is('evidences') ? 'active' : '') }}" data-bs-toggle="collapse" aria-expanded="false" href="#vrExamples">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="fas fa-file-export"></i>
+          </div>
+          <span class="nav-link-text ms-1">Evidências</span>
         </a>
-      </li>
+        <div class="collapse" id="vrExamples" style="">
+            <ul class="nav nav-sm flex-column">
+              <li class="nav-item ">
+                <a class="nav-link" href="{{ url('evidences') }}">
+                  Cadastrar Evidências
+                </a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="{{ url('evidences') }}">
+                  Listar Evidências
+                </a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="{{ route('evidences.disparo') }}">
+                  Disparo Planilha EDP
+                </a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="{{ url('evidences') }}">
+                  Gerar Arquivo Processamento
+                </a>
+              </li>
+            </ul>
+        </div>
+    </li>
       <li class="nav-item">
         <a class="nav-link {{ (Request::is('clientes') ? 'active' : '') }} " href="{{ url('clientes') }}">
             <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">

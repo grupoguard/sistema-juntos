@@ -10,6 +10,17 @@
 .navbar-vertical .navbar-nav>.nav-item .nav-link.active .icon {
     background-image: linear-gradient(310deg, #FF9921, #FF9921);
 }
+.navbar-vertical .navbar-nav .nav-item .collapse .nav .nav-item .nav-link, .navbar-vertical .navbar-nav .nav-item .collapsing .nav .nav-item .nav-link {
+    color: #DBDBDB;
+}
+.navbar-vertical .navbar-nav .nav-item .collapse .nav .nav-item .nav-link:before, .navbar-vertical .navbar-nav .nav-item .collapsing .nav .nav-item .nav-link:before {
+    color: #DBDBDB;
+    background: rgba(255, 255, 255, .9);
+    left: 6px;
+}
+ul.nav.nav-sm {
+    list-style-type: none !important;
+}
 @media (min-width: 1200px) {
     .navbar-vertical .navbar-nav .nav-item .nav-link .icon {
         padding: 10px 11px 13px 11px;
