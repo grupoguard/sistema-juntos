@@ -28,9 +28,17 @@ Route::group(['middleware' => 'auth'], function () {
 		[PlanilhaController::class, 'disparo']
 	)->name('evidences.disparo');
 
+	Route::get('/evidences/processamento', 
+		[PlanilhaController::class, 'processamento']
+	)->name('evidences.processamento');
+
 	Route::post('/evidences/send', 
 		[PlanilhaController::class, 'upload']
 	)->name('evidences.send');
+
+	Route::post('/evidences/gerartxt', 
+		[PlanilhaController::class, 'gerarTxt']
+	)->name('evidences.gerartxt');
 
 	Route::get('billing', function () {
 		return view('billing');

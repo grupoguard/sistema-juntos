@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PlanilhaImport;
+use App\Traits\TxtLayoutTrait;
+use Carbon\Carbon;
 use Google\Client as GoogleClient;
 use Google\Service\Drive as GoogleDrive;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +17,7 @@ class PlanilhaController extends Controller
 {
     private $googleDrive;
     private $tokenFile = 'private/tokens/token.json';
+    use TxtLayoutTrait;
 
     public function __construct()
     {
@@ -33,6 +36,11 @@ class PlanilhaController extends Controller
     public function disparo()
     {
         return view('pages.disparo');
+    }
+
+    public function processamento()
+    {
+        return view('pages.processamento');
     }
 
     public function getToken()
@@ -98,12 +106,19 @@ class PlanilhaController extends Controller
 
             // Faz o download de todos os arquivos da pasta
             $arquivos = $this->downloadFilesFromDriveFolder($folderId);
+            
+            try {
+                $dataEvidencia = \Carbon\Carbon::createFromFormat('d/m/Y', $row['dt_evidencia'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                $excelDate = $row['dt_evidencia'];
+                $dataEvidencia = \Carbon\Carbon::parse('1900-01-01')->addDays($excelDate - 2)->format('Y-m-d');
+            }
 
             $obj = [
                 'Token' => $token,
                 'CodigoProduto' => substr($row['produto'], 0, 3),
                 'CodigoInstalacao' => str_pad($row['instalacao'], 9, '0', STR_PAD_LEFT),
-                'DataEvidencia' => \Carbon\Carbon::createFromFormat('d/m/Y', $row['dt_evidencia'])->format('Y-m-d'),
+                'DataEvidencia' => $dataEvidencia,
                 'NomeTitular' => strtoupper($this->removeAccents($row['titular_conta_energia'])),
                 'NomeQuemAprovou' => strtoupper($this->removeAccents($row['autorizado_por'])),
                 'TelefoneContato' => preg_replace('/[^\d]/', '', $row['contato']),
@@ -116,7 +131,7 @@ class PlanilhaController extends Controller
             $this->enviarParaAPI($evidencia);
         }
 
-        return view('upload', ['result' => $result])->with('success', 'Planilha processada com sucesso!');
+        return redirect()->route('evidences.disparo')->with('success', 'Planilha processada com sucesso!');
     }
 
     private function extractFolderIdFromLink($folderLink)
@@ -226,16 +241,78 @@ class PlanilhaController extends Controller
             $response = $client->post('https://web-edp-sgcvt-prd.azurewebsites.net/api/EnviarEvidencia', [
                 'multipart' => $multipartData,
             ]);
+
+            // Captura e decodifica o corpo da resposta
+            $responseData = json_decode($response->getBody(), true);
+            Log::info('Resposta da API: ' . json_encode($responseData));
+
+            // Retorna a resposta para a view com dados da API
+            return redirect()->route('evidences.disparo')->with([
+                'apiResponse' => $responseData,
+                'success' => 'Planilha processada com sucesso!'
+            ]);
         } catch (\Exception $e) {
             Log::error('Erro ao enviar dados para a API: ' . $e->getMessage());
-            return response()->json(['error' => 'Erro ao enviar evidências para a API'], 500);
+            return redirect()->route('evidences.disparo')->with('error', 'Erro ao enviar evidências para a API');
         }
-
-        return json_decode($response->getBody(), true);
     }
 
     private function removeAccents($string)
     {
         return iconv('UTF-8', 'ASCII//TRANSLIT', $string);
+    }
+
+    public function gerarTxt(Request $request)
+    {
+
+        $request->validate([
+            'planilha' => 'required|mimes:xlsx,xls,csv'
+        ]);
+
+        $import = new PlanilhaImport();
+        Excel::import($import, $request->file('planilha'));
+        $file = $import->rows;
+
+        $data = []; // Aqui, você parseia a planilha e extrai as linhas necessárias
+
+        $totalRecords = 0;
+        $totalAmount = 0;
+        $bodyContent = '';
+
+        //dd($data);
+
+        // Processa cada linha do body (registros do tipo B)
+        foreach ($file as $row) {
+            $instalacao = str_pad($row['instalacao'], 9, '0', STR_PAD_LEFT);
+            $valor = (int) ($row['valor'] * 100); // Converte o valor para inteiro
+            $codigoProduto = substr($row['produto'], 0, 3);
+            $dataInicial = Carbon::now()->addMonth()->startOfMonth()->format('Ymd');
+
+            $bodyContent .= sprintf(
+                "B%-9s64%-3s01%015d%-12s%s%-8s%-40s%-47s012\n",
+                $instalacao,
+                $codigoProduto,
+                $valor,
+                "",
+                $dataInicial,
+                "00000000",
+                "",
+                ""
+            );
+
+            $totalRecords++;
+            $totalAmount += $row['valor'];
+        }
+
+        // Monta o conteúdo completo do arquivo TXT
+        $header = $this->generateHeader();
+        $footer = $this->generateFooter($totalRecords, $totalAmount);
+        $fileContent = $header . $bodyContent . $footer;
+
+        // Salva o arquivo para download
+        $fileName = 'arquivo_' . now()->format('Ymd_His') . '.txt';
+        Storage::put("public/txt/{$fileName}", $fileContent);
+
+        return response()->download(storage_path("app/public/txt/{$fileName}"))->deleteFileAfterSend(true);
     }
 }
