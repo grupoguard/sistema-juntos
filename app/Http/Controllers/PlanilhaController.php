@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\FeedbackExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PlanilhaImport;
@@ -124,14 +125,13 @@ class PlanilhaController extends Controller
                 'TelefoneContato' => preg_replace('/[^\d]/', '', $row['contato']),
                 'Arquivos' => $arquivos,
             ];
-            $result[] = $obj;
+
+            $result[] = $this->enviarParaAPI($obj);
         }
 
-        foreach ($result as $evidencia) {
-            $this->enviarParaAPI($evidencia);
-        }
+        session(['feedback_resultados' => $result]);
 
-        return redirect()->route('evidences.disparo')->with('success', 'Planilha processada com sucesso!');
+        return redirect()->route('evidences.disparo')->with('resultados', $result);
     }
 
     private function extractFolderIdFromLink($folderLink)
@@ -168,7 +168,7 @@ class PlanilhaController extends Controller
         return "https://www.googleapis.com/drive/v3/files/{$fileId}?alt=media";
     }
 
-    private function downloadFile($downloadLink, $fileName)
+    private function downloadFile($downloadLink, $originalFileName)
     {
         $client = new Client();
         $response = $client->get($downloadLink, [
@@ -181,11 +181,22 @@ class PlanilhaController extends Controller
             Storage::disk('public')->makeDirectory('evidencias');
         }
 
-        // Salvar o arquivo
-        $path = 'evidencias/' . $fileName;
+        // Base para o novo nome do arquivo, com o sufixo "_edp"
+        $fileExtension = pathinfo($originalFileName, PATHINFO_EXTENSION);
+        $fileNameWithoutExtension = pathinfo($originalFileName, PATHINFO_FILENAME) . '_edp';
+        $path = 'evidencias/' . $fileNameWithoutExtension . '.' . $fileExtension;
+
+        // Verifica se o arquivo já existe e ajusta o nome com o sufixo numérico se necessário
+        $counter = 1;
+        while (Storage::disk('public')->exists($path)) {
+            $path = 'evidencias/' . $fileNameWithoutExtension . '_' . $counter . '.' . $fileExtension;
+            $counter++;
+        }
+
+        // Salva o arquivo com o nome ajustado
         Storage::disk('public')->put($path, $response->getBody());
 
-        return $path;
+        return $path; // Retorna o caminho final do arquivo no storage
     }
 
     public function enviarParaAPI($evidencia)
@@ -246,14 +257,20 @@ class PlanilhaController extends Controller
             $responseData = json_decode($response->getBody(), true);
             Log::info('Resposta da API: ' . json_encode($responseData));
 
-            // Retorna a resposta para a view com dados da API
-            return redirect()->route('evidences.disparo')->with([
-                'apiResponse' => $responseData,
-                'success' => 'Planilha processada com sucesso!'
-            ]);
+            return [
+                'cliente' => $evidencia['NomeTitular'],
+                'instalacao' => $evidencia['CodigoInstalacao'],
+                'status' => !$responseData['Error'] ? 'success' : 'danger',
+                'mensagem' => $responseData['Message'],
+            ];
         } catch (\Exception $e) {
             Log::error('Erro ao enviar dados para a API: ' . $e->getMessage());
-            return redirect()->route('evidences.disparo')->with('error', 'Erro ao enviar evidências para a API');
+            return [
+                'cliente' => $evidencia['NomeTitular'],
+                'instalacao' => $evidencia['CodigoInstalacao'],
+                'status' => 'danger',
+                'mensagem' => $e->getMessage(),
+            ];
         }
     }
 
@@ -314,5 +331,16 @@ class PlanilhaController extends Controller
         Storage::put("public/txt/{$fileName}", $fileContent);
 
         return response()->download(storage_path("app/public/txt/{$fileName}"))->deleteFileAfterSend(true);
+    }
+
+    public function downloadFeedback()
+    {
+        $feedbackData = session('feedback_resultados');
+
+        if (!$feedbackData) {
+            return redirect()->route('evidences.disparo')->with('error', 'Nenhum feedback disponível para download.');
+        }
+
+        return Excel::download(new FeedbackExport($feedbackData), 'feedback_evidencias.xlsx');
     }
 }
