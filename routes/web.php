@@ -40,6 +40,8 @@ Route::group(['middleware' => 'auth'], function () {
 		[PlanilhaController::class, 'gerarTxt']
 	)->name('evidences.gerartxt');
 
+	Route::get('/evidences/download-feedback', [PlanilhaController::class, 'downloadFeedback'])->name('evidences.downloadFeedback');
+
 	Route::get('billing', function () {
 		return view('billing');
 	})->name('billing');
