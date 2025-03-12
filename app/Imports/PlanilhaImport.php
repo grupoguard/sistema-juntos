@@ -14,8 +14,13 @@ class PlanilhaImport implements ToCollection, WithHeadingRow
 
     public $rows;
 
-    public function collection(Collection $rows)
+    public function collection(Collection $collection)
     {
-        $this->rows = $rows;
+        $this->rows = $collection->map(function ($row) {
+            // Remove colunas onde o valor é nulo
+            return $row->filter(function ($value) {
+                return $value !== null;
+            });
+        });
     }
 }

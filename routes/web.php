@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AtualizarExcelTXT;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfoUserController;
@@ -41,6 +42,10 @@ Route::group(['middleware' => 'auth'], function () {
 	)->name('evidences.gerartxt');
 
 	Route::get('/evidences/download-feedback', [PlanilhaController::class, 'downloadFeedback'])->name('evidences.downloadFeedback');
+
+	Route::get('/atualizar-excel', [AtualizarExcelTXT::class, 'index'])->name('atualizar.excel');
+
+	Route::post('/atualizar-excel/upload', [AtualizarExcelTXT::class, 'upload'])->name('atualizar.excel.upload');
 
 	Route::get('billing', function () {
 		return view('billing');
