@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+set_time_limit(0); // Remove limite de execução
+ini_set('max_execution_time', 0); // Garante que não há limite no PHP
+
 use App\Exports\FeedbackExport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -96,6 +99,7 @@ class PlanilhaController extends Controller
         $dadosImportados = $import->rows;
 
         $result = [];
+
         foreach ($dadosImportados as $row) {
             $folderLink = $row['evidencia'];
             $folderId = $this->extractFolderIdFromLink($folderLink);
@@ -122,7 +126,7 @@ class PlanilhaController extends Controller
                 'DataEvidencia' => $dataEvidencia,
                 'NomeTitular' => strtoupper($this->removeAccents($row['titular_conta_energia'])),
                 'NomeQuemAprovou' => strtoupper($this->removeAccents($row['autorizado_por'])),
-                'TelefoneContato' => preg_replace('/[^\d]/', '', $row['contato']),
+                'TelefoneContato' => isset($row['contato']) ? preg_replace('/[^\d]/', '', $row['contato']) : '',
                 'Arquivos' => $arquivos,
             ];
 
@@ -281,7 +285,6 @@ class PlanilhaController extends Controller
 
     public function gerarTxt(Request $request)
     {
-
         $request->validate([
             'planilha' => 'required|mimes:xlsx,xls,csv'
         ]);
