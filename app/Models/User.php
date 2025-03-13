@@ -21,9 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
-        'location',
-        'about_me',
+        'status',
     ];
 
     /**
@@ -44,5 +42,10 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function access()
+    {
+        return $this->hasOne(UserAccessModel::class, 'user_id');
+    }
     
 }

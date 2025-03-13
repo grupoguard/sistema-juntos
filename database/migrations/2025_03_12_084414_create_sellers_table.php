@@ -31,7 +31,6 @@ return new class extends Migration
             $table->string('city', 50);
             $table->string('state', 2);
             $table->text('obs')->nullable();
-            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }

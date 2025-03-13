@@ -11,16 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('clients', function (Blueprint $table) {
+        Schema::create('admin', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('group_id')->constrained('groups')->onDelete('cascade');
+            $table->foreignId('group_id')->nullable()->constrained('groups')->onDelete('set null');
             $table->string('name', 100);
-            $table->string('mom_name', 100);
-            $table->date('date_birth');
+            $table->date('date_birth')->nullable();
             $table->string('cpf', 11);
             $table->string('rg', 9)->nullable();
-            $table->string('gender', 15);
-            $table->string('marital_status', 15);
             $table->string('phone', 11)->nullable();
             $table->string('email', 50);
             $table->string('zipcode', 8);
@@ -31,7 +28,6 @@ return new class extends Migration
             $table->string('city', 50);
             $table->string('state', 2);
             $table->text('obs')->nullable();
-            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }
@@ -41,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('clients');
+        Schema::dropIfExists('admin');
     }
 };
