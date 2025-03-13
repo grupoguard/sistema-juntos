@@ -16,12 +16,20 @@ class UserSeeder extends Seeder
     public function run()
     {
         DB::table('users')->insert([
-            'id' => 1,
-            'name' => 'admin',
-            'email' => 'admin@juntosbeneficios.com.br',
-            'password' => Hash::make('secret'),
-            'created_at' => now(),
-            'updated_at' => now()
+            [
+                'name' => 'admin',
+                'email' => 'admin@juntosbeneficios.com.br',
+                'password' => Hash::make('secret'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ], 
+            [
+                'name' => 'dev',
+                'email' => 'contato@webcube.com.br',
+                'password' => Hash::make('secret'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
         ]);
     }
 }
