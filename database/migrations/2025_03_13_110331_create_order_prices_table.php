@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_aditionals', function (Blueprint $table) {
+        Schema::create('order_prices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->foreignId('aditional_id')->constrained('aditionals')->onDelete('cascade');
-            $table->decimal('value', 10, 2); // Valor do adicional no momento da compra
+            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
+            $table->decimal('product_value', 10, 2); // Preço do produto no momento da compra
+            $table->decimal('dependent_value', 10, 2); // Valor cobrado por dependente
+            $table->integer('dependents_count'); // Quantidade de dependentes no momento da compra
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_aditionals');
+        Schema::dropIfExists('order_prices');
     }
 };
