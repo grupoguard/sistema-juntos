@@ -4,22 +4,22 @@ namespace App\Livewire;
 
 use App\Models\Client;
 use Livewire\Component;
+use Livewire\Attributes\On;
 use Livewire\WithPagination;
 
 class ClientsList extends Component
 {
     use WithPagination;
 
-    public $search = '';
+    public $search;
     public $statusFilter = '';
-
-    public function updated($propertyName)
+    
+    public function updated($type, $value)
     {
-        /*if (in_array($propertyName, ['search', 'statusFilter'])) {
-            $this->resetPage(); // Reseta a paginação sempre que um filtro mudar
-        }*/
-        dump($propertyName);
-        $this->resetPage();
+        if (in_array($type, ['search', 'statusFilter'])) {
+            $this->resetPage();
+        }
+        $this->{$type} = $value;
     }
 
     public function delete($clientId)
@@ -33,22 +33,27 @@ class ClientsList extends Component
         }
     }
 
+    private function getClients()
+    {
+        return Client::where(function ($query) {
+            if (!empty($this->search)) {
+                $query->where('name', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%");
+            }
+        })
+        ->when($this->statusFilter !== '', function ($query) {
+            $query->where('status', $this->statusFilter);
+        })
+        ->orderBy('name')
+        ->paginate(10);
+    }
+
     public function render()
     {
-        dump($this->search, $this->statusFilter);
-
-        $clients = Client::query()
-            ->when(!empty($this->search), function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-                });
-            })
-            ->when($this->statusFilter !== '', function ($query) {
-                $query->where('status', $this->statusFilter);
-            })
-            ->paginate(10);
-
-        return view('livewire.clients-list', compact('clients'));
+        return view('livewire.clients-list',[
+            'clients' => $this->getClients(),
+            'search' => $this->search,
+            'statusFilter' => $this->statusFilter,
+        ]);
     }
 }
