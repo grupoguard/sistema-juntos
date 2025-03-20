@@ -19,3 +19,6 @@
         </div>
     </div>
 </footer>
+
+@livewireScripts
+@stack('scripts')

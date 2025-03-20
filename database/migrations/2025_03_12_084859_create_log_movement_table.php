@@ -19,9 +19,9 @@ return new class extends Migration
             $table->unsignedBigInteger('product_cod');
             $table->string('installment', 5);
             $table->string('reading_script', 15);
-            $table->date('date_invoice');
+            $table->string('date_invoice', 8);
             $table->string('city_code', 3);
-            $table->date('date_movement');
+            $table->string('date_movement', 8);
             $table->string('value', 15);
             $table->string('code_return', 2);
             $table->string('future', 80)->nullable();
