@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
             GroupsSeeder::class,
             UserSeeder::class,
             ProductsSeeder::class,
+            AnomalyCodeSeeder::class,
+            MoveCodeSeeder::class,
+            ReturnCodeSeeder::class
         ]);
     }
 }

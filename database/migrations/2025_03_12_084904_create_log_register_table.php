@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('value_installment', 15);
             $table->string('future1', 9)->nullable();
             $table->string('city_code', 3);
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->string('address', 40);
             $table->string('name', 40);
             $table->string('future2', 7)->nullable();

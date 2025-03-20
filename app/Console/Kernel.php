@@ -30,6 +30,10 @@ class Kernel extends ConsoleKernel
         if(env('IS_DEMO')) {
             $schedule->command('migrate:fresh --seed')->cron($scheduledInterval);
         }
+
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('06:00');
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('12:00');
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('18:00');
     }
 
     /**

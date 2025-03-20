@@ -45,7 +45,18 @@ class User extends Authenticatable
 
     public function access()
     {
-        return $this->hasOne(UserAccessModel::class, 'user_id');
+        return $this->hasOne(UserAccess::class, 'user_id');
     }
     
+    // Relacionamento para obter a role correta
+    public function role()
+    {
+        return $this->hasOneThrough(Role::class, UserAccess::class, 'user_id', 'id', 'id', 'role_id');
+    }
+
+    // Método para retornar o nome da role
+    public function getRoleNameAttribute()
+    {
+        return $this->role ? $this->role->name : 'Sem Permissão';
+    }
 }
