@@ -6,10 +6,10 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-4">
-                    <input type="text" class="form-control" placeholder="Buscar cliente..." wire:model="search">
+                    <input type="text" class="form-control" placeholder="Buscar cliente..." wire:model.live="search">
                 </div>
                 <div class="col-md-4">
-                    <select class="form-control" wire:model="statusFilter">
+                    <select class="form-control" wire:model.lazy="statusFilter">
                         <option value="">Todos</option>
                         <option value="1">Ativo</option>
                         <option value="0">Inativo</option>
@@ -19,7 +19,6 @@
                     <a href="{{ route('admin.clients.create') }}" class="btn bg-blue text-white">+ Novo Cliente</a>
                 </div>
             </div>
-
             <div class="table-responsive">
                 <table class="table">
                     <thead>
