@@ -21,9 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'phone',
-        'location',
-        'about_me',
+        'status',
     ];
 
     /**
@@ -44,5 +42,21 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function access()
+    {
+        return $this->hasOne(UserAccess::class, 'user_id');
+    }
     
+    // Relacionamento para obter a role correta
+    public function role()
+    {
+        return $this->hasOneThrough(Role::class, UserAccess::class, 'user_id', 'id', 'id', 'role_id');
+    }
+
+    // Método para retornar o nome da role
+    public function getRoleNameAttribute()
+    {
+        return $this->role ? $this->role->name : 'Sem Permissão';
+    }
 }

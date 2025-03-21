@@ -92,9 +92,13 @@
                     </ul>
                 </li>
                 <li class="nav-item d-flex align-items-center">
-                    <a href="{{ url('/logout')}}" class="nav-link text-body font-weight-bold px-0">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span class="d-sm-inline d-none">Sair</span>
+                    <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
+                    
+                    <a href="#" class="nav-link text-body font-weight-bold px-0"
+                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                       Sair
                     </a>
                 </li>
                 
