@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Admin;
 use App\Models\AdminModel;
+use App\Models\Role;
 use App\Models\RolesModel;
 use App\Models\User;
+use App\Models\UserAccess;
 use App\Models\UserAccessModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +31,7 @@ class UserSeeder extends Seeder
                 'updated_at' => now(), 
         ]);
 
-        $adminData = AdminModel::create([
+        $adminData = Admin::create([
             'group_id' => null,
             'name' => 'Administrador',
             'date_birth' => '1990-01-01',
@@ -46,12 +49,12 @@ class UserSeeder extends Seeder
             'obs' => 'Usuário administrador'
         ]);
 
-        UserAccessModel::create([
+        UserAccess::create([
             'user_id' => $adminUser->id,
             'group_id' => null, // Admin global
             'userable_id' => $adminData->id,
-            'userable_type' => AdminModel::class,
-            'role_id' => RolesModel::where('name', 'ADMIN')->first()->id
+            'userable_type' => Admin::class,
+            'role_id' => Role::where('name', 'ADMIN')->first()->id
         ]);
     }
 }

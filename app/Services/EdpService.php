@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Models\LogMovement;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use App\Models\LogRegister;
-use App\Models\Orders;
+use App\Models\Order;
 use Exception;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +22,7 @@ class EdpService
         $this->baseUrl = env('EDP_API_URL');
         $this->username = env('EDP_USERNAME');
         $this->password = env('EDP_PASSWORD');
-        $this->token = '3818b2213c9f4a128aab4fa46d209491';
+        $this->token = $this->getAccessToken();
     }
 
     public function getAccessToken()
@@ -48,7 +47,7 @@ class EdpService
 
     public function enviarEvidencia($orderId, $dadosEvidencia)
     {
-        $order = Orders::find($orderId);
+        $order = Order::find($orderId);
         if (!$order || $order->charge_type !== 'EDP') {
             throw new Exception('Pedido inválido ou não aplicável');
         }
@@ -80,34 +79,6 @@ class EdpService
         ])->post("{$this->baseUrl}/api/listarArquivoRetorno", $filtros);
         return $response->json();
     }
-
-    /*public function baixarArquivoRetorno($arquivoId)
-    {
-        $client = new Client([
-            'base_uri' => $this->baseUrl,
-        ]);
-    
-        $response = $client->request('GET', '/api/ObterArquivoRetorno', [
-            'form_params' => [
-                'token' => $this->token,
-                'ArquivoId' => $arquivoId,
-            ],
-        ]);
-    
-        $dadosArquivo = $response->getBody()->getContents();
-        // Cria o diretório se ele não existir
-        $caminhoDiretorio = storage_path("app/retornos/");
-        if (!file_exists($caminhoDiretorio)) {
-            mkdir($caminhoDiretorio, 0755, true);
-        }
-
-        // Salva o arquivo no diretório
-        $caminhoArquivo = $caminhoDiretorio . $arquivoId; // Ou outro nome de arquivo
-        file_put_contents($caminhoArquivo, $dadosArquivo);
-
-        // Você pode retornar o caminho do arquivo ou uma mensagem de sucesso
-        return "Arquivo salvo em: " . $caminhoArquivo;
-    }*/
 
     public function baixarArquivoRetorno($arquivoId)
     {
@@ -251,7 +222,7 @@ class EdpService
             $nomeArquivo = $arquivo['Nome'];
 
             // Verifica se já processamos esse arquivo
-            if (\App\Models\RetornosArmazenados::where('arquivo_id', $arquivoId)->exists()) {
+            if (\App\Models\RetornoArmazenado::where('arquivo_id', $arquivoId)->exists()) {
                 Log::info("Arquivo {$nomeArquivo} (ID: {$arquivoId}) já foi armazenado. Pulando...");
                 continue;
             }
@@ -275,7 +246,7 @@ class EdpService
                 $this->processarArquivoTxt($txtPath);
 
                 // 7. Armazenar o arquivo na tabela retornos_armazenados
-                \App\Models\RetornosArmazenados::create([
+                \App\Models\RetornoArmazenado::create([
                     'arquivo_id' => $arquivoId,
                     'nome_arquivo' => $nomeArquivo,
                     'baixado_em' => now(),

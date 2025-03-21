@@ -24,8 +24,8 @@ class SessionsController extends Controller
         {
             session()->regenerate();
             $user = Auth::user();
-            
-            switch ($user->role_name) {
+
+            switch (strtoupper($user->role_name)) {
                 case 'ADMIN':
                     return redirect('admin/dashboard')->with(['success' => 'Bem-vindo, Administrador!']);
                 case 'COOP':
@@ -47,6 +47,6 @@ class SessionsController extends Controller
     {
         Auth::logout();
 
-        return redirect('/login')->with(['success'=>'You\'ve been logged out.']);
+        return redirect('/login')->with(['success'=>'Você foi deslogado.']);
     }
 }
