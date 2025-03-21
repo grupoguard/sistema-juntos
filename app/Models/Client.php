@@ -57,4 +57,9 @@ class Client extends Model
     {
         return $this->hasMany(Dependent::class);
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }
