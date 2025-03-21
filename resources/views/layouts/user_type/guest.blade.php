@@ -11,8 +11,8 @@
                     @include('layouts.navbars.guest.nav')
                 </div>
             </div>
-        </div> --}}
+        </div>  --}}
         @yield('content')        
         @include('layouts.footers.guest.footer')
-    {{--@endif--}}
+    {{-- @endif --}}
 @endsection

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -13,6 +14,11 @@ class ClientController extends Controller
 
     public function create()
     {
-        return view('admin.clients.create');
+        return view('pages.admin.clients.create');
+    }
+
+    public function edit($id)
+    {
+        return view('pages.admin.clients.create', compact('id'));
     }
 }

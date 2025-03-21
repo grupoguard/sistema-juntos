@@ -29,6 +29,7 @@ use App\Http\Controllers\ReturnCodeController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ViaCepController;
 use App\Imports\PlanilhaImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -149,6 +150,10 @@ Route::group(['middleware' => 'guest'], function () {
 Route::get('/login', function () {
     return view('session/login-session');
 })->name('login');
+
+Route::prefix('api')->group(function () {
+    Route::get('/buscar-cep/{cep}', [ViaCepController::class, 'buscarCep']);
+});
 
 /* 
 Route::get('/evidences', 

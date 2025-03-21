@@ -33,11 +33,28 @@ class Client extends Model
         'status',
     ];
 
+    // Remove pontos e traços do CPF antes de salvar
+    public function setCpfAttribute($value)
+    {
+        $this->attributes['cpf'] = preg_replace('/\D/', '', $value);
+    }
+ 
+    // Remove pontos e traços do RG antes de salvar
+    public function setRgAttribute($value)
+    {
+        $this->attributes['rg'] = preg_replace('/\D/', '', $value);
+    }
+
     /**
      * Relacionamento com a tabela Group (muitos clientes pertencem a um grupo)
-     */
+    */
     public function group()
     {
         return $this->belongsTo(Group::class, 'group_id');
+    }
+
+    public function dependents()
+    {
+        return $this->hasMany(Dependent::class);
     }
 }
