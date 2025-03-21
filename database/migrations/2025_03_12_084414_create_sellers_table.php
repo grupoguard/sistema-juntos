@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('neighborhood', 50);
             $table->string('city', 50);
             $table->string('state', 2);
+            $table->boolean('status')->default(true);
             $table->text('obs')->nullable();
             $table->timestamps();
         });

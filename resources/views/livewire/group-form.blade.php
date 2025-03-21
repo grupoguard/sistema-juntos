@@ -66,7 +66,7 @@
 
                 <div class="row mb-3">
                     <div class="col-12">
-                        <h5 class="mb-0">Endereço do Cliente</h5>
+                        <h5 class="mb-0">Endereço da Cooperativa</h5>
                     </div>
                 </div>
                 <div class="row mb-3">
