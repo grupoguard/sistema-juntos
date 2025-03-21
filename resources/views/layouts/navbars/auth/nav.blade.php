@@ -1,3 +1,16 @@
+@php
+    // Obtém o caminho da URL e remove "admin"
+    $fullPath = Request::path();
+    $segments = explode('/', $fullPath); // Divide a URL em partes
+    
+    // Mapeia alias personalizados
+    $aliases = [
+        'admin'  => 'Painel',
+        'groups' => 'Cooperativas',
+        'create' => 'Novo Cadastro',
+        'edit'   => 'Editar Cadastro'
+    ];
+@endphp
 <!-- Navbar -->
 <nav class="navbar navbar-main navbar-expand-lg px-0 mx-4 shadow-none border-radius-xl" id="navbarBlur" navbar-scroll="true">
     <div class="container-fluid py-1 px-3">
@@ -8,13 +21,29 @@
                         Páginas
                     </a>
                 </li>
-                <li class="breadcrumb-item text-sm text-dark active text-capitalize" aria-current="page">
-                    {{ str_replace('-', ' ',   Request::path()) }}
-                </li>
+        
+                @foreach ($segments as $index => $segment)
+                    @php
+                        $segmentName = $aliases[$segment] ?? ucfirst($segment);
+                        $url = url(implode('/', array_slice($segments, 0, $index + 1)));
+                    @endphp
+        
+                    @if ($index < count($segments) - 1)
+                        <li class="breadcrumb-item text-sm">
+                            <a href="{{ $url }}" class="text-dark opacity-7">
+                                {{ $segmentName }}
+                            </a>
+                        </li>
+                    @else
+                        <li class="breadcrumb-item text-sm text-dark active text-capitalize" aria-current="page">
+                            {{ $segmentName }}
+                        </li>
+                    @endif
+                @endforeach
             </ol>
             <h6 class="font-weight-bolder mb-0 text-capitalize">
-                {{ str_replace('-', ' ', Request::path()) }}
-            </h6>
+                {{ $aliases[$segments[count($segments) - 1]] ?? ucfirst(end($segments)) }}
+            </h6>        
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 d-flex justify-content-end" id="navbar"> 
             <ul class="navbar-nav  justify-content-end">

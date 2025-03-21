@@ -2,7 +2,7 @@
     <div class="container-fluid py-4">
         <div class="card">
             <div class="card-header pb-0">
-                <h5 class="mb-0">Lista de Clientes</h5>
+                <h5 class="mb-0">Lista de Cooperativas</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -10,7 +10,7 @@
                         <input 
                             type="text" 
                             class="form-control" 
-                            placeholder="Buscar cliente..." 
+                            placeholder="Buscar cooperativa..." 
                             wire:model.live="search"
                         >
                     </div>
@@ -29,9 +29,9 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <a 
-                            href="{{ route('admin.clients.create') }}" 
+                            href="{{ route('admin.groups.create') }}" 
                             class="btn bg-blue text-white">
-                                + Novo Cliente
+                                + Nova Cooperativa
                         </a>
                     </div>
                 </div>
@@ -46,7 +46,7 @@
                                     Nome
                                 </th>
                                 <th>
-                                    Email
+                                    Telefone
                                 </th>
                                 <th>
                                     Status
@@ -60,32 +60,32 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($clients as $client)
+                            @foreach($groups as $group)
                             <tr>
                                 <td>
-                                    {{ $client->id }}
+                                    {{ $group->id }}
                                 </td>
                                 <td>
-                                    {{ $client->name }}
+                                    {{ $group->name }}
                                 </td>
                                 <td>
-                                    {{ $client->email }}
+                                    {{ $group->phone }}
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $client->status ? 'success' : 'danger' }}">
-                                        {{ $client->status ? 'Ativo' : 'Inativo' }}
+                                    <span class="badge bg-{{ $group->status ? 'success' : 'danger' }}">
+                                        {{ $group->status ? 'Ativo' : 'Inativo' }}
                                     </span>
                                 </td>
                                 <td class="text-center">
                                     <a 
-                                        href="{{ route('admin.clients.edit', $client->id) }}" 
+                                        href="{{ route('admin.groups.edit', $group->id) }}" 
                                         class="btn btn-link text-dark fs-5 p-0 mb-0">
                                         <i class="fa fa-edit me-1"></i>
                                     </a>
                                 </td>
                                 <td class="text-center">
                                     <button 
-                                        wire:click="confirmDelete({{ $client->id }})" 
+                                        wire:click="confirmDelete({{ $group->id }})" 
                                         class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
                                     >
                                         <i class="fa fa-trash me-1"></i>
@@ -97,7 +97,7 @@
                     </table>
                 </div>
 
-                {{ $clients->links() }}
+                {{ $groups->links() }}
 
             </div>
         </div>
@@ -110,7 +110,7 @@
                         <h5 class="modal-title">Confirmar Exclusão</h5>
                     </div>
                     <div class="modal-body">
-                        Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir esta cooperativa? Esta ação não pode ser desfeita.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>
