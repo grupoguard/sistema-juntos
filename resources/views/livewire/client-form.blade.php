@@ -102,12 +102,12 @@
                 <div class="row mb-3">
                     <div class="col-md-3">
                         <label>CEP<span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="zipcode" wire:model="client.zipcode">
+                        <input type="number" class="form-control" data-cep id="zipcode" wire:model="client.zipcode">
                         @error('client.zipcode') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-md-7 ">
                         <label>Endereço<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model="client.address">
+                        <input type="text" class="form-control" data-field="address" wire:model="client.address">
                         @error('client.address') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-md-2">
@@ -125,19 +125,19 @@
 
                     <div class="col-md-4">
                         <label>Bairro<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model="client.neighborhood">
+                        <input type="text" class="form-control" data-field="neighborhood" wire:model="client.neighborhood">
                         @error('client.neighborhood') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="col-md-4">
                         <label>Cidade<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model="client.city">
+                        <input type="text" class="form-control" data-field="city" wire:model="client.city">
                         @error('client.city') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="col-md-1">
                         <label>Estado<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model="client.state">
+                        <input type="text" class="form-control" data-field="state" wire:model="client.state">
                         @error('client.state') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                 </div>

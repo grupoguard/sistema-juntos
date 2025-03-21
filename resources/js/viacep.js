@@ -1,52 +1,42 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const cepInput = document.querySelector("[wire\\:model='client.zipcode']");
-    const addressInput = document.querySelector("[wire\\:model='client.address']");
-    const neighborhoodInput = document.querySelector("[wire\\:model='client.neighborhood']");
-    const cityInput = document.querySelector("[wire\\:model='client.city']");
-    const stateInput = document.querySelector("[wire\\:model='client.state']"); // Adicione se tiver o campo de estado
+    const cepInput = document.querySelector("[data-cep]");
 
-    if (cepInput) {
-        cepInput.addEventListener("input", async function () {
-            let cep = cepInput.value.replace(/\D/g, ""); // Remove não numéricos
+    if (!cepInput) return;
 
-            if (cep.length > 8) {
-                alert("CEP inválido!");
-                return;
-            }
-            
-            if (cep.length === 8) {
-                try {
-                    // Faz a requisição para sua API Laravel
-                    let response = await fetch(`/api/buscar-cep/${cep}`);
-                    let data = await response.json();
+    cepInput.addEventListener("blur", function () {
+        const cep = this.value.replace(/\D/g, ""); // Remove caracteres não numéricos
 
-                    if (data.error) {
-                        alert("CEP não encontrado!");
-                        return;
-                    }
+        if (cep.length !== 8) return;
 
-                    // Preenche os campos com os dados retornados
-                    addressInput.value = data.logradouro || "";
-                    neighborhoodInput.value = data.bairro || "";
-                    cityInput.value = data.localidade || "";
-                    stateInput.value = data.uf || "";
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                const address = document.querySelector("[data-field='address']");
+                const neighborhood = document.querySelector("[data-field='neighborhood']");
+                const city = document.querySelector("[data-field='city']");
+                const state = document.querySelector("[data-field='state']");
 
-                    // Disparar evento 'input' para o Livewire reconhecer as mudanças
-                    addressInput.dispatchEvent(new Event('input'));
-                    neighborhoodInput.dispatchEvent(new Event('input'));
-                    cityInput.dispatchEvent(new Event('input'));
-                    stateInput.dispatchEvent(new Event('input'));
+                if (!data.erro) {
+                    // Preenche os campos e os torna readonly
+                    address.value = data.logradouro || "";
+                    neighborhood.value = data.bairro || "";
+                    city.value = data.localidade || "";
+                    state.value = data.uf || "";
 
-                    // Desabilita os campos preenchidos
-                    addressInput.readOnly = true;
-                    neighborhoodInput.readOnly = true;
-                    cityInput.readOnly = true;
-                    stateInput.readOnly = true;
+                    [address, neighborhood, city, state].forEach(input => input.readOnly = true);
 
-                } catch (error) {
-                    console.error("Erro ao buscar o CEP:", error);
+                    address.dispatchEvent(new Event('input'));
+                    neighborhood.dispatchEvent(new Event('input'));
+                    city.dispatchEvent(new Event('input'));
+                    state.dispatchEvent(new Event('input'));
+                } else {
+                    // Caso o CEP não retorne endereço, desbloqueia os campos para edição
+                    [address, neighborhood, city, state].forEach(input => {
+                        input.value = "";
+                        input.readOnly = false;
+                    });
                 }
-            }
-        });
-    }
+            })
+            .catch(error => console.error("Erro ao buscar CEP:", error));
+    });
 });

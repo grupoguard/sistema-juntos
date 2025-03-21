@@ -2,12 +2,11 @@
 
 namespace App\Livewire;
 
-use App\Models\Client;
+use App\Models\Group;
 use Livewire\Component;
-use Livewire\Attributes\On;
 use Livewire\WithPagination;
 
-class ClientsList extends Component
+class GroupsList extends Component
 {
     use WithPagination;
 
@@ -34,7 +33,7 @@ class ClientsList extends Component
     {
         if (!$this->deleteId) return;
 
-        $client = Client::findOrFail($clientId);
+        $client = Group::findOrFail($clientId);
 
         if ($client) {
             // Verifica se o cliente tem pedidos vinculados
@@ -52,9 +51,9 @@ class ClientsList extends Component
         }
     }
 
-    private function getClients()
+    private function getGroups()
     {
-        return Client::where(function ($query) {
+        return Group::where(function ($query) {
             if (!empty($this->search)) {
                 $query->where('name', 'like', "%{$this->search}%")
                       ->orWhere('email', 'like', "%{$this->search}%");
@@ -69,8 +68,8 @@ class ClientsList extends Component
 
     public function render()
     {
-        return view('livewire.clients-list',[
-            'clients' => $this->getClients(),
+        return view('livewire.groups-list',[
+            'groups' => $this->getGroups(),
             'search' => $this->search,
             'statusFilter' => $this->statusFilter,
         ]);
