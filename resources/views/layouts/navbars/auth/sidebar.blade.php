@@ -130,7 +130,7 @@
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder text-white">Rede de Parceiros</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="javascript:;">
+        <a class="nav-link {{ (Request::is('admin.partners.index') ? 'active' : '') }} " href="{{ route('admin.partners.index') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-handshake-o"></i>
           </div>
@@ -138,7 +138,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="javascript:;">
+        <a class="nav-link {{ (Request::is('admin.partner_categories.index') ? 'active' : '') }} " href="{{ route('admin.partner_categories.index') }}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-th-list"></i>
           </div>

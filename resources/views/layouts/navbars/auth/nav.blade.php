@@ -9,6 +9,7 @@
         'admin'     => 'Painel',
         'clients'   => 'Clientes',
         'groups'    => 'Cooperativas',
+        'partners'  => 'Parceiros',
         'products'  => 'Produtos',
         'sellers'   => 'Consultores',
         'create'    => 'Novo Cadastro',
