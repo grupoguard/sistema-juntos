@@ -96,6 +96,7 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
 
     // Produtos e suas vinculações
     Route::resource('products', ProductController::class);
+    Route::resource('product-additionals', ProductController::class);
     Route::post('products/{product}/aditionals', [ProductController::class, 'attachAditional'])->name('products.attachAditional');
 
     // Códigos de Retorno

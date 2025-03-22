@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('dependents_limit');
             $table->string('recurrence', 20);
             $table->unsignedInteger('lack');
+            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }

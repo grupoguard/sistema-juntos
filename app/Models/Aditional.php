@@ -11,7 +11,14 @@ class Aditional extends Model
 
     protected $table = 'aditionals';
 
-    protected $fillable = ['name', 'value'];
+    protected $fillable = [
+        'name',
+        'status' 
+    ];
+
+    protected $attributes = [
+        'status' => true,
+    ];
 
     /**
      * Relacionamento muitos-para-muitos com Orders (adicionais de um pedido)

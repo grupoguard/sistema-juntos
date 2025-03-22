@@ -29,19 +29,13 @@ class SellersList extends Component
         $this->confirmingDelete = true;
     }
 
-    public function delete($sellerId)
+    public function delete()
     {
         if (!$this->deleteId) return;
 
-        $seller = Seller::findOrFail($sellerId);
+        $seller = Seller::findOrFail($this->deleteId);
 
         if ($seller) {
-            // Verifica se o consultor tem pedidos vinculados
-            if ($seller->orders()->exists()) {
-                $this->addError('delete', 'Este consultor possui pedidos vinculados e não pode ser excluído.');
-                return;
-            }
-
             $seller->delete();
             session()->flash('message', 'Consultor excluído com sucesso!');
             $this->confirmingDelete = false;
