@@ -10,14 +10,4 @@ class AditionalController extends Controller
     {
         return view('pages.admin.aditionals.index');
     }
-
-    public function create()
-    {
-        return view('pages.admin.aditionals.create');
-    }
-
-    public function edit($id)
-    {
-        return view('pages.admin.aditionals.create', compact('id'));
-    }
 }

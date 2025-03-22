@@ -1,5 +1,5 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-    <livewire:partner-categories-list />
+    <livewire:partners-categories-list />
 @endsection
