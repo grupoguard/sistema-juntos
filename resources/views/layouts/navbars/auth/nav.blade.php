@@ -5,10 +5,15 @@
     
     // Mapeia alias personalizados
     $aliases = [
-        'admin'  => 'Painel',
-        'groups' => 'Cooperativas',
-        'create' => 'Novo Cadastro',
-        'edit'   => 'Editar Cadastro'
+        'aditionals'=> 'Adicionais',
+        'admin'     => 'Painel',
+        'clients'   => 'Clientes',
+        'groups'    => 'Cooperativas',
+        'partners'  => 'Parceiros',
+        'products'  => 'Produtos',
+        'sellers'   => 'Consultores',
+        'create'    => 'Novo Cadastro',
+        'edit'      => 'Editar Cadastro'
     ];
 @endphp
 <!-- Navbar -->

@@ -2,11 +2,11 @@
 
 namespace App\Livewire;
 
-use App\Models\Product;
+use App\Models\Partner;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class ProductsList extends Component
+class PartnersList extends Component
 {
     use WithPagination;
 
@@ -29,45 +29,43 @@ class ProductsList extends Component
         $this->confirmingDelete = true;
     }
 
-    public function delete()
+    public function delete($partnerId)
     {
         if (!$this->deleteId) return;
 
-        $product = Product::findOrFail($this->deleteId);
+        $partner = Partner::findOrFail($partnerId);
 
-        if ($product->orders()->exists()) {
-            $this->addError('delete', 'Este produto possui pedidos vinculados e não pode ser excluído.');
-            return;
+        if ($partner) {
+            $partner->delete();
+            session()->flash('message', 'Parceiro excluído com sucesso!');
+            $this->confirmingDelete = false;
+        } else {
+            session()->flash('error', 'Parceiro não encontrado.');
+            $this->confirmingDelete = false;
         }
-
-        $product->delete();
-        session()->flash('message', 'Produto excluído com sucesso!');
-        
-        // Resetando as variáveis
-        $this->confirmingDelete = false;
-        $this->deleteId = null;
     }
 
-    private function getProducts()
+    private function getPartners()
     {
-        return Product::where(function ($query) {
+        return Partner::where(function ($query) {
             if (!empty($this->search)) {
-                $query->where('name', 'like', "%{$this->search}%")
-                      ->orWhere('code', 'like', "%{$this->search}%")
-                      ->orWhere('value', 'like', "%{$this->search}%");
+                $query->where('company_name', 'like', "%{$this->search}%")
+                      ->orWhere('fantasy_name', 'like', "%{$this->search}%")
+                      ->orWhere('cnpj', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%");
             }
         })
         ->when($this->statusFilter !== '', function ($query) {
             $query->where('status', $this->statusFilter);
         })
-        ->orderBy('name')
+        ->orderBy('fantasy_name')
         ->paginate(10);
     }
 
     public function render()
     {
-        return view('livewire.products-list',[
-            'products' => $this->getProducts(),
+        return view('livewire.partners-list',[
+            'partners' => $this->getPartners(),
             'search' => $this->search,
             'statusFilter' => $this->statusFilter,
         ]);

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('aditionals', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
-            $table->decimal('value', 10, 2); 
+            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }

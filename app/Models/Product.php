@@ -18,7 +18,8 @@ class Product extends Model
         'accession',
         'dependents_limit',
         'recurrence',
-        'lack'
+        'lack',
+        'status'
     ];
 
     // Relacionamento com Comission (um produto pode ter várias comissões)
@@ -30,6 +31,14 @@ class Product extends Model
     // Relacionamento com Aditionals (um produto pode ter vários adicionais)
     public function additionals()
     {
-        return $this->belongsToMany(Aditional::class, 'product_aditionals', 'product_id', 'aditional_id');
+        return $this->belongsToMany(Aditional::class, 'product_aditionals', 'product_id', 'aditional_id')
+        ->withPivot('value') // Pega o campo 'value' da tabela pivô
+        ->withTimestamps();
+    }
+    
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'product_id');
     }
 }

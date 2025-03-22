@@ -2,7 +2,7 @@
     <div class="container-fluid py-4">
         <div class="card">
             <div class="card-header pb-0">
-                <h5 class="mb-0">Lista de Consultores</h5>
+                <h5 class="mb-0">Lista de Parceiros</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -10,28 +10,15 @@
                         <input 
                             type="text" 
                             class="form-control" 
-                            placeholder="Buscar consultor..." 
+                            placeholder="Nome/CNPJ/Email" 
                             wire:model.live="search"
                         >
                     </div>
-                    <div class="col-md-4">
-                        <select class="form-control" wire:model.lazy="statusFilter">
-                            <option value="">
-                                Todos
-                            </option>
-                            <option value="1">
-                                Ativo
-                            </option>
-                            <option value="0">
-                                Inativo
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 text-end">
+                    <div class="col-md-8 text-end">
                         <a 
-                            href="{{ route('admin.sellers.create') }}" 
+                            href="{{ route('admin.partners.create') }}" 
                             class="btn bg-blue text-white">
-                                + Novo Consultor
+                                + Novo Parceiro
                         </a>
                     </div>
                 </div>
@@ -46,10 +33,7 @@
                                     Nome
                                 </th>
                                 <th>
-                                    Email
-                                </th>
-                                <th>
-                                    Status
+                                    Telefone
                                 </th>
                                 <th class="text-center">
                                     Editar
@@ -60,32 +44,27 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($sellers as $seller)
+                            @foreach($partners as $partner)
                             <tr>
                                 <td>
-                                    {{ $seller->id }}
+                                    {{ $partner->id }}
                                 </td>
                                 <td>
-                                    {{ $seller->name }}
+                                    {{ $partner->fantasy_name }}
                                 </td>
                                 <td>
-                                    {{ $seller->email }}
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $seller->status ? 'success' : 'danger' }}">
-                                        {{ $seller->status ? 'Ativo' : 'Inativo' }}
-                                    </span>
+                                    {{ $partner->phone }}
                                 </td>
                                 <td class="text-center">
                                     <a 
-                                        href="{{ route('admin.sellers.edit', $seller->id) }}" 
+                                        href="{{ route('admin.partners.edit', $partner->id) }}" 
                                         class="btn btn-link text-dark fs-5 p-0 mb-0">
                                         <i class="fa fa-edit me-1"></i>
                                     </a>
                                 </td>
                                 <td class="text-center">
                                     <button 
-                                        wire:click="confirmDelete({{ $seller->id }})" 
+                                        wire:click="confirmDelete({{ $partner->id }})" 
                                         class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
                                     >
                                         <i class="fa fa-trash me-1"></i>
@@ -97,7 +76,7 @@
                     </table>
                 </div>
 
-                {{ $sellers->links() }}
+                {{ $partners->links() }}
 
             </div>
         </div>
@@ -110,7 +89,7 @@
                         <h5 class="modal-title">Confirmar Exclusão</h5>
                     </div>
                     <div class="modal-body">
-                        Tem certeza que deseja excluir este consultor? Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir este parceiro? Esta ação não pode ser desfeita.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>
