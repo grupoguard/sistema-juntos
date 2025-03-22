@@ -95,12 +95,12 @@
         <div class="collapse" id="produtos" style="">
           <ul class="nav nav-sm flex-column">
             <li class="nav-item ">
-              <a class="nav-link" href="javascript:;">
+              <a class="nav-link" href="{{ route('admin.products.index') }}">
                 Gerenciar produtos
               </a>
             </li>
             <li class="nav-item ">
-              <a class="nav-link" href="javascript:;">
+              <a class="nav-link" href="{{ route('admin.aditionals.index') }}">
                 Gerenciar adicionais
               </a>
             </li>

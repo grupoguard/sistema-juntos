@@ -30,11 +30,11 @@ class ClientsList extends Component
         $this->confirmingDelete = true;
     }
 
-    public function delete($clientId)
+    public function delete()
     {
         if (!$this->deleteId) return;
 
-        $client = Client::findOrFail($clientId);
+        $client = Client::findOrFail($this->deleteId);
 
         if ($client) {
             // Verifica se o cliente tem pedidos vinculados

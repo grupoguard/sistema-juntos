@@ -5,9 +5,11 @@
     
     // Mapeia alias personalizados
     $aliases = [
+        'aditionals'=> 'Adicionais',
         'admin'     => 'Painel',
         'clients'   => 'Clientes',
         'groups'    => 'Cooperativas',
+        'products'  => 'Produtos',
         'sellers'   => 'Consultores',
         'create'    => 'Novo Cadastro',
         'edit'      => 'Editar Cadastro'
