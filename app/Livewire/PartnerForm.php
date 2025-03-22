@@ -3,35 +3,60 @@
 namespace App\Livewire;
 
 use App\Models\Partner;
+use App\Models\PartnersCategorie;
 use Livewire\Component;
 
 class PartnerForm extends Component
 {
     public $partner = [];
+    public $plans = [];
+    public $availableCategories = [];
     public $partnerId;
+    public $activeTab = '#partner-data-tab';
+
+    protected $listeners = ['tabChanged' => 'updateTab'];
 
     protected $rules = [
-        'partner.company_name'    => 'required|string|max:100',
-        'partner.fantasy_name'    => 'required|string|max:100',
-        'partner.cnpj'            => 'required|string|min:14|max:18|unique:partners,cnpj',
-        'partner.phone'           => 'required|string|max:15',
-        'partner.email'           => 'required|email|max:50|unique:partners,email',
-        'partner.whatsapp'        => 'nullable|string|max:15',
-        'partner.site'            => 'nullable|string|max:255',
-        'partner.zipcode'         => 'required|string|max:8',
-        'partner.address'         => 'required|string|max:100',
-        'partner.number'          => 'required|string|max:10',
-        'partner.complement'      => 'nullable|string|max:40',
-        'partner.neighborhood'    => 'required|string|max:50',
-        'partner.city'            => 'required|string|max:50',
-        'partner.state'           => 'required|string|max:2',
+        'partner.company_name'      => 'required|string|max:100',
+        'partner.fantasy_name'      => 'required|string|max:100',
+        'partner.cnpj'              => 'required|string|min:14|max:18|unique:partners,cnpj',
+        'partner.phone'             => 'required|string|max:15',
+        'partner.email'             => 'required|email|max:50|unique:partners,email',
+        'partner.whatsapp'          => 'nullable|string|max:15',
+        'partner.site'              => 'nullable|string|max:255',
+        'partner.zipcode'           => 'required|string|max:8',
+        'partner.address'           => 'required|string|max:100',
+        'partner.number'            => 'required|string|max:10',
+        'partner.complement'        => 'nullable|string|max:40',
+        'partner.neighborhood'      => 'required|string|max:50',
+        'partner.city'              => 'required|string|max:50',
+        'partner.state'             => 'required|string|max:2',
+        'plans.*.partner_id'        => 'required|integer',
+        'plans.*.category_id'       => 'required|integer',
+        'plans.*.particular_price'  => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+        'plans.*.juntos_price'      => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+        'plans.*.obs'               => 'nullable|string',
     ];
 
     public function mount($partnerId = null)
     {
+        $this->availableCategories = PartnersCategorie::all();
+
         if ($partnerId) {
             $partner = Partner::find($partnerId);
             $this->partner = $partner->toArray();
+        
+            // Carrega os planos existentes vinculados ao parceiro
+            $this->plans = $partner->partnerPlans->map(function ($plan) {
+                return [
+                    'partner_id' => $plan->partner_id,
+                    'category_id' => $plan->category_id,
+                    'particular_price' => $plan->particular_price,
+                    'juntos_price' => $plan->juntos_price,
+                    'obs' => $plan->obs ?? '',
+                    'locked' => true, // Bloqueia a edição
+                ];
+            })->toArray();
         } else {
             $this->partner = [
                 'company_name'  => null,
@@ -50,6 +75,26 @@ class PartnerForm extends Component
                 'state'         => '',
             ];
         }
+
+        $this->activeTab = session('activeTab', '#partner-data-tab');
+    }
+
+    public function addPlans()
+    {
+        $this->plans[] = [
+            'partner_id' => $this->partnerId ?? '',
+            'category_id' => '',
+            'particular_price' => '',
+            'juntos_price' => '',
+            'obs' => '',
+            'locked' => false
+        ];
+    }
+
+    public function removePlan($index)
+    {
+        unset($this->plans[$index]);
+        $this->plans = array_values($this->plans); // Reorganiza os índices
     }
 
     public function storeOrUpdate()
@@ -74,10 +119,35 @@ class PartnerForm extends Component
             $partner->update($this->partner);
         } else {
             $partner = Partner::create($this->partner);
+            $this->partnerId = $partner->id;
+        }
+
+        // Salvar os planos vinculados
+        foreach ($this->plans as $plan) {
+            $partner->partnerPlans()->updateOrCreate(
+                ['category_id' => $plan['category_id']],
+                [
+                    'particular_price' => $plan['particular_price'],
+                    'juntos_price' => $plan['juntos_price'],
+                    'obs' => $plan['obs'],
+                ]
+            );
         }
 
         session()->flash('message', 'parceiro' . ($this->partnerId ? 'atualizado' : 'cadastrado') . ' com sucesso!');
         return redirect()->route('admin.partners.edit', ['partner' => $partner->id]);
+    }
+
+    public function setActiveTab($tab)
+    {
+        $this->activeTab = $tab;
+        $this->dispatch('tabChanged', $tab);
+    }
+
+    public function updateTab($tab)
+    {
+        $this->activeTab = $tab;
+        session(['activeTab' => $tab]);
     }
 
     public function updatedPartnerCnpj()
