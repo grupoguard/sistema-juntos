@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('evidence_documents', function (Blueprint $table) {
+        Schema::create('order_aditionals_dependents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
-            $table->string('evidence_type', 30);
-            $table->string('document', 255);
+            $table->foreignId('dependent_id')->constrained('dependents')->onDelete('cascade');
+            $table->foreignId('aditional_id')->constrained('aditionals')->onDelete('cascade');
+            $table->decimal('value', 10, 2); // Valor do adicional no momento da compra
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('evidence_documents');
+        Schema::dropIfExists('order_aditionals_dependents');
     }
 };

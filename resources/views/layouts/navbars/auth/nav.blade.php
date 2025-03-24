@@ -9,6 +9,7 @@
         'admin'     => 'Painel',
         'clients'   => 'Clientes',
         'groups'    => 'Cooperativas',
+        'orders'    => 'Pedidos',
         'partners'  => 'Parceiros',
         'products'  => 'Produtos',
         'sellers'   => 'Consultores',
