@@ -18,12 +18,13 @@ return new class extends Migration
             $table->foreignId('group_id')->constrained('groups')->onDelete('cascade');
             $table->foreignId('seller_id')->constrained('sellers')->onDelete('cascade');
             $table->string('charge_type', 20);
-            $table->unsignedBigInteger('installation_number')->nullable();
+            $table->string('installation_number', 9)->nullable();
             $table->string('approval_name', 50)->nullable();
+            $table->string('approval_by', 20)->nullable();
             $table->date('evidence_date');
-            $table->string('audio', 255)->nullable();
             $table->unsignedSmallInteger('charge_date');
-            $table->unsignedBigInteger('accession');
+            $table->decimal('accession', 10, 2);
+            $table->string('accession_payment', 50)->nullable(); //Forma de pagamento da adesão
             $table->enum('discount_type', ['R$', '%'])->nullable(); // Tipo de desconto (real ou percentual)
             $table->decimal('discount_value', 10, 2)->nullable(); // Valor do desconto
             $table->timestamps();

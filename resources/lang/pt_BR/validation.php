@@ -316,5 +316,13 @@ return [
         'group.state' => 'estado',
         'group.status' => 'status',
         'group.obs' => 'observação',
+        'client_id' => 'cliente',
+        'product_id' => 'produto',
+        'seller_id' => 'consultor',
+        'charge_type' => 'tipo de cobrança',
+        'accession' => 'adesão',
+        'accession_payment' => 'pagamento da adesão',
+        'discount_type' => 'tipo de desconto',
+        'discount_value' => 'valor do desconto',
     ],
 ];

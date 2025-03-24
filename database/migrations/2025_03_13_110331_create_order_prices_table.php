@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->decimal('product_value', 10, 2); // Preço do produto no momento da compra
-            $table->decimal('dependent_value', 10, 2); // Valor cobrado por dependente
+            $table->decimal('dependent_value', 10, 2)->nullable(); // Valor cobrado por dependente
             $table->integer('dependents_count'); // Quantidade de dependentes no momento da compra
             $table->timestamps();
         });
