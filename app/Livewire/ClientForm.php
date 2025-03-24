@@ -94,7 +94,8 @@ class ClientForm extends Component
             'cpf' => '', 
             'rg' => '', 
             'marital_status' => '',
-            'relationship' => ''];
+            'relationship' => ''
+        ];
     }
 
     public function removeDependent($index)
