@@ -160,10 +160,9 @@ Route::prefix('api')->group(function () {
     Route::get('/buscar-cep/{cep}', [ViaCepController::class, 'buscarCep']);
 });
 
-/* 
 Route::get('/evidences', 
-		[PlanilhaController::class, 'index']
-	)->name('evidences');
+    [PlanilhaController::class, 'index']
+)->name('evidences');
 
 Route::get('/evidences/disparo', 
 	[PlanilhaController::class, 'disparo']
@@ -186,4 +185,3 @@ Route::get('/evidences/download-feedback', [PlanilhaController::class, 'download
 Route::get('/atualizar-excel', [AtualizarExcelTXT::class, 'index'])->name('atualizar.excel');
 
 Route::post('/atualizar-excel/upload', [AtualizarExcelTXT::class, 'upload'])->name('atualizar.excel.upload');
-*/
