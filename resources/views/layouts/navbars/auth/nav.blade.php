@@ -12,6 +12,7 @@
         'orders'    => 'Pedidos',
         'partners'  => 'Parceiros',
         'products'  => 'Produtos',
+        'reports'   => 'Relatório Retornos EDP',
         'sellers'   => 'Consultores',
         'create'    => 'Novo Cadastro',
         'edit'      => 'Editar Cadastro'
