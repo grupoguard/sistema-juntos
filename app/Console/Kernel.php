@@ -31,9 +31,9 @@ class Kernel extends ConsoleKernel
             $schedule->command('migrate:fresh --seed')->cron($scheduledInterval);
         }
 
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('06:00');
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('12:00');
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->dailyAt('18:00');
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->timezone('America/Sao_Paulo')->at('08:00');
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->timezone('America/Sao_Paulo')->at('12:30');
+        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)->timezone('America/Sao_Paulo')->at('17:00');
     }
 
     /**
