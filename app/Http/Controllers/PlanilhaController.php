@@ -111,7 +111,6 @@ class PlanilhaController extends Controller
 
             // Faz o download de todos os arquivos da pasta
             $arquivos = $this->downloadFilesFromDriveFolder($folderId);
-            
             try {
                 $dataEvidencia = \Carbon\Carbon::createFromFormat('d/m/Y', $row['dt_evidencia'])->format('Y-m-d');
             } catch (\Exception $e) {
