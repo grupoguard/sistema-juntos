@@ -126,16 +126,24 @@ class EdpService
     {
         $zip = new \ZipArchive;
         if ($zip->open($zipPath) === TRUE) {
-            $extractPath = storage_path('app/retornos/');
+            // Cria um nome de pasta baseado no nome do arquivo ZIP (sem extensão)
+            $folderName = pathinfo($zipPath, PATHINFO_FILENAME);
+            $extractPath = storage_path('app/retornos/' . $folderName . '/');
+
+            // Garante que a pasta exista
+            if (!file_exists($extractPath)) {
+                mkdir($extractPath, 0755, true);
+            }
+
             $zip->extractTo($extractPath);
             $zip->close();
 
             // Filtra os arquivos extraídos para encontrar o .txt
-            $files = array_diff(scandir($extractPath), ['.', '..']); // Remove "." e ".."
-            
+            $files = array_diff(scandir($extractPath), ['.', '..']);
+
             foreach ($files as $file) {
                 if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) == 'txt') {
-                    return $extractPath . $file; // Retorna o arquivo TXT correto
+                    return $extractPath . $file; // Retorna o caminho do TXT extraído
                 }
             }
         }
@@ -146,26 +154,13 @@ class EdpService
     public function processarArquivoTxt($txtPath)
     {
         $lines = file($txtPath, FILE_IGNORE_NEW_LINES);
+
+        Log::info("Arquivo " . $txtPath);
+
         foreach ($lines as $line) {
+            Log::info("Linha " . $line);
             $tipoRegistro = substr($line, 0, 1);
-    
             if ($tipoRegistro === 'B') {
-                LogMovement::create([
-                    'register_code'      => substr($line, 0, 1),
-                    'installation_number'=> substr($line, 1, 9),
-                    'extra_value'        => substr($line, 10, 2),
-                    'product_cod'        => substr($line, 12, 3),
-                    'installment'        => substr($line, 15, 5),
-                    'reading_script'     => substr($line, 20, 15),
-                    'date_invoice'       => $this->formatDate(substr($line, 35, 6)),
-                    'city_code'          => substr($line, 41, 3),
-                    'date_movement'      => $this->formatDate(substr($line, 44, 8)),
-                    'value'              => substr($line, 52, 15),
-                    'code_return'        => substr($line, 67, 2),
-                    'future'             => substr($line, 69, 80),
-                    'code_move'          => substr($line, 149, 1),
-                ]);
-            } elseif ($tipoRegistro === 'F') {
                 LogRegister::create([
                     'register_code'      => substr($line, 0, 1),
                     'installation_number'=> substr($line, 1, 9),
@@ -176,12 +171,28 @@ class EdpService
                     'future1'            => substr($line, 32, 9),
                     'city_code'          => substr($line, 41, 3),
                     'start_date'         => $this->formatDate(substr($line, 44, 8)),
-                    'end_date'           => $this->formatDate(substr($line, 52, 8)),
+                    'end_date'           => $this->formatDate(substr($line, 52, 8)),         
                     'address'            => substr($line, 60, 40),
                     'name'               => substr($line, 100, 40),
-                    'future2'            => substr($line, 140, 7),
-                    'code_anomaly'       => substr($line, 147, 2),
-                    'code_move'          => substr($line, 150, 1),
+                    'future2'            => substr($line, 140, 17),                  
+                    'code_anomaly'       => substr($line, 157, 2),
+                    'code_move'          => substr($line, 159, 1),
+                ]);
+            } else if ($tipoRegistro === 'F') {
+                LogMovement::create([
+                    'register_code'      => substr($line, 0, 1),
+                    'installation_number'=> substr($line, 1, 9),
+                    'extra_value'        => substr($line, 10, 2),
+                    'product_cod'        => substr($line, 12, 3),
+                    'installment'        => substr($line, 15, 5),
+                    'reading_script'     => substr($line, 20, 15),
+                    'date_invoice'       => substr($line, 35, 6),
+                    'city_code'          => substr($line, 41, 3),
+                    'date_movement'      => substr($line, 44, 8),
+                    'value'              => substr($line, 52, 15),
+                    'code_return'        => substr($line, 67, 2),
+                    'future'             => substr($line, 69, 90),
+                    'code_move'          => substr($line, 159, 1),
                 ]);
             }
         }
@@ -200,7 +211,7 @@ class EdpService
     {
         // 1. Listar os arquivos de retorno disponíveis
         $arquivosResponse = $this->listarArquivosRetorno();
-
+       
         if (!isset($arquivosResponse['Data']) || !is_array($arquivosResponse['Data'])) {
             throw new Exception('Resposta inesperada da API: ' . json_encode($arquivosResponse));
         }
@@ -213,13 +224,15 @@ class EdpService
 
         // 2. Ordenar os arquivos do mais antigo para o mais novo
         usort($arquivos, function ($a, $b) {
-            return strtotime($a['DataCriacao']) - strtotime($b['DataCriacao']);
+            return strtotime($a['DataInclusao']) - strtotime($b['DataInclusao']);
         });
+
+        $arquivosProcessados = 0; // Contador de arquivos processados
 
         // 3. Processar apenas o arquivo mais antigo que ainda não foi armazenado
         foreach ($arquivos as $arquivo) {
             $arquivoId = $arquivo['Id'];
-            $nomeArquivo = $arquivo['Nome'];
+            $nomeArquivo = $arquivo['Arquivo'];
 
             // Verifica se já processamos esse arquivo
             if (\App\Models\RetornoArmazenado::where('arquivo_id', $arquivoId)->exists()) {
@@ -253,8 +266,7 @@ class EdpService
                 ]);
 
                 Log::info("Arquivo de retorno ID {$arquivoId} processado e armazenado com sucesso!");
-
-                return "Arquivo processado com sucesso!";
+                $arquivosProcessados++;
 
             } catch (Exception $e) {
                 Log::error("Erro ao processar o arquivo ID {$arquivoId}: " . $e->getMessage());
