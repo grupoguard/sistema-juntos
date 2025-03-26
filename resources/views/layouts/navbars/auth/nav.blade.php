@@ -5,17 +5,18 @@
     
     // Mapeia alias personalizados
     $aliases = [
-        'aditionals'=> 'Adicionais',
-        'admin'     => 'Painel',
-        'clients'   => 'Clientes',
-        'groups'    => 'Cooperativas',
-        'orders'    => 'Pedidos',
-        'partners'  => 'Parceiros',
-        'products'  => 'Produtos',
-        'reports'   => 'Relatório Retornos EDP',
-        'sellers'   => 'Consultores',
-        'create'    => 'Novo Cadastro',
-        'edit'      => 'Editar Cadastro'
+        'aditionals'            => 'Adicionais',
+        'admin'                 => 'Painel',
+        'clients'               => 'Clientes',
+        'groups'                => 'Cooperativas',
+        'orders'                => 'Pedidos',
+        'partners'              => 'Parceiros',
+        'partner_categories'    => 'Categorias para Parceiros',
+        'products'              => 'Produtos',
+        'reports'               => 'Relatório Retornos EDP',
+        'sellers'               => 'Consultores',
+        'create'                => 'Novo Cadastro',
+        'edit'                  => 'Editar Cadastro'
     ];
 @endphp
 <!-- Navbar -->
