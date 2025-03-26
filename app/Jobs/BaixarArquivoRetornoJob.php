@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\RetornoArmazenado;
 use App\Models\RetornoArquivo;
 use App\Models\RetornosArmazenados;
 use App\Services\EdpService;
@@ -56,7 +57,7 @@ class BaixarArquivoRetornoJob implements ShouldQueue
             $arquivoId = $arquivo['Id'];
             $nomeArquivo = $arquivo['Nome'];
 
-            if (RetornosArmazenados::where('arquivo_id', $arquivoId)->exists()) {
+            if (RetornoArmazenado::where('arquivo_id', $arquivoId)->exists()) {
                 Log::info("Arquivo {$nomeArquivo} (ID: {$arquivoId}) já foi processado. Pulando...");
                 continue;
             }
@@ -80,14 +81,13 @@ class BaixarArquivoRetornoJob implements ShouldQueue
                 $edpService->processarArquivoTxt($txtPath);
 
                 // 6. Registrar que o arquivo foi processado
-                RetornosArmazenados::create([
+                RetornoArmazenado::create([
                     'arquivo_id' => $arquivoId,
                     'nome_arquivo' => $nomeArquivo,
+                    'baixado_em' => now(),
                 ]);
 
                 Log::info("Arquivo {$nomeArquivo} (ID: {$arquivoId}) baixado e processado com sucesso!");
-
-                return; // Sai do loop após baixar apenas um arquivo
 
             } catch (Exception $e) {
                 Log::error("Erro ao processar o arquivo ID {$arquivoId}: " . $e->getMessage());
