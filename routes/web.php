@@ -24,6 +24,7 @@ use App\Http\Controllers\PartnerPlanController;
 use App\Http\Controllers\PlanilhaController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ResetController;
 use App\Http\Controllers\ReturnCodeController;
 use App\Http\Controllers\SellerController;
@@ -82,6 +83,9 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
 
     // Códigos de Movimento
     Route::resource('move_codes', MoveCodeController::class);
+
+    // Códigos de Movimento
+    Route::resource('reports', ReportsController::class);
 
     // Pedidos e seus detalhes
     Route::resource('orders', OrderController::class);

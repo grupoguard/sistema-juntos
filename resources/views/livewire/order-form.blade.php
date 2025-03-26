@@ -292,7 +292,7 @@
                         <hr class="my-5">
 
                         <div class="col-12 mb-3">
-                            <h5 class="mb-0">Dados de cobraça</h5>
+                            <h5 class="mb-0">Dados de cobrança</h5>
                         </div>
 
                         <!-- Tipo de Cobrança -->
