@@ -87,7 +87,7 @@ class SellerForm extends Component
         $rules['seller.email'] = 'required|email|max:255|unique:sellers,email,' . ($this->sellerId ?: 'NULL') . ',id';
 
         // Validação do RG
-        if (!empty($rg) && !$this->sellerId && !$this->validateRg($rg)) {
+        if (!$this->sellerId && !empty($rg) && !$this->validateRg($rg)) {
             $this->addError('seller.rg', 'RG inválido.');
             return;
         }
