@@ -424,20 +424,24 @@ class OrderForm extends Component
 
         try {
             // 3️⃣ Obter o `group_id` do usuário autenticado
-            $groupId = $groupId = auth()->user()->access()->first()->group_id; 
+            $groupId = $groupId = auth()->user()->access()->first()->group_id;
+
+            $cpf = preg_replace('/\D/', '', $this->client['cpf']);
+            $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove pontos e traços
+            $phone = preg_replace('/\D/', '', $this->client['phone']); // Remove caracteres não numéricos
 
             // 1️⃣ Verificar se o cliente já existe
             $client = Client::updateOrCreate(
-                ['cpf' => $this->client['cpf']], // Supondo que 'document' seja único
+                ['cpf' => $cpf], // Supondo que 'document' seja único
                 [
                     'group_id' => $groupId,
                     'name' => $this->client['name'],
                     'mom_name' => $this->client['mom_name'],
                     'date_birth' => $this->client['date_birth'],
-                    'rg' => $this->client['rg'],
+                    'rg' => $rg ,
                     'gender' => $this->client['gender'],
                     'marital_status' => $this->client['marital_status'],
-                    'phone' => $this->client['phone'],
+                    'phone' => $phone,
                     'email' => $this->client['email'],
                     'zipcode' => $this->client['zipcode'],
                     'address' => $this->client['address'],
