@@ -117,7 +117,7 @@ class ClientForm extends Component
         $rules['client.email'] = 'required|email|max:255|unique:clients,email,' . ($this->clientId ?: 'NULL') . ',id';
 
         // Validação do RG
-        if (!$this->clientId && !$this->validateRg($rg)) {
+        if (!$this->clientId && !empty($rg) && !$this->validateRg($rg)) {
             $this->addError('client.rg', 'RG inválido.');
             return;
         }
@@ -173,12 +173,12 @@ class ClientForm extends Component
         if (!$this->clientId) {
             $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove caracteres não numéricos
 
-            if (!$this->validateRg($rg)) {
+            if (!empty($rg) && !$this->validateRg($rg)) {
                 $this->addError('client.rg', 'RG inválido.');
                 return;
             }
 
-            if (Client::where('rg', $rg)->exists()) {
+            if (!empty($rg) && Client::where('rg', $rg)->exists()) {
                 $this->addError('client.rg', 'RG já cadastrado.');
             } else {
                 $this->resetErrorBag('client.rg');

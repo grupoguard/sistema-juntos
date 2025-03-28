@@ -12,9 +12,9 @@ class OrderPrice extends Model
     protected $fillable = [
         'order_id',
         'product_id',
-        'base_price',
-        'dependent_price',
-        'total_price',
+        'product_value',
+        'dependent_value',
+        'dependents_count'
     ];
 
     public function order()
