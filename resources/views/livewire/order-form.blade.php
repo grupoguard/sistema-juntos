@@ -32,7 +32,7 @@
                         <div class="row mb-3">
                             <div class="col-lg-3">
                                 <label>Gênero<span class="text-danger">*</span></label>
-                                <select class="form-control" wire:model.defer="client.gender">
+                                <select class="form-control" wire:model.change="client.gender">
                                     <option value="">Selecione</option>
                                     <option value="masculino">Masculino</option>
                                     <option value="feminino">Feminino</option>
@@ -71,7 +71,7 @@
                         <div class="row mb-3">
                             <div class="col-md-3">
                                 <label>Estado Civil<span class="text-danger">*</span></label>
-                                <select class="form-control" wire:model.defer="client.marital_status">
+                                <select class="form-control" wire:model.change="client.marital_status">
                                     <option value="">Selecione</option>
                                     <option value="solteiro">Solteiro(a)</option>
                                     <option value="casado">Casado(a)</option>
@@ -149,10 +149,10 @@
                         </div>
 
                         <!-- Seleção de Consultor -->
-                        <div class="row {{ empty($additionals) ? 'align-items-end' : 'align-items-center' }}">
+                        <div class="row {{ empty($additionals) ? 'align-items-center' : 'align-items-ender' }}">
                             <div class="col-lg-3 mb-3">
                                 <label for="seller_id" class="form-label">Consultor<span class="text-danger">*</span></label>
-                                <select id="seller_id" class="form-control" wire:model="seller_id">
+                                <select id="seller_id" class="form-control" wire:model.change="seller_id">
                                     <option value="">Selecione um consultor</option>
                                     @foreach($sellers as $seller)
                                         <option value="{{ $seller->id }}">{{ $seller->name }}</option>
@@ -179,7 +179,7 @@
                                     <label class="form-label">Adicionais</label>
                                     @foreach($additionals as $additional)
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" wire:model="selectedAdditionals" value="{{ $additional['id'] }}">
+                                            <input type="checkbox" class="form-check-input" wire:model.change="selectedAdditionals" value="{{ $additional['id'] }}">
                                             <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                         </div>
                                     @endforeach
@@ -195,7 +195,7 @@
                             </div>
                             <div class="col-lg-5 mb-3">
                                 <label for="accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
-                                <select id="accession_payment" class="form-control" wire:model="accession_payment">
+                                <select id="accession_payment" class="form-control" wire:model.change="accession_payment">
                                     <option value="">Selecione um pagamento</option>
                                     <option value="PIX">PIX</option>
                                     <option value="Boleto">Boleto</option>
@@ -205,10 +205,18 @@
                                 </select>
                                 @error('accession_payment') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
+                            <div class="col-lg-4 mt-4">
+                                <h3>
+                                    Total:
+                                    <span class="total" id="total">
+                                        R$ {{ number_format($total, 2, ',', '.') }}
+                                    </span>
+                                </h3>
+                            </div>
                         </div>
 
                         <hr class="my-5">
-
+                        {{-- Dependentes --}}
                         <div class="row">
                             <div class="col-lg-6">
                                 <h5 class="mb-0">Dependentes</h5>
@@ -229,7 +237,7 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>Grau de Parentesco<span class="text-danger">*</span></label>
-                                        <select class="form-control" wire:model="dependents.{{ $index }}.relationship">
+                                        <select class="form-control" wire:model.defer="dependents.{{ $index }}.relationship">
                                             <option value="">Selecione</option>
                                             <option value="solteiro">Mãe/Pai</option>
                                             <option value="casado">Irmão(ã)</option>
@@ -253,7 +261,7 @@
                                     </div>
                                     <div class="col-md-2 mb-3">
                                         <label>Estado Civil<span class="text-danger">*</span></label>
-                                        <select class="form-control" wire:model="dependents.{{ $index }}.marital_status">
+                                        <select class="form-control" wire:model.change="dependents.{{ $index }}.marital_status">
                                             <option value="">Selecione</option>
                                             <option value="solteiro">Solteiro(a)</option>
                                             <option value="casado">Casado(a)</option>
@@ -274,7 +282,7 @@
                                             <label class="form-label">Adicionais</label>
                                             @foreach($additionals as $additional)
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" wire:model="dependents.{{ $index }}.additionals" value="{{ $additional['id'] }}">
+                                                    <input type="checkbox" class="form-check-input" wire:model.change="dependents.{{ $index }}.additionals" value="{{ $additional['id'] }}">
                                                     <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                 </div>
                                             @endforeach
@@ -313,7 +321,7 @@
                             <div class="row">
                                 <div class="col-lg-3 mb-3">
                                     <label for="installation_number" class="form-label">Número da Instalação<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="installation_number" wire:model="installation_number">
+                                    <input type="number" class="form-control" id="installation_number" min="1" max="999999999" oninput="this.value = this.value.slice(0, 9)" wire:model="installation_number">
                                     @error('installation_number') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-3 mb-3">
@@ -323,7 +331,7 @@
                                 </div>
                                 <div class="col-lg-3 mb-3">
                                     <label for="approval_by" class="form-label">Autorizado por<span class="text-danger">*</span></label>
-                                    <select id="approval_by" class="form-control">
+                                    <select id="approval_by" class="form-control"  wire:model.change="approval_by">
                                         <option value="">Selecione</option>
                                         <option value="Titular">Titular</option>
                                         <option value="Conjuge">Cônjuge</option>
@@ -338,10 +346,13 @@
                             </div>
 
                             <hr class="my-5">
-
+                            {{-- Documentos --}}
                             <div class="row mt-4 mb-5">
                                 <div class="col-lg-6">
                                     <h5 class="mb-0">Adicionar documentos</h5>
+                                    @error('evidences')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
                                 </div>
                                 <div class="col-lg-6 text-end">
                                     <button type="button" class="btn bg-blue text-white" wire:click="addEvidence">Adicionar Documentos</button>
@@ -350,13 +361,14 @@
                                     <div class="row align-items-end mt-4">
                                         <div class="col-md-4 mb-3">
                                             <label>Tipo de evidência<span class="text-danger">*</span></label>
-                                            <select class="form-control" wire:model="evidences.{{ $index }}.evidence_type">
+                                            <select class="form-control" wire:model.change="evidences.{{ $index }}.evidence_type">
                                                 <option value="selecione">Selecione</option>
                                                 <option value="audio">Audio</option>
                                                 <option value="contrato">Contrato</option>
                                                 <option value="certidao de casamento">Certidão de Casamento</option>
                                                 <option value="cpf">CPF</option>
                                                 <option value="rg">RG</option>
+                                                <option value="cnh">Carteira de Motorista</option>
                                                 <option value="outro">Outro</option>
                                             </select>
                                             @error('evidences.{{ $index }}.evidence_type') <span class="text-danger">{{ $message }}</span> @enderror
@@ -384,7 +396,10 @@
 
                         <!-- Botão de salvar -->
                         <div class="row">
-                            <div class="col-12 text-end">
+                            <div class="col-lg-7">
+
+                            </div>
+                            <div class="col-lg-5 text-end">
                                 <button type="submit" class="btn btn-success btn-lg">Salvar Pedido</button>
                             </div>
                         </div>
@@ -393,4 +408,29 @@
             </div>
         </div>
     </form>
+    <div class="modal fade" id="clientHasOrderModal" tabindex="-1" aria-labelledby="clientHasOrderModalLabel" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clientHasOrderModalLabel">Cliente já possui pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Este cliente já possui um pedido e não pode cadastrar um novo.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @push('scripts')
+        <script>
+            window.addEventListener('clientHasOrder', event => {
+                var myModal = new bootstrap.Modal(document.getElementById('clientHasOrderModal'));
+                myModal.show();
+            });
+        </script>
+    @endpush
 </div>
