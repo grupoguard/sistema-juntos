@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\EvidenceReturn;
 use App\Models\LogMovement;
 use Illuminate\Support\Facades\Http;
 use App\Models\LogRegister;
 use App\Models\Order;
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 
 class EdpService
@@ -27,37 +29,86 @@ class EdpService
 
     public function getAccessToken()
     {
-        $response = Http::asJson()->post("{$this->baseUrl}/api/getAccessToken", [
-            'UserName' => $this->username,
-            'Password' => $this->password
-        ]);
+        $client = new Client();
 
-        if ($response->successful()) {
+         try {
+            $response = $client->post("{$this->baseUrl}/api/getAccessToken", [
+                'json' => [
+                    'UserName' => $this->username,
+                    'Password' => $this->password,
+                ],
+            ]);
+
             $data = json_decode($response->getBody(), true);
 
             if ($data['Code'] == 200 && !$data['Error']) {
-                $token = $data['Data']['token'];
+                return $data['Data']['token'];
             }
 
-            return $token ?? false;
+            throw new Exception($data['Message'] ?? 'Falha ao obter token de acesso');
+        } catch (RequestException $e) {
+            Log::error('Erro ao obter token de acesso: ' . $e->getMessage());
+            throw new Exception('Falha ao obter token de acesso');
         }
-
-        throw new Exception('Falha ao obter token de acesso');
     }
 
-    public function enviarEvidencia($orderId, $dadosEvidencia)
+    public function enviarEvidencia($orderId, $dadosEvidencia, array $arquivos)
     {
         $order = Order::find($orderId);
         if (!$order || $order->charge_type !== 'EDP') {
             throw new Exception('Pedido inválido ou não aplicável');
         }
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])->attach('arquivos', $dadosEvidencia['arquivo'])
-          ->post("{$this->baseUrl}/api/EnviarEvidencia", $dadosEvidencia);
-        
-        return $response->json();
+        $evidenceReturn = EvidenceReturn::where('order_id', $orderId)->first();
+        if ($evidenceReturn && $evidenceReturn->status === 'APROVADO') {
+            throw new Exception('Evidência já aprovada para este pedido');
+        }
+
+        $client = new Client();
+        $multipartData = [
+            [
+                'name' => 'token',
+                'contents' => $this->token,
+            ],
+            [
+                'name' => 'CodigoProduto',
+                'contents' => $dadosEvidencia['CodigoProduto'],
+            ],
+            [
+                'name' => 'CodigoInstalacao',
+                'contents' => $dadosEvidencia['CodigoInstalacao'],
+            ],
+            [
+                'name' => 'DataEvidencia',
+                'contents' => $dadosEvidencia['DataEvidencia'],
+            ],
+            [
+                'name' => 'NomeTitular',
+                'contents' => $dadosEvidencia['NomeTitular'],
+            ],
+            [
+                'name' => 'NomeQuemAprovou',
+                'contents' => $dadosEvidencia['NomeQuemAprovou'],
+            ],
+            [
+                'name' => 'TelefoneContato',
+                'contents' => $dadosEvidencia['TelefoneContato'],
+            ],
+        ];
+
+        // Adiciona os arquivos ao array multipart
+        $multipartData = array_merge($multipartData, $arquivos);
+
+        try {
+            $response = $client->post("{$this->baseUrl}/api/EnviarEvidencia", [
+                'multipart' => $multipartData,
+            ]);
+
+            return json_decode($response->getBody(), true);
+        } catch (RequestException $e) {
+            Log::error('Erro ao enviar evidência: ' . $e->getMessage());
+            throw new Exception('Erro ao enviar evidência');
+        }
     }
 
     public function enviarArquivoProducao($arquivoTxt)

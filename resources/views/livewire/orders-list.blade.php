@@ -49,7 +49,7 @@
                                     <td>{{ $order->created_at->format('d/m/Y') }}</td>
                                     <td class="text-center">
                                         <a 
-                                            href="{{ route('orders.edit', $order->id) }}"
+                                            href="{{ route('admin.orders.edit', $order->id) }}"
                                             class="btn btn-link text-dark fs-5 p-0 mb-0">
                                             <i class="fa fa-edit me-1"></i>
                                         </a>
@@ -81,7 +81,7 @@
                         <h5 class="modal-title">Confirmar Exclusão</h5>
                     </div>
                     <div class="modal-body">
-                        Tem certeza que deseja excluir esta cooperativa? Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>

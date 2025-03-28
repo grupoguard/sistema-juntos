@@ -344,5 +344,9 @@ return [
         'accession_payment' => 'pagamento da adesão',
         'discount_type' => 'tipo de desconto',
         'discount_value' => 'valor do desconto',
+        'installation_number' => 'número de instalação',
+        'approval_name' => 'nome do titular',
+        'approval_by' => 'autorizado por',
+        'evidence_date' => 'data da evidência',        
     ],
 ];
