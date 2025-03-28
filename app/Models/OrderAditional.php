@@ -13,7 +13,7 @@ class OrderAditional extends Pivot
 
     protected $fillable = [
         'order_id',
-        'product_aditional_id',
+        'aditional_id',
         'value',
     ];
 
