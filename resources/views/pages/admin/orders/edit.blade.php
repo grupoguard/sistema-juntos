@@ -1,5 +1,5 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-    @livewire('order-form')
+    @livewire('order-edit', ['orderId' => $id ?? null])
 @endsection

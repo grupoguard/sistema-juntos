@@ -8,24 +8,11 @@
                             <h5 class="mb-0">Dados do Cliente</h5>
                         </div>
 
-                        <!-- Seleção de Cliente -->
-                        <div class="row mb-3">
-                            <div class="col-lg-5">
-                                <label for="client_id" class="form-label">Cliente</label>
-                                <select id="client_id" class="form-control" wire:model.change="client_id">
-                                    <option value="new">Cadastrar cliente</option>
-                                    @foreach($clients as $client)
-                                        <option value="{{ $client->id }}">{{ $client->name }} - {{ $client->cpf }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
                         <!-- Dados do Cliente -->
                         <div class="row mb-3">
                             <div class="col-12">
                                 <label>Nome do cliente<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" wire:model.defer="client.name">
+                                <input type="text" class="form-control" wire:model="client.name">
                                 @error('client.name') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -155,7 +142,7 @@
                                 <select id="seller_id" class="form-control" wire:model.change="seller_id">
                                     <option value="">Selecione um consultor</option>
                                     @foreach($sellers as $seller)
-                                        <option value="{{ $seller->id }}">{{ $seller->name }}</option>
+                                        <option value="{{ $seller->id }}" {{$seller->id === $order['seller_id'] ? 'selected' : ''}}>{{ $seller->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('seller_id') <span class="text-danger">{{ $message }}</span> @enderror
@@ -163,14 +150,14 @@
         
                             <!-- Seleção de Produto -->
                             <div class="col-lg-6 mb-3">
-                                <label for="product_id" class="form-label">Produto<span class="text-danger">*</span></label>
-                                <select id="product_id" class="form-control" wire:model.change="product_id" wire:change="loadAdditionals">
+                                <label for="order.product_id" class="form-label">Produto<span class="text-danger">*</span></label>
+                                <select id="order.product_id" class="form-control" wire:model.change="order.product_id" wire:change="loadAdditionals">
                                     <option value="">Selecione um produto</option>
                                     @foreach($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                        <option value="{{ $product->id }}" {{$product->id === $order['product_id'] ? 'selected' : ''}}>{{ $product->name }}</option>
                                     @endforeach
                                 </select>
-                                @error('product_id') <span class="text-danger">{{ $message }}</span> @enderror
+                                @error('order.product_id') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                             
                             <!-- Adicionais -->
@@ -190,12 +177,12 @@
 
                             <div class="col-lg-3 mb-3">
                                 <label>Valor adesão (R$)<span class="text-danger">*</span></label>
-                                <input type="number" id="accession" step="0.1" class="form-control" placeholder="R$ Adesão" wire:model="accession">
-                                @error('accession') <span class="text-danger">{{ $message }}</span> @enderror
+                                <input type="number" id="order.accession" step="0.1" class="form-control" placeholder="R$ Adesão" wire:model="order.accession">
+                                @error('order.accession') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-lg-5 mb-3">
-                                <label for="accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
-                                <select id="accession_payment" class="form-control" wire:model.change="accession_payment">
+                                <label for="order.accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
+                                <select id="order.accession_payment" class="form-control" wire:model.change="order.accession_payment">
                                     <option value="">Selecione um pagamento</option>
                                     <option value="PIX">PIX</option>
                                     <option value="Boleto">Boleto</option>
@@ -203,7 +190,7 @@
                                     <option value="Cartão de débito">Cartão de débito</option>
                                     <option value="Não cobrada">Não cobrada</option>
                                 </select>
-                                @error('accession_payment') <span class="text-danger">{{ $message }}</span> @enderror
+                                @error('order.accession_payment') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-lg-4 mt-4">
                                 <h3>
@@ -230,12 +217,10 @@
                                 @endif
                             </div>
                             @foreach($dependents as $index => $dependent)
-                                <div class="row align-items-end mt-4" wire:key="dependent-{{ $index }}">
+                                <div class="row align-items-end mt-4">
                                     <div class="col-md-12 mb-3">
                                         <label>Nome do dependente<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" placeholder="Nome do Dependente" wire:model="dependents.{{ $index }}.name">
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.name') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>Grau de Parentesco<span class="text-danger">*</span></label>
@@ -247,26 +232,19 @@
                                             <option value="separado">Cônjuge</option>
                                             <option value="outro">Outro</option>
                                         </select>
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.relationship') <span class="text-danger">{{ $message }}</span> @enderror
+                                        @error('dependents.{{ $index }}.relationship') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>CPF<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" wire:model="dependents.{{ $index }}.cpf">
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.cpf') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>RG</label>
                                         <input type="text" class="form-control" wire:model="dependents.{{ $index }}.rg">
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.rg') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>Data de nascimento<span class="text-danger">*</span></label>
                                         <input type="date" class="form-control" wire:model="dependents.{{ $index }}.date_birth">
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.date_birth') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-2 mb-3">
                                         <label>Estado Civil<span class="text-danger">*</span></label>
@@ -280,14 +258,11 @@
                                             <option value="uniao_estavel">União Estável</option>
                                             <option value="outro">Outro</option>
                                         </select>
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.marital_status') <span class="text-danger">{{ $message }}</span> @enderror
+                                        @error('dependents.{{ $index }}.marital_status') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-5 mb-3">
                                         <label>Nome da mãe<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" placeholder="Nome da mãe" wire:model="dependents.{{ $index }}.mom_name">
-                                        {{-- CORRIGIDO AQUI --}}
-                                        @error('dependents.'.$index.'.mom_name') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         @if(!empty($additionals))
@@ -298,8 +273,6 @@
                                                     <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                 </div>
                                             @endforeach
-                                            {{-- CORRIGIDO AQUI E ALERTA ABAIXO --}}
-                                            @error('dependents.'.$index.'.additionals') <span class="text-danger">{{ $message }}</span> @enderror
                                         @else
                                             <p>Nenhum adicional disponível.</p>
                                         @endif
@@ -320,42 +293,42 @@
                         <!-- Tipo de Cobrança -->
                         <div class="row">
                             <div class="col-lg-3 mb-3">
-                                <label for="charge_type" class="form-label">Tipo de Cobrança<span class="text-danger">*</span></label>
-                                <select id="charge_type" class="form-control" wire:model.change="charge_type">
+                                <label for="order.charge_type" class="form-label">Tipo de Cobrança<span class="text-danger">*</span></label>
+                                <select id="order.charge_type" class="form-control" wire:model.change="order.charge_type">
                                     <option value="">Selecione</option>
                                     <option value="EDP">EDP</option>
                                     <option value="BOLETO">Boleto</option>
                                 </select>
-                                @error('charge_type') <span class="text-danger">{{ $message }}</span> @enderror
+                                @error('order.charge_type') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
                         <!-- Campos Condicionais -->
-                        @if($charge_type == 'EDP')
+                        @if($order['charge_type'] == 'EDP')
                             <div class="row">
                                 <div class="col-lg-3 mb-3">
-                                    <label for="installation_number" class="form-label">Número da Instalação<span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="installation_number" min="1" max="999999999" oninput="this.value = this.value.slice(0, 9)" wire:model="installation_number">
-                                    @error('installation_number') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="order.installation_number" class="form-label">Número da Instalação<span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="order.installation_number" min="1" max="999999999" oninput="this.value = this.value.slice(0, 9)" wire:model="order.installation_number">
+                                    @error('order.installation_number') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-3 mb-3">
-                                    <label for="approval_name" class="form-label">Nome do Titular<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="approval_name" wire:model="approval_name">
-                                    @error('approval_name') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="order.approval_name" class="form-label">Nome do Titular<span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="order.approval_name" wire:model="order.approval_name">
+                                    @error('order.approval_name') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-3 mb-3">
-                                    <label for="approval_by" class="form-label">Autorizado por<span class="text-danger">*</span></label>
-                                    <select id="approval_by" class="form-control"  wire:model.change="approval_by">
+                                    <label for="order.approval_by" class="form-label">Autorizado por<span class="text-danger">*</span></label>
+                                    <select id="order.approval_by" class="form-control"  wire:model.change="order.approval_by">
                                         <option value="">Selecione</option>
                                         <option value="Titular">Titular</option>
                                         <option value="Conjuge">Cônjuge</option>
                                     </select>
-                                    @error('approval_by') <span class="text-danger">{{ $message }}</span> @enderror
+                                    @error('order.approval_by') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-lg-3 mb-3">
-                                    <label for="evidence_date" class="form-label">Data da Evidência<span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" id="evidence_date" wire:model="evidence_date">
-                                    @error('evidence_date') <span class="text-danger">{{ $message }}</span> @enderror
+                                    <label for="order.evidence_date" class="form-label">Data da Evidência<span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="order.evidence_date" wire:model="order.evidence_date">
+                                    @error('order.evidence_date') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
@@ -372,10 +345,10 @@
                                     <button type="button" class="btn bg-blue text-white" wire:click="addEvidence">Adicionar Documentos</button>
                                 </div>
                                 @foreach($evidences as $index => $evidence)
-                                    <div class="row align-items-end mt-4" wire:key="evidences-{{ $index }}">
-                                        <div class="col-md-4 mb-3">
+                                    <div class="row align-items-center mt-4">
+                                        <div class="col-md-3 mb-3">
                                             <label>Tipo de evidência<span class="text-danger">*</span></label>
-                                            <select class="form-control" wire:model.change="evidences.{{ $index }}.evidence_type">
+                                            <select class="form-control" wire:model="evidences.{{ $index }}.evidence_type">
                                                 <option value="selecione">Selecione</option>
                                                 <option value="audio">Audio</option>
                                                 <option value="contrato">Contrato</option>
@@ -387,7 +360,20 @@
                                             </select>
                                             @error('evidences.{{ $index }}.evidence_type') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
-                                        <div class="col-md-6 mb-3">
+                                        <div class="col-md-2 text-center">
+                                            <label>Arquivo cadastrado</label><br>
+                                            @if ($evidence['evidence_type'] === 'audio')
+                                                <audio controls>
+                                                    <source src="{{ asset('storage/' . $evidence['document']) }}" type="audio/mpeg">
+                                                    Seu navegador não suporta a tag de áudio.
+                                                </audio>
+                                            @else 
+                                                <a href="{{ asset('storage/' . $evidence['document']) }}" target="_blank">
+                                                    <i class="fa fa-file-pdf-o fa-2x"></i>
+                                                </a>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-5 mb-3">
                                             <label>Documento<span class="text-danger">*</span></label>
                                             <input type="file" class="form-control" wire:model="evidences.{{ $index }}.document">
                                             @error('evidences.{{ $index }}.document') <span class="text-danger">{{ $message }}</span> @enderror
@@ -400,11 +386,11 @@
                             </div>
                         @endif
 
-                        @if($charge_type == 'BOLETO')
+                        @if($order['charge_type'] == 'BOLETO')
                             <div class="col-lg-3 mb-3">
-                                <label for="charge_date" class="form-label">Data da Cobrança</label>
-                                <input type="number" class="form-control" id="charge_date" wire:model="charge_date">
-                                @error('charge_date') <span class="text-danger">{{ $message }}</span> @enderror
+                                <label for="order.charge_date" class="form-label">Data da Cobrança</label>
+                                <input type="number" class="form-control" id="order.charge_date" wire:model="order.charge_date">
+                                @error('order.charge_date') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
@@ -414,7 +400,7 @@
 
                             </div>
                             <div class="col-lg-5 text-end">
-                                <button type="submit" class="btn btn-success btn-lg">Salvar Pedido</button>
+                                <button type="submit" class="btn btn-success btn-lg">Alterar Pedido</button>
                             </div>
                         </div>
                     </div>
@@ -422,39 +408,4 @@
             </div>
         </div>
     </form>
-    <div class="modal fade" id="clientHasOrderModal" tabindex="-1" aria-labelledby="clientHasOrderModalLabel" aria-hidden="true" wire:ignore.self>
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="clientHasOrderModalLabel">Cliente já possui pedido</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Este cliente já possui um pedido e não pode cadastrar um novo.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-    
-    @push('scripts')
-        <script>
-            window.addEventListener('clientHasOrder', event => {
-                var myModal = new bootstrap.Modal(document.getElementById('clientHasOrderModal'));
-                myModal.show();
-            });
-        </script>
-    @endpush
 </div>
