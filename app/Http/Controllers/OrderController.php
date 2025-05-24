@@ -18,6 +18,6 @@ class OrderController extends Controller
 
     public function edit($id)
     {
-        return view('pages.admin.orders.create', compact('id'));
+        return view('pages.admin.orders.edit', compact('id'));
     }
 }
