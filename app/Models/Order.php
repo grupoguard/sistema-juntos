@@ -73,4 +73,9 @@ class Order extends Model
     {
         return $this->hasMany(OrderAditional::class);
     }
+
+    public function evidences()
+    {
+        return $this->hasMany(EvidenceDocument::class);
+    }
 }

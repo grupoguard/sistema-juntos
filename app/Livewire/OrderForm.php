@@ -21,6 +21,7 @@ use Livewire\WithFileUploads;
 use App\Services\EdpService;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -103,14 +104,6 @@ class OrderForm extends Component
             'client.obs' => 'nullable|string',
             'client.status' => 'nullable|integer',
             'dependents' => 'nullable|array',
-            'dependents.*.name' => 'required_with:dependents.*.cpf|string|max:100',
-            'dependents.*.mom_name' => 'required_with:dependents.*.cpf|string|max:100',
-            'dependents.*.date_birth' => 'required_with:dependents.*.cpf|date',
-            'dependents.*.cpf' => 'required_with|string|size:11|unique:clients,cpf',
-            'dependents.*.rg' => 'nullable|string|size:9',
-            'dependents.*.marital_status' => 'required_with:dependents.*.cpf|string|max:15',
-            'dependents.*.relationship' => 'required_with:dependents.*.cpf|string|max:20',
-            'dependents.*.additionals' => 'nullable|integer',
             'client_id' => 'nullable|integer',
             'product_id' => 'required|integer',
             'seller_id' => 'required|integer',
@@ -124,6 +117,24 @@ class OrderForm extends Component
         if (!$this->client_id) {
             $rules['client.cpf'] = 'required|string|min:11|max:14|unique:clients,cpf';
             $rules['client.email'] = 'required|email|max:50|unique:clients,email';
+        }
+
+        // ✅ Se existirem dependentes no array, aplicar regras
+        if (!empty($this->dependents)) {
+            foreach ($this->dependents as $index => $dependent) {
+                // CPF sempre obrigatório se o dependente existir
+                $rules["dependents.{$index}.cpf"] = 'required|string|size:11';
+                
+                // Outros campos obrigatórios quando CPF preenchido
+                $rules["dependents.{$index}.name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.mom_name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.date_birth"] = 'required|date';
+                $rules["dependents.{$index}.marital_status"] = 'required|string|max:15';
+                $rules["dependents.{$index}.relationship"] = 'required|string|max:20';
+                $rules["dependents.{$index}.rg"] = 'nullable|string|min:9|max:12';
+                $rules["dependents.{$index}.additionals"] = 'nullable|array';
+                $rules["dependents.{$index}.additionals.*"] = 'nullable|integer|exists:aditionals,id';
+            }
         }
     
         if ($this->charge_type === 'EDP') {
@@ -179,9 +190,9 @@ class OrderForm extends Component
 
     public function mount($clientId = null)
     {
-        $this->clients = Client::where('status', 1)->get();
-        $this->sellers = Seller::where('status', 1)->get();
-        $this->products = Product::where('status', 1)->get();
+        $this->clients = Client::where('status', 1)->orderBy('name')->get();
+        $this->sellers = Seller::where('status', 1)->orderBy('name')->get();
+        $this->products = Product::where('status', 1)->orderBy('name')->get();
 
         if ($clientId) {
             $this->loadClient($clientId);
@@ -424,7 +435,7 @@ class OrderForm extends Component
 
         try {
             // 3️⃣ Obter o `group_id` do usuário autenticado
-            $groupId = $groupId = auth()->user()->access()->first()->group_id;
+            $groupId = request()->user()->access()->first()->group_id;
 
             $cpf = preg_replace('/\D/', '', $this->client['cpf']);
             $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove pontos e traços
@@ -689,22 +700,137 @@ class OrderForm extends Component
     protected function messages()
     {
         return [
-            // Mensagem personalizada para evidência do contrato
-            'evidences.*.document.required_if' => 'É necessário adicionar um documento (RG, CPF ou CNH) junto ao contrato.',
+            // Mensagens dos campos do Cliente (mantidas como estão, pois já estavam ok)
+            'client.name.required' => 'O nome do cliente é obrigatório.',
+            'client.name.string' => 'O nome do cliente deve ser texto.',
+            'client.name.max' => 'O nome do cliente não pode exceder :max caracteres.',
+            'client.mom_name.required' => 'O nome da mãe do cliente é obrigatório.',
+            'client.mom_name.string' => 'O nome da mãe do cliente deve ser texto.',
+            'client.mom_name.max' => 'O nome da mãe do cliente não pode exceder :max caracteres.',
+            'client.date_birth.required' => 'A data de nascimento do cliente é obrigatória.',
+            'client.date_birth.date' => 'A data de nascimento do cliente deve ser uma data válida.',
+            'client.rg.string' => 'O RG do cliente deve ser texto.',
+            'client.rg.min' => 'O RG do cliente deve ter no mínimo :min caracteres.',
+            'client.rg.max' => 'O RG do cliente não pode exceder :max caracteres.',
+            'client.gender.required' => 'O gênero do cliente é obrigatório.',
+            'client.gender.string' => 'O gênero do cliente deve ser texto.',
+            'client.gender.max' => 'O gênero do cliente não pode exceder :max caracteres.',
+            'client.marital_status.required' => 'O estado civil do cliente é obrigatório.',
+            'client.marital_status.string' => 'O estado civil do cliente deve ser texto.',
+            'client.marital_status.max' => 'O estado civil do cliente não pode exceder :max caracteres.',
+            'client.phone.string' => 'O telefone do cliente deve ser texto.',
+            'client.phone.max' => 'O telefone do cliente não pode exceder :max caracteres.',
+            'client.zipcode.required' => 'O CEP do cliente é obrigatório.',
+            'client.zipcode.string' => 'O CEP do cliente deve ser texto.',
+            'client.zipcode.max' => 'O CEP do cliente não pode exceder :max caracteres.',
+            'client.address.required' => 'O endereço do cliente é obrigatório.',
+            'client.address.string' => 'O endereço do cliente deve ser texto.',
+            'client.address.max' => 'O endereço do cliente não pode exceder :max caracteres.',
+            'client.number.required' => 'O número do endereço do cliente é obrigatório.',
+            'client.number.string' => 'O número do endereço do cliente deve ser texto.',
+            'client.number.max' => 'O número do endereço do cliente não pode exceder :max caracteres.',
+            'client.complement.string' => 'O complemento do endereço do cliente deve ser texto.',
+            'client.complement.max' => 'O complemento do endereço do cliente não pode exceder :max caracteres.',
+            'client.neighborhood.required' => 'O bairro do cliente é obrigatório.',
+            'client.neighborhood.string' => 'O bairro do cliente deve ser texto.',
+            'client.neighborhood.max' => 'O bairro do cliente não pode exceder :max caracteres.',
+            'client.city.required' => 'A cidade do cliente é obrigatória.',
+            'client.city.string' => 'A cidade do cliente deve ser texto.',
+            'client.city.max' => 'A cidade do cliente não pode exceder :max caracteres.',
+            'client.state.required' => 'O estado do cliente é obrigatório.',
+            'client.state.string' => 'O estado do cliente deve ser texto.',
+            'client.state.max' => 'O estado do cliente não pode exceder :max caracteres.',
+            'client.obs.string' => 'As observações do cliente devem ser texto.',
+            'client.status.integer' => 'O status do cliente deve ser um número inteiro.',
 
-            // Mensagem personalizada para evidência de áudio ou contrato no tipo EDP
-            'evidences.*.document.required' => 'É necessário adicionar um áudio ou contrato para o tipo EDP.',
+            // Mensagens de CPF/Email do Cliente (condicionais, mantidas ok)
+            'client.cpf.required' => 'O CPF do cliente é obrigatório.',
+            'client.cpf.string' => 'O CPF do cliente deve ser texto.',
+            'client.cpf.min' => 'O CPF do cliente deve ter no mínimo :min caracteres.',
+            'client.cpf.max' => 'O CPF do cliente não pode exceder :max caracteres.',
+            'client.cpf.unique' => 'O CPF informado já está cadastrado para outro cliente.',
+            'client.email.required' => 'O email do cliente é obrigatório.',
+            'client.email.email' => 'O email do cliente deve ser um endereço de e-mail válido.',
+            'client.email.max' => 'O email do cliente não pode exceder :max caracteres.',
+            'client.email.unique' => 'O email informado já está em uso por outro cliente.',
 
-            // Mensagem genérica para evidências obrigatórias
-            'evidences.*.document.mimes' => 'O documento deve ser um arquivo do tipo: PDF, JPG, PNG, MP3 ou WAV.',
+            // Mensagens dos campos dos Dependentes (CORRIGIDAS)
+            'dependents.array' => 'Os dependentes devem ser um array.',
+            // Removidas as mensagens '.required_with' e adicionadas '.required'
+            'dependents.*.name.required' => 'O nome do dependente é obrigatório.',
+            'dependents.*.name.string' => 'O nome do dependente deve ser texto.',
+            'dependents.*.name.max' => 'O nome do dependente não pode exceder :max caracteres.',
 
-            // Mensagens específicas para CPF e Email únicos
-            'client.cpf.unique' => 'O CPF informado já está cadastrado.',
-            'client.email.unique' => 'O email informado já está em uso.',
+            'dependents.*.mom_name.required' => 'O nome da mãe do dependente é obrigatório.',
+            'dependents.*.mom_name.string' => 'O nome da mãe do dependente deve ser texto.',
+            'dependents.*.mom_name.max' => 'O nome da mãe do dependente não pode exceder :max caracteres.',
 
-            // Mensagem para valores numéricos com casas decimais
+            'dependents.*.date_birth.required' => 'A data de nascimento do dependente é obrigatória.',
+            'dependents.*.date_birth.date' => 'A data de nascimento do dependente deve ser uma data válida.',
+
+            'dependents.*.cpf.required' => 'O CPF do dependente é obrigatório.',
+            'dependents.*.cpf.string' => 'O CPF do dependente deve ser texto.',
+            'dependents.*.cpf.size' => 'O CPF do dependente deve ter exatamente :size caracteres.',
+
+            'dependents.*.rg.string' => 'O RG do dependente deve ser texto.',
+            'dependents.*.rg.min' => 'O RG do dependente deve ter no mínimo :min caracteres.',
+            'dependents.*.rg.max' => 'O RG do dependente não pode exceder :max caracteres.',
+
+            'dependents.*.marital_status.required' => 'O estado civil do dependente é obrigatório.',
+            'dependents.*.marital_status.string' => 'O estado civil do dependente deve ser texto.',
+            'dependents.*.marital_status.max' => 'O estado civil do dependente não pode exceder :max caracteres.',
+
+            'dependents.*.relationship.required' => 'O parentesco do dependente é obrigatório.',
+            'dependents.*.relationship.string' => 'O parentesco do dependente deve ser texto.',
+            'dependents.*.relationship.max' => 'O parentesco do dependente não pode exceder :max caracteres.',
+
+            'dependents.*.additionals.array' => 'Os adicionais do dependente devem ser uma lista.',
+            'dependents.*.additionals.*.integer' => 'Cada adicional do dependente deve ser um número inteiro.',
+            'dependents.*.additionals.*.exists' => 'O adicional selecionado para o dependente não é válido.',
+
+            // Mensagens dos campos do Pedido (mantidas ok)
+            'product_id.required' => 'O produto é obrigatório.',
+            'product_id.integer' => 'O ID do produto deve ser um número inteiro.',
+            'seller_id.required' => 'O vendedor é obrigatório.',
+            'seller_id.integer' => 'O ID do vendedor deve ser um número inteiro.',
+            'charge_type.required' => 'O tipo de cobrança é obrigatório.',
+            'charge_type.string' => 'O tipo de cobrança deve ser texto.',
+            'charge_type.max' => 'O tipo de cobrança não pode exceder :max caracteres.',
+            'accession.required' => 'O valor de adesão é obrigatório.',
+            'accession.numeric' => 'O valor de adesão deve ser numérico.',
             'accession.regex' => 'O valor de adesão deve ter no máximo 8 dígitos inteiros e até 2 casas decimais.',
+            'accession_payment.required' => 'O tipo de pagamento da adesão é obrigatório.',
+            'accession_payment.string' => 'O tipo de pagamento da adesão deve ser texto.',
+            'accession_payment.max' => 'O tipo de pagamento da adesão não pode exceder :max caracteres.',
+            'discount_type.string' => 'O tipo de desconto deve ser texto.',
+            'discount_type.max' => 'O tipo de desconto não pode exceder :max caracteres.',
+            'discount_value.numeric' => 'O valor do desconto deve ser numérico.',
             'discount_value.regex' => 'O valor do desconto deve ter no máximo 8 dígitos inteiros e até 2 casas decimais.',
+
+            // Mensagens dos campos específicos de EDP (mantidas ok)
+            'installation_number.required' => 'O número da instalação é obrigatório.',
+            'installation_number.string' => 'O número da instalação deve ser texto.',
+            'installation_number.max' => 'O número da instalação não pode exceder :max caracteres.',
+            'approval_name.required' => 'O nome de aprovação é obrigatório.',
+            'approval_name.string' => 'O nome de aprovação deve ser texto.',
+            'approval_name.max' => 'O nome de aprovação não pode exceder :max caracteres.',
+            'approval_by.required' => 'O aprovado por é obrigatório.',
+            'approval_by.string' => 'O aprovado por deve ser texto.',
+            'approval_by.max' => 'O aprovado por não pode exceder :max caracteres.',
+            'evidence_date.required' => 'A data da evidência é obrigatória.',
+            'evidence_date.date' => 'A data da evidência deve ser uma data válida.',
+            'charge_date.required' => 'A data de cobrança é obrigatória.',
+            'charge_date.integer' => 'A data de cobrança deve ser um número inteiro.',
+
+            // Mensagens das Evidências (mantidas ok)
+            'evidences.required' => 'É obrigatório adicionar pelo menos um documento de evidência.',
+            'evidences.array' => 'As evidências devem ser um array.',
+            'evidences.min' => 'É obrigatório adicionar pelo menos :min documento(s) de evidência.',
+            'evidences.*.evidence_type.required' => 'O tipo de evidência é obrigatório para cada documento.',
+            'evidences.*.evidence_type.string' => 'O tipo de evidência deve ser texto.',
+            'evidences.*.document.required' => 'É necessário adicionar um documento para cada evidência.',
+            'evidences.*.document.required_if' => 'É necessário adicionar um documento (RG, CPF ou CNH) junto ao contrato.',
+            'evidences.*.document.mimes' => 'O documento deve ser um arquivo do tipo: PDF, JPG, PNG, MP3 ou WAV.',
         ];
     }
 }
