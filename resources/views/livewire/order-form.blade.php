@@ -75,7 +75,6 @@
                                     <option value="">Selecione</option>
                                     <option value="solteiro">Solteiro(a)</option>
                                     <option value="casado">Casado(a)</option>
-                                    <option value="separado">Separado(a)</option>
                                     <option value="divorciado">Divorciado(a)</option>
                                     <option value="viuvo">Viúvo(a)</option>
                                     <option value="uniao_estavel">União Estável</option>
@@ -234,38 +233,33 @@
                                     <div class="col-md-12 mb-3">
                                         <label>Nome do dependente<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" placeholder="Nome do Dependente" wire:model="dependents.{{ $index }}.name">
-                                        {{-- CORRIGIDO AQUI --}}
                                         @error('dependents.'.$index.'.name') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>Grau de Parentesco<span class="text-danger">*</span></label>
                                         <select class="form-control" wire:model.defer="dependents.{{ $index }}.relationship">
                                             <option value="">Selecione</option>
-                                            <option value="solteiro">Mãe/Pai</option>
-                                            <option value="casado">Irmão(ã)</option>
-                                            <option value="separado">Filho(a)</option>
-                                            <option value="separado">Cônjuge</option>
+                                            <option value="mae-pai">Mãe/Pai</option>
+                                            <option value="irmao">Irmão(ã)</option>
+                                            <option value="filho">Filho(a)</option>
+                                            <option value="conjuge">Cônjuge</option>
                                             <option value="outro">Outro</option>
                                         </select>
-                                        {{-- CORRIGIDO AQUI --}}
                                         @error('dependents.'.$index.'.relationship') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>CPF<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" wire:model="dependents.{{ $index }}.cpf">
-                                        {{-- CORRIGIDO AQUI --}}
+                                        <input type="text" class="form-control cpf-mask" wire:model="dependents.{{ $index }}.cpf">
                                         @error('dependents.'.$index.'.cpf') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>RG</label>
-                                        <input type="text" class="form-control" wire:model="dependents.{{ $index }}.rg">
-                                        {{-- CORRIGIDO AQUI --}}
+                                        <input type="text" class="form-control rg-mask" wire:model="dependents.{{ $index }}.rg">
                                         @error('dependents.'.$index.'.rg') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label>Data de nascimento<span class="text-danger">*</span></label>
                                         <input type="date" class="form-control" wire:model="dependents.{{ $index }}.date_birth">
-                                        {{-- CORRIGIDO AQUI --}}
                                         @error('dependents.'.$index.'.date_birth') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-2 mb-3">
@@ -274,19 +268,16 @@
                                             <option value="">Selecione</option>
                                             <option value="solteiro">Solteiro(a)</option>
                                             <option value="casado">Casado(a)</option>
-                                            <option value="separado">Separado(a)</option>
                                             <option value="divorciado">Divorciado(a)</option>
                                             <option value="viuvo">Viúvo(a)</option>
                                             <option value="uniao_estavel">União Estável</option>
                                             <option value="outro">Outro</option>
                                         </select>
-                                        {{-- CORRIGIDO AQUI --}}
                                         @error('dependents.'.$index.'.marital_status') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-5 mb-3">
                                         <label>Nome da mãe<span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" placeholder="Nome da mãe" wire:model="dependents.{{ $index }}.mom_name">
-                                        {{-- CORRIGIDO AQUI --}}
                                         @error('dependents.'.$index.'.mom_name') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3 mb-3">
@@ -298,7 +289,6 @@
                                                     <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                 </div>
                                             @endforeach
-                                            {{-- CORRIGIDO AQUI E ALERTA ABAIXO --}}
                                             @error('dependents.'.$index.'.additionals') <span class="text-danger">{{ $message }}</span> @enderror
                                         @else
                                             <p>Nenhum adicional disponível.</p>
@@ -454,6 +444,46 @@
             window.addEventListener('clientHasOrder', event => {
                 var myModal = new bootstrap.Modal(document.getElementById('clientHasOrderModal'));
                 myModal.show();
+            });
+            
+            // Função para aplicar máscaras em elementos específicos
+            function applyMasksToNewElements(container) {
+                $(container).find('.cpf-mask').each(function() {
+                    if (!$(this).data('mask')) {
+                        $(this).mask('000.000.000-00', {reverse: true});
+                    }
+                });
+                
+                $(container).find('.rg-mask').each(function() {
+                    if (!$(this).data('mask')) {
+                        $(this).mask('00.000.000-0');
+                    }
+                });
+            }
+            
+            // Observer para detectar novos elementos
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) { // Element node
+                                applyMasksToNewElements(node);
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Iniciar observação
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            
+            Livewire.hook('message.processed', (message, component) => {
+                setTimeout(function() {
+                    window.applyMasks();
+                }, 50);
             });
         </script>
     @endpush

@@ -402,6 +402,7 @@ class OrderForm extends Component
         ];
 
         $this->recalculateTotal();
+        //$this->dispatch('applyDependentMasks');
     }
 
     public function removeDependent($index)

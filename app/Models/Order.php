@@ -74,6 +74,11 @@ class Order extends Model
         return $this->hasMany(OrderAditional::class);
     }
 
+    public function orderAditionalDependents()
+    {
+        return $this->hasMany(OrderAditionalDependent::class, 'order_id');
+    }
+
     public function evidences()
     {
         return $this->hasMany(EvidenceDocument::class);
