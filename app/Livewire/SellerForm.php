@@ -195,4 +195,100 @@ class SellerForm extends Component
     {
         return view('livewire.seller-form');
     }
+
+    protected function messages()
+    {
+        return [
+            // Mensagens para 'seller.group_id'
+            'seller.group_id.required' => 'A cooperativa do consultor é obrigatório.',
+            'seller.group_id.integer' => 'A cooperativa do consultor deve ser um número inteiro.',
+            'seller.group_id.max' => 'A cooperativa do consultor não pode exceder :max dígitos.', // Ajustei para dígitos, pois 'max' em int não é de caracteres
+
+            // Mensagens para 'seller.name'
+            'seller.name.required' => 'O nome do consultor é obrigatório.',
+            'seller.name.string' => 'O nome do consultor deve ser texto.',
+            'seller.name.max' => 'O nome do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.date_birth'
+            'seller.date_birth.required' => 'A data de nascimento do consultor é obrigatória.',
+            'seller.date_birth.date' => 'A data de nascimento do consultor deve ser uma data válida.',
+
+            // Mensagens para 'seller.cpf'
+            'seller.cpf.required' => 'O CPF do consultor é obrigatório.',
+            'seller.cpf.string' => 'O CPF do consultor deve ser texto.',
+            'seller.cpf.min' => 'O CPF do consultor deve ter no mínimo :min caracteres.',
+            'seller.cpf.max' => 'O CPF do consultor não pode exceder :max caracteres.',
+            'seller.cpf.unique' => 'O CPF informado já está cadastrado para outro consultor.',
+
+            // Mensagens para 'seller.rg'
+            'seller.rg.string' => 'O RG do consultor deve ser texto.',
+            'seller.rg.min' => 'O RG do consultor deve ter no mínimo :min caracteres.',
+            'seller.rg.max' => 'O RG do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.phone'
+            'seller.phone.string' => 'O telefone do consultor deve ser texto.',
+            'seller.phone.max' => 'O telefone do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.email'
+            'seller.email.required' => 'O email do consultor é obrigatório.',
+            'seller.email.email' => 'O email do consultor deve ser um endereço de e-mail válido.',
+            'seller.email.max' => 'O email do consultor não pode exceder :max caracteres.',
+            'seller.email.unique' => 'O email informado já está em uso por outro consultor.',
+
+            // Mensagens para 'seller.comission_type'
+            'seller.comission_type.required' => 'O tipo de comissão é obrigatório.',
+            'seller.comission_type.integer' => 'O tipo de comissão deve ser um número inteiro.',
+            'seller.comission_type.max' => 'O tipo de comissão não pode exceder :max dígito.',
+
+            // Mensagens para 'seller.comission_value'
+            'seller.comission_value.required' => 'O valor da comissão é obrigatório.',
+            'seller.comission_value.numeric' => 'O valor da comissão deve ser numérico.',
+            'seller.comission_value.regex' => 'O valor da comissão deve ter no máximo 8 dígitos inteiros e até 2 casas decimais.',
+
+            // Mensagens para 'seller.comission_recurrence'
+            'seller.comission_recurrence.required' => 'A recorrência da comissão é obrigatória.',
+            'seller.comission_recurrence.integer' => 'A recorrência da comissão deve ser um número inteiro.',
+            'seller.comission_recurrence.max' => 'A recorrência da comissão não pode exceder :max dígito.',
+
+            // Mensagens para 'seller.zipcode'
+            'seller.zipcode.required' => 'O CEP do consultor é obrigatório.',
+            'seller.zipcode.string' => 'O CEP do consultor deve ser texto.',
+            'seller.zipcode.max' => 'O CEP do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.address'
+            'seller.address.required' => 'O endereço do consultor é obrigatório.',
+            'seller.address.string' => 'O endereço do consultor deve ser texto.',
+            'seller.address.max' => 'O endereço do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.number'
+            'seller.number.required' => 'O número do endereço do consultor é obrigatório.',
+            'seller.number.string' => 'O número do endereço do consultor deve ser texto.',
+            'seller.number.max' => 'O número do endereço do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.complement'
+            'seller.complement.string' => 'O complemento do endereço do consultor deve ser texto.',
+            'seller.complement.max' => 'O complemento do endereço do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.neighborhood'
+            'seller.neighborhood.required' => 'O bairro do consultor é obrigatório.',
+            'seller.neighborhood.string' => 'O bairro do consultor deve ser texto.',
+            'seller.neighborhood.max' => 'O bairro do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.city'
+            'seller.city.required' => 'A cidade do consultor é obrigatória.',
+            'seller.city.string' => 'A cidade do consultor deve ser texto.',
+            'seller.city.max' => 'A cidade do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.state'
+            'seller.state.required' => 'O estado do consultor é obrigatório.',
+            'seller.state.string' => 'O estado do consultor deve ser texto.',
+            'seller.state.max' => 'O estado do consultor não pode exceder :max caracteres.',
+
+            // Mensagens para 'seller.obs'
+            'seller.obs.string' => 'As observações do consultor devem ser texto.',
+
+            // Mensagens para 'seller.status'
+            'seller.status.integer' => 'O status do consultor deve ser um número inteiro.',
+        ];
+    }
 }

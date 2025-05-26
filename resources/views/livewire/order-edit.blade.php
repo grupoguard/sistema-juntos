@@ -62,7 +62,6 @@
                                     <option value="">Selecione</option>
                                     <option value="solteiro">Solteiro(a)</option>
                                     <option value="casado">Casado(a)</option>
-                                    <option value="separado">Separado(a)</option>
                                     <option value="divorciado">Divorciado(a)</option>
                                     <option value="viuvo">Viúvo(a)</option>
                                     <option value="uniao_estavel">União Estável</option>
@@ -226,10 +225,9 @@
                                         <label>Grau de Parentesco<span class="text-danger">*</span></label>
                                         <select class="form-control" wire:model.defer="dependents.{{ $index }}.relationship">
                                             <option value="">Selecione</option>
-                                            <option value="solteiro">Mãe/Pai</option>
-                                            <option value="casado">Irmão(ã)</option>
-                                            <option value="separado">Filho(a)</option>
-                                            <option value="separado">Cônjuge</option>
+                                            <option value="mae-pai">Mãe/Pai</option>
+                                            <option value="irmao">Irmão(ã)</option>
+                                            <option value="conjuge">Cônjuge</option>
                                             <option value="outro">Outro</option>
                                         </select>
                                         @error('dependents.{{ $index }}.relationship') <span class="text-danger">{{ $message }}</span> @enderror
@@ -252,7 +250,6 @@
                                             <option value="">Selecione</option>
                                             <option value="solteiro">Solteiro(a)</option>
                                             <option value="casado">Casado(a)</option>
-                                            <option value="separado">Separado(a)</option>
                                             <option value="divorciado">Divorciado(a)</option>
                                             <option value="viuvo">Viúvo(a)</option>
                                             <option value="uniao_estavel">União Estável</option>

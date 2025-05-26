@@ -9,17 +9,19 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    public function handle(Request $request, Closure $next): Response
+public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role_name === 'ADMIN') {
-            return $next($request);
+        // Verifica se está autenticado
+        if (!Auth::check()) {
+            return redirect('/login');
         }
-        abort(403, 'Acesso não autorizado');
+
+        // Verifica se é admin
+        if (Auth::user()->role_name !== 'ADMIN') {
+            abort(403, 'Acesso não autorizado. Apenas administradores podem acessar esta área.');
+        }
+
+        return $next($request);
     }
     
 }
