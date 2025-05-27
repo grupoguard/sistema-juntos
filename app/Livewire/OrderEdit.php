@@ -15,8 +15,6 @@ class OrderEdit extends Component
 {
     use WithFileUploads, OrderFormTrait;
 
-    
-
     public function render()
     {
         return view('livewire.order-edit');
