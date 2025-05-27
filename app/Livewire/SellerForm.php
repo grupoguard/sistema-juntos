@@ -19,7 +19,7 @@ class SellerForm extends Component
         'seller.name' => 'required|string|max:100',
         'seller.date_birth' => 'required|date',
         'seller.cpf' => 'required|string|min:11|max:14|unique:sellers,cpf',
-        'seller.rg' => 'nullable|string|min:9|max:12',
+        'seller.rg' => 'nullable|string|min:7|max:15',
         'seller.phone' => 'nullable|string|max:15',
         'seller.email' => 'required|email|max:50|unique:sellers,email',
         'seller.comission_type' => 'required|integer|max:1',
@@ -80,6 +80,7 @@ class SellerForm extends Component
         $phone = preg_replace('/\D/', '', $this->seller['phone']); // Remove caracteres não numéricos
         $this->seller['phone'] = $phone;
         $this->seller['cpf'] = $cpf;
+        $this->seller['rg'] = $rg;
 
         // Atualiza as regras de validação dinamicamente
         $rules = $this->rules;
