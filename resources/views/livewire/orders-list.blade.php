@@ -56,7 +56,7 @@
                                     </td>
                                     <td class="text-center">
                                         <button 
-                                            wire:click="deleteOrder({{ $order->id }})" 
+                                            wire:click="confirmDelete({{ $order->id }})" 
                                             class="btn btn-danger btn-sm"
                                         >
                                             <i class="fa fa-trash me-1"></i>
@@ -85,7 +85,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>
-                        <button type="button" class="btn btn-danger" wire:click="delete()">Excluir</button>
+                        <button type="button" class="btn btn-danger" wire:click="deleteOrder()" >Excluir</button>
                     </div>
                 </div>
             </div>

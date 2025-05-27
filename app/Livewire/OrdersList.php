@@ -27,8 +27,12 @@ class OrdersList extends Component
         $this->confirmingDelete = true;
     }
 
-    public function deleteOrder($orderId)
+    public function deleteOrder()
     {
+        if (!$this->deleteId) return;
+
+        $orderId = $this->deleteId;
+
         DB::transaction(function () use ($orderId) {
             // Deletando registros relacionados ao pedido
             DB::table('order_aditionals')->where('order_id', $orderId)->delete();
@@ -44,7 +48,10 @@ class OrdersList extends Component
     
             // Deletando o pedido principal
             Order::where('id', $orderId)->delete();
+            
         });
+
+        $this->confirmingDelete = false;
     
         session()->flash('message', 'Pedido deletado com sucesso!');
     }

@@ -33,16 +33,30 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ViaCepController;
 use App\Imports\PlanilhaImport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        // Se o usuário está logado, verifica se é admin
+        if (Auth::user()->role_name === 'ADMIN') {
+            return redirect()->route('admin.dashboard'); // Usando o nome da rota
+        } else {
+            // Usuário logado mas não é admin - redireciona para uma página específica
+            // ou mostra mensagem de erro
+            Auth::logout(); // Faz logout
+            return redirect('/login')->with('error', 'Acesso restrito apenas para administradores.');
+        }
+    }
+    
+    // Se não está logado, vai para login
     return redirect('/login');
 });
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 	
-    Route::get('/', [HomeController::class, 'home']);
+    Route::get('/', [HomeController::class, 'home'])->name('dashboard');
 
 	Route::get('dashboard', function () {
         return view('pages.admin.dashboard'); // Caminho correto para a view
@@ -154,7 +168,9 @@ Route::group(['middleware' => 'guest'], function () {
 
 Route::get('/login', function () {
     return view('session/login-session');
-})->name('login');
+})
+->middleware('guest')
+->name('login');
 
 Route::prefix('api')->group(function () {
     Route::get('/buscar-cep/{cep}', [ViaCepController::class, 'buscarCep']);
@@ -185,3 +201,7 @@ Route::get('/evidences/download-feedback', [PlanilhaController::class, 'download
 Route::get('/atualizar-excel', [AtualizarExcelTXT::class, 'index'])->name('atualizar.excel');
 
 Route::post('/atualizar-excel/upload', [AtualizarExcelTXT::class, 'upload'])->name('atualizar.excel.upload');
+
+Route::get('/access-denied', function() {
+    return view('access-denied');
+})->name('access.denied');
