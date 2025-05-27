@@ -60,6 +60,9 @@
                                         <th>
                                             Código Movimento
                                         </th>
+                                        <th>
+                                            Data Inicial
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -68,6 +71,13 @@
                                         <td>{{ $return->installation_number }}</td>
                                         <td>{{ optional($return->anomalyCode)->description ?? optional($return->returnCode)->description ?? '-' }}</td>
                                         <td>{{ optional($return->moveCode)->description ?? '-' }}</td>
+                                        <td>
+                                            @if (isset($return->start_date) && !empty($return->start_date))
+                                                {{ \Carbon\Carbon::parse($return->start_date)->format('d/m/Y') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
                                     </tr>
                                     @endforeach
                                 </tbody>
