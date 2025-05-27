@@ -10,6 +10,7 @@ use App\Models\Order;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EdpService
@@ -204,7 +205,7 @@ class EdpService
 
     public function processarArquivoTxt($txtPath)
     {
-        $lines = file($txtPath, FILE_IGNORE_NEW_LINES);
+        $lines = file($txtPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         Log::info("Processando arquivo: " . $txtPath);
         
@@ -212,64 +213,122 @@ class EdpService
         $nomeArquivo = basename($txtPath);
         $arquivoData = $this->extrairDataDoArquivo($nomeArquivo);
 
-        foreach ($lines as $line) {
+        $totalLinhas = count($lines);
+        $registrosBProcessados = 0;
+        $registrosFProcessados = 0;
+        $errosB = 0;
+        $errosF = 0;
+
+        Log::info("Total de linhas no arquivo: {$totalLinhas}");
+
+        foreach ($lines as $lineNumber => $line) {
+            // Pula linhas vazias ou muito curtas
+            if (empty(trim($line)) || strlen($line) < 160) {
+                Log::warning("Linha " . ($lineNumber + 1) . " ignorada (muito curta ou vazia): " . strlen($line) . " caracteres");
+                continue;
+            }
+
             $tipoRegistro = substr($line, 0, 1);
             
             if ($tipoRegistro === 'B') {
                 try {
-                    LogRegister::create([
-                        'register_code'      => substr($line, 0, 1),
-                        'installation_number'=> substr($line, 1, 9),  // CORRIGIDO: 9 dígitos, não 10
-                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),  // Ajustado: posição 10
-                        'product_cod'        => substr($line, 12, 3),  // Ajustado: posição 12
-                        'number_installment' => substr($line, 15, 2),  // Ajustado: posição 15
-                        'value_installment'  => substr($line, 17, 15), // Ajustado: posição 17
-                        'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),  // Ajustado: posição 32
-                        'city_code'          => substr($line, 41, 3),  // Ajustado: posição 41
-                        'start_date'         => $this->formatDate(substr($line, 44, 8)),
-                        'end_date'           => $this->formatDate(substr($line, 52, 8)),
-                        'address'            => $this->nullIfEmpty(substr($line, 60, 40)),
-                        'name'               => $this->nullIfEmpty(substr($line, 100, 40)),
-                        'future2'            => $this->nullIfEmpty(substr($line, 140, 17)),
-                        'code_anomaly'       => substr($line, 157, 2),
-                        'code_move'          => substr($line, 159, 1),
-                        'arquivo_data'       => $arquivoData,
-                    ]);
+                    // Usa transação para garantir consistência
+                    DB::transaction(function () use ($line, $arquivoData, $lineNumber) {
+                        $installationNumber = substr($line, 1, 9);
+                        
+                        // Verifica se já existe para evitar duplicatas
+                        $exists = LogRegister::where('installation_number', $installationNumber)
+                                           ->where('arquivo_data', $arquivoData)
+                                           ->exists();
+                        
+                        if (!$exists) {
+                            LogRegister::create([
+                                'register_code'      => substr($line, 0, 1),
+                                'installation_number'=> $installationNumber,
+                                'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
+                                'product_cod'        => substr($line, 12, 3),
+                                'number_installment' => substr($line, 15, 2),
+                                'value_installment'  => substr($line, 17, 15),
+                                'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),
+                                'city_code'          => substr($line, 41, 3),
+                                'start_date'         => $this->formatDate(substr($line, 44, 8)),
+                                'end_date'           => $this->formatDate(substr($line, 52, 8)),
+                                'address'            => $this->nullIfEmpty(substr($line, 60, 40)),
+                                'name'               => $this->nullIfEmpty(substr($line, 100, 40)),
+                                'future2'            => $this->nullIfEmpty(substr($line, 140, 17)),
+                                'code_anomaly'       => substr($line, 157, 2),
+                                'code_move'          => substr($line, 159, 1),
+                                'arquivo_data'       => $arquivoData,
+                            ]);
+                            
+                            Log::info("LogRegister criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
+                        } else {
+                            Log::warning("Registro B duplicado ignorado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
+                        }
+                    });
                     
-                    Log::info("LogRegister criado com sucesso para linha: " . substr($line, 1, 10));
+                    $registrosBProcessados++;
                     
                 } catch (Exception $e) {
-                    Log::error("Erro ao criar LogRegister: " . $e->getMessage());
-                    Log::error("Linha que causou erro: " . $line);
+                    $errosB++;
+                    Log::error("ERRO LogRegister - Linha " . ($lineNumber + 1) . ": " . $e->getMessage());
+                    Log::error("Dados da linha: " . $line);
+                    Log::error("Tamanho da linha: " . strlen($line));
+                    
+                    // Log detalhado dos campos extraídos
+                    Log::error("Campos extraídos:");
+                    Log::error("- register_code: '" . substr($line, 0, 1) . "'");
+                    Log::error("- installation_number: '" . substr($line, 1, 9) . "'");
+                    Log::error("- extra_value: '" . substr($line, 10, 2) . "'");
+                    Log::error("- product_cod: '" . substr($line, 12, 3) . "'");
+                    // ... continue para outros campos se necessário
                 }
                 
             } else if ($tipoRegistro === 'F') {
                 try {
-                    LogMovement::create([
-                        'register_code'      => substr($line, 0, 1),
-                        'installation_number'=> substr($line, 1, 9),
-                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
-                        'product_cod'        => substr($line, 12, 3),
-                        'installment'        => substr($line, 15, 5),
-                        'reading_script'     => substr($line, 20, 15),
-                        'date_invoice'       => substr($line, 35, 6),
-                        'city_code'          => substr($line, 41, 3),
-                        'date_movement'      => substr($line, 44, 8),
-                        'value'              => substr($line, 52, 15),
-                        'code_return'        => substr($line, 67, 2),
-                        'future'             => $this->nullIfEmpty(substr($line, 69, 90)),
-                        'code_move'          => substr($line, 159, 1),
-                        'arquivo_data'       => $arquivoData,
-                    ]);
+                    DB::transaction(function () use ($line, $arquivoData, $lineNumber) {
+                        $installationNumber = substr($line, 1, 9);
+                        
+                        LogMovement::create([
+                            'register_code'      => substr($line, 0, 1),
+                            'installation_number'=> $installationNumber,
+                            'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
+                            'product_cod'        => substr($line, 12, 3),
+                            'installment'        => substr($line, 15, 5),
+                            'reading_script'     => substr($line, 20, 15),
+                            'date_invoice'       => substr($line, 35, 6),
+                            'city_code'          => substr($line, 41, 3),
+                            'date_movement'      => substr($line, 44, 8),
+                            'value'              => substr($line, 52, 15),
+                            'code_return'        => substr($line, 67, 2),
+                            'future'             => $this->nullIfEmpty(substr($line, 69, 90)),
+                            'code_move'          => substr($line, 159, 1),
+                            'arquivo_data'       => $arquivoData,
+                        ]);
+                        
+                        Log::info("LogMovement criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
+                    });
                     
-                    Log::info("LogMovement criado com sucesso para linha: " . substr($line, 1, 9));
+                    $registrosFProcessados++;
                     
                 } catch (Exception $e) {
-                    Log::error("Erro ao criar LogMovement: " . $e->getMessage());
-                    Log::error("Linha que causou erro: " . $line);
+                    $errosF++;
+                    Log::error("ERRO LogMovement - Linha " . ($lineNumber + 1) . ": " . $e->getMessage());
+                    Log::error("Dados da linha: " . $line);
                 }
+            } else {
+                Log::warning("Tipo de registro desconhecido na linha " . ($lineNumber + 1) . ": '" . $tipoRegistro . "'");
             }
         }
+
+        // Log do resumo final
+        Log::info("=== RESUMO DO PROCESSAMENTO ===");
+        Log::info("Total de linhas: {$totalLinhas}");
+        Log::info("Registros B processados: {$registrosBProcessados}");
+        Log::info("Registros F processados: {$registrosFProcessados}");
+        Log::info("Erros em registros B: {$errosB}");
+        Log::info("Erros em registros F: {$errosF}");
+        Log::info("================================");
     }
 
     private function nullIfEmpty($string)
@@ -291,14 +350,35 @@ class EdpService
     public function analisarEstruturaArquivo($txtPath)
     {
         $lines = file($txtPath, FILE_IGNORE_NEW_LINES);
+        $totalLinhas = count($lines);
+        $tiposEncontrados = [];
+        
+        Log::info("=== ANÁLISE ESTRUTURAL DO ARQUIVO ===");
+        Log::info("Arquivo: " . $txtPath);
+        Log::info("Total de linhas: " . $totalLinhas);
         
         foreach ($lines as $index => $line) {
-            $tipoRegistro = substr($line, 0, 1);
+            if (empty(trim($line))) {
+                Log::warning("Linha " . ($index + 1) . " está vazia");
+                continue;
+            }
             
-            if ($tipoRegistro === 'B') {
-                Log::info("=== ANÁLISE REGISTRO B (Linha " . ($index + 1) . ") ===");
-                Log::info("Linha completa: " . $line);
-                Log::info("Tamanho: " . strlen($line));
+            $tipoRegistro = substr($line, 0, 1);
+            $tamanhoLinha = strlen($line);
+            
+            if (!isset($tiposEncontrados[$tipoRegistro])) {
+                $tiposEncontrados[$tipoRegistro] = 0;
+            }
+            $tiposEncontrados[$tipoRegistro]++;
+            
+            // Analisa apenas algumas linhas de cada tipo
+            if ($tiposEncontrados[$tipoRegistro] <= 3) {
+                Log::info("=== ANÁLISE REGISTRO {$tipoRegistro} (Linha " . ($index + 1) . ") ===");
+                Log::info("Tamanho: " . $tamanhoLinha);
+                
+                if ($tamanhoLinha < 160) {
+                    Log::warning("ATENÇÃO: Linha muito curta! Esperado >= 160 caracteres");
+                }
                 
                 // Quebra a linha em blocos de 10 caracteres para análise
                 $chunks = str_split($line, 10);
@@ -307,9 +387,15 @@ class EdpService
                     $end = $start + strlen($chunk) - 1;
                     Log::info("Posições {$start}-{$end}: '{$chunk}'");
                 }
-                Log::info("=== FIM ANÁLISE ===");
+                Log::info("=== FIM ANÁLISE REGISTRO {$tipoRegistro} ===");
             }
         }
+        
+        Log::info("=== RESUMO TIPOS DE REGISTRO ===");
+        foreach ($tiposEncontrados as $tipo => $quantidade) {
+            Log::info("Tipo '{$tipo}': {$quantidade} registros");
+        }
+        Log::info("=== FIM ANÁLISE ESTRUTURAL ===");
     }
     
     private function formatDate($date)
@@ -356,6 +442,8 @@ class EdpService
             }
 
             try {
+                Log::info("Iniciando processamento do arquivo: {$nomeArquivo} (ID: {$arquivoId})");
+                
                 // 4. Baixar o arquivo ZIP
                 $zipPath = $this->baixarArquivoRetorno($arquivoId);
 
@@ -369,6 +457,9 @@ class EdpService
                 if (!file_exists($txtPath)) {
                     throw new Exception("Erro: O arquivo TXT não foi extraído corretamente para o ID {$arquivoId}.");
                 }
+
+                // NOVO: Analisar estrutura antes de processar
+                $this->analisarEstruturaArquivo($txtPath);
 
                 // 6. Processar o arquivo TXT
                 $this->processarArquivoTxt($txtPath);
@@ -385,9 +476,12 @@ class EdpService
 
             } catch (Exception $e) {
                 Log::error("Erro ao processar o arquivo ID {$arquivoId}: " . $e->getMessage());
+                Log::error("Stack trace: " . $e->getTraceAsString());
             }
         }
 
-        return "Nenhum novo arquivo para processar!";
+        return $arquivosProcessados > 0 
+            ? "Processados {$arquivosProcessados} arquivo(s) com sucesso!" 
+            : "Nenhum novo arquivo para processar!";
     }
 }
