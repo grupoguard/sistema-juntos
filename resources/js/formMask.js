@@ -14,4 +14,13 @@ $(document).ready(function(){
             element.mask('(00) 0000-0000');
         }
     });
+
+    // Declarar no escopo global
+    window.applyMasks = function() {
+        $('.cpf-mask').mask('000.000.000-00', {reverse: true});
+        $('.rg-mask').mask('00.000.000-0');
+    }
+
+    // Já aplica nas mascaras fixas
+    window.applyMasks();
 });
