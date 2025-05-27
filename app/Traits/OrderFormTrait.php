@@ -61,9 +61,6 @@ trait OrderFormTrait
     public $documents = [];
     public $dependentAdditionals = [];
     
-
-    protected $listeners = ['clientSelected' => 'loadClient', 'loadAdditionals'];
-
     //GENERAL
     protected function rules()
     {

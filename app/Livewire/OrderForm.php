@@ -30,7 +30,8 @@ class OrderForm extends Component
 {
     use WithFileUploads, OrderFormTrait;
 
-    
+    protected $listeners = ['clientSelected' => 'loadClient', 'loadAdditionals'];
+
     public function mount($clientId = null)
     {
         $this->clients = Client::where('status', 1)->orderBy('name')->get();
