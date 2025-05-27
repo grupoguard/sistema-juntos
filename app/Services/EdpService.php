@@ -222,8 +222,8 @@ class EdpService
         Log::info("Total de linhas no arquivo: {$totalLinhas}");
 
         foreach ($lines as $lineNumber => $line) {
-            // Pula linhas vazias ou muito curtas
-            if (empty(trim($line)) || strlen($line) < 160) {
+            // Pula linhas vazias, mas aceita qualquer tamanho >= 10 (mínimo para ter installation_number)
+            if (empty(trim($line)) || strlen($line) < 10) {
                 Log::warning("Linha " . ($lineNumber + 1) . " ignorada (muito curta ou vazia): " . strlen($line) . " caracteres");
                 continue;
             }
@@ -234,6 +234,7 @@ class EdpService
                 try {
                     // Usa transação para garantir consistência
                     DB::transaction(function () use ($line, $arquivoData, $lineNumber) {
+                        $lineLength = strlen($line);
                         $installationNumber = substr($line, 1, 9);
                         
                         // Verifica se já existe para evitar duplicatas
@@ -245,23 +246,23 @@ class EdpService
                             LogRegister::create([
                                 'register_code'      => substr($line, 0, 1),
                                 'installation_number'=> $installationNumber,
-                                'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
-                                'product_cod'        => substr($line, 12, 3),
-                                'number_installment' => substr($line, 15, 2),
-                                'value_installment'  => substr($line, 17, 15),
-                                'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),
-                                'city_code'          => substr($line, 41, 3),
-                                'start_date'         => $this->formatDate(substr($line, 44, 8)),
-                                'end_date'           => $this->formatDate(substr($line, 52, 8)),
-                                'address'            => $this->nullIfEmpty(substr($line, 60, 40)),
-                                'name'               => $this->nullIfEmpty(substr($line, 100, 40)),
-                                'future2'            => $this->nullIfEmpty(substr($line, 140, 17)),
-                                'code_anomaly'       => substr($line, 157, 2),
-                                'code_move'          => substr($line, 159, 1),
+                                'extra_value'        => $this->safeSubstr($line, 10, 2),
+                                'product_cod'        => $this->safeSubstr($line, 12, 3),
+                                'number_installment' => $this->safeSubstr($line, 15, 2),
+                                'value_installment'  => $this->safeSubstr($line, 17, 15),
+                                'future1'            => $this->safeSubstr($line, 32, 9),
+                                'city_code'          => $this->safeSubstr($line, 41, 3),
+                                'start_date'         => $this->formatDate($this->safeSubstr($line, 44, 8)),
+                                'end_date'           => $this->formatDate($this->safeSubstr($line, 52, 8)),
+                                'address'            => $this->safeSubstr($line, 60, 40),
+                                'name'               => $this->safeSubstr($line, 100, 40),
+                                'future2'            => $this->safeSubstr($line, 140, 17),
+                                'code_anomaly'       => $this->safeSubstr($line, 157, 2),
+                                'code_move'          => $this->safeSubstr($line, 159, 1),
                                 'arquivo_data'       => $arquivoData,
                             ]);
                             
-                            Log::info("LogRegister criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
+                            Log::info("LogRegister criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber . " - Tamanho: " . $lineLength);
                         } else {
                             Log::warning("Registro B duplicado ignorado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
                         }
@@ -279,34 +280,34 @@ class EdpService
                     Log::error("Campos extraídos:");
                     Log::error("- register_code: '" . substr($line, 0, 1) . "'");
                     Log::error("- installation_number: '" . substr($line, 1, 9) . "'");
-                    Log::error("- extra_value: '" . substr($line, 10, 2) . "'");
-                    Log::error("- product_cod: '" . substr($line, 12, 3) . "'");
-                    // ... continue para outros campos se necessário
+                    if (strlen($line) > 10) Log::error("- extra_value: '" . substr($line, 10, 2) . "'");
+                    if (strlen($line) > 12) Log::error("- product_cod: '" . substr($line, 12, 3) . "'");
                 }
                 
             } else if ($tipoRegistro === 'F') {
                 try {
                     DB::transaction(function () use ($line, $arquivoData, $lineNumber) {
+                        $lineLength = strlen($line);
                         $installationNumber = substr($line, 1, 9);
                         
                         LogMovement::create([
                             'register_code'      => substr($line, 0, 1),
                             'installation_number'=> $installationNumber,
-                            'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
-                            'product_cod'        => substr($line, 12, 3),
-                            'installment'        => substr($line, 15, 5),
-                            'reading_script'     => substr($line, 20, 15),
-                            'date_invoice'       => substr($line, 35, 6),
-                            'city_code'          => substr($line, 41, 3),
-                            'date_movement'      => substr($line, 44, 8),
-                            'value'              => substr($line, 52, 15),
-                            'code_return'        => substr($line, 67, 2),
-                            'future'             => $this->nullIfEmpty(substr($line, 69, 90)),
-                            'code_move'          => substr($line, 159, 1),
+                            'extra_value'        => $this->safeSubstr($line, 10, 2),
+                            'product_cod'        => $this->safeSubstr($line, 12, 3),
+                            'installment'        => $this->safeSubstr($line, 15, 5),
+                            'reading_script'     => $this->safeSubstr($line, 20, 15),
+                            'date_invoice'       => $this->safeSubstr($line, 35, 6),
+                            'city_code'          => $this->safeSubstr($line, 41, 3),
+                            'date_movement'      => $this->safeSubstr($line, 44, 8),
+                            'value'              => $this->safeSubstr($line, 52, 15),
+                            'code_return'        => $this->safeSubstr($line, 67, 2),
+                            'future'             => $this->safeSubstr($line, 69, 90),
+                            'code_move'          => $this->safeSubstr($line, 159, 1),
                             'arquivo_data'       => $arquivoData,
                         ]);
                         
-                        Log::info("LogMovement criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber);
+                        Log::info("LogMovement criado - Linha " . ($lineNumber + 1) . " - Installation: " . $installationNumber . " - Tamanho: " . $lineLength);
                     });
                     
                     $registrosFProcessados++;
@@ -315,6 +316,7 @@ class EdpService
                     $errosF++;
                     Log::error("ERRO LogMovement - Linha " . ($lineNumber + 1) . ": " . $e->getMessage());
                     Log::error("Dados da linha: " . $line);
+                    Log::error("Tamanho da linha: " . strlen($line));
                 }
             } else {
                 Log::warning("Tipo de registro desconhecido na linha " . ($lineNumber + 1) . ": '" . $tipoRegistro . "'");
@@ -329,6 +331,19 @@ class EdpService
         Log::info("Erros em registros B: {$errosB}");
         Log::info("Erros em registros F: {$errosF}");
         Log::info("================================");
+    }
+
+    /**
+     * Extrai substring de forma segura, retornando null se a posição não existir
+     */
+    private function safeSubstr($string, $start, $length)
+    {
+        if (strlen($string) <= $start) {
+            return null;
+        }
+        
+        $extracted = substr($string, $start, $length);
+        return $this->nullIfEmpty($extracted);
     }
 
     private function nullIfEmpty($string)
