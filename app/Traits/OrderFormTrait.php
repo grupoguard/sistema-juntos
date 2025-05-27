@@ -101,7 +101,7 @@ trait OrderFormTrait
         if (!empty($this->dependents)) {
             foreach ($this->dependents as $index => $dependent) {
                 // CPF sempre obrigatório se o dependente existir
-                $rules["dependents.{$index}.cpf"] = 'required|string|size:11';
+                $rules["dependents.{$index}.cpf"] = 'required|string|min:11|max:14';
                 
                 // Outros campos obrigatórios quando CPF preenchido
                 $rules["dependents.{$index}.name"] = 'required|string|max:100';
