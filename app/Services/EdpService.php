@@ -206,56 +206,120 @@ class EdpService
     {
         $lines = file($txtPath, FILE_IGNORE_NEW_LINES);
 
-        Log::info("Arquivo " . $txtPath);
+        Log::info("Processando arquivo: " . $txtPath);
+        
+        // Extrai a data do nome do arquivo
+        $nomeArquivo = basename($txtPath);
+        $arquivoData = $this->extrairDataDoArquivo($nomeArquivo);
 
         foreach ($lines as $line) {
-            Log::info("Linha " . $line);
             $tipoRegistro = substr($line, 0, 1);
+            
             if ($tipoRegistro === 'B') {
-                LogRegister::create([
-                    'register_code'      => substr($line, 0, 1),
-                    'installation_number'=> substr($line, 1, 9),
-                    'extra_value'        => substr($line, 10, 2),
-                    'product_cod'        => substr($line, 12, 3),
-                    'number_installment' => substr($line, 15, 2),
-                    'value_installment'  => substr($line, 17, 15),
-                    'future1'            => substr($line, 32, 9),
-                    'city_code'          => substr($line, 41, 3),
-                    'start_date'         => $this->formatDate(substr($line, 44, 8)),
-                    'end_date'           => $this->formatDate(substr($line, 52, 8)),         
-                    'address'            => substr($line, 60, 40),
-                    'name'               => substr($line, 100, 40),
-                    'future2'            => substr($line, 140, 17),                  
-                    'code_anomaly'       => substr($line, 157, 2),
-                    'code_move'          => substr($line, 159, 1),
-                ]);
+                try {
+                    LogRegister::create([
+                        'register_code'      => substr($line, 0, 1),
+                        'installation_number'=> substr($line, 1, 9),  // CORRIGIDO: 9 dígitos, não 10
+                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),  // Ajustado: posição 10
+                        'product_cod'        => substr($line, 12, 3),  // Ajustado: posição 12
+                        'number_installment' => substr($line, 15, 2),  // Ajustado: posição 15
+                        'value_installment'  => substr($line, 17, 15), // Ajustado: posição 17
+                        'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),  // Ajustado: posição 32
+                        'city_code'          => substr($line, 41, 3),  // Ajustado: posição 41
+                        'start_date'         => $this->formatDate(substr($line, 44, 8)),
+                        'end_date'           => $this->formatDate(substr($line, 52, 8)),
+                        'address'            => $this->nullIfEmpty(substr($line, 60, 40)),
+                        'name'               => $this->nullIfEmpty(substr($line, 100, 40)),
+                        'future2'            => $this->nullIfEmpty(substr($line, 140, 17)),
+                        'code_anomaly'       => substr($line, 157, 2),
+                        'code_move'          => substr($line, 159, 1),
+                        'arquivo_data'       => $arquivoData,
+                    ]);
+                    
+                    Log::info("LogRegister criado com sucesso para linha: " . substr($line, 1, 10));
+                    
+                } catch (Exception $e) {
+                    Log::error("Erro ao criar LogRegister: " . $e->getMessage());
+                    Log::error("Linha que causou erro: " . $line);
+                }
+                
             } else if ($tipoRegistro === 'F') {
-                LogMovement::create([
-                    'register_code'      => substr($line, 0, 1),
-                    'installation_number'=> substr($line, 1, 9),
-                    'extra_value'        => substr($line, 10, 2),
-                    'product_cod'        => substr($line, 12, 3),
-                    'installment'        => substr($line, 15, 5),
-                    'reading_script'     => substr($line, 20, 15),
-                    'date_invoice'       => substr($line, 35, 6),
-                    'city_code'          => substr($line, 41, 3),
-                    'date_movement'      => substr($line, 44, 8),
-                    'value'              => substr($line, 52, 15),
-                    'code_return'        => substr($line, 67, 2),
-                    'future'             => substr($line, 69, 90),
-                    'code_move'          => substr($line, 159, 1),
-                ]);
+                try {
+                    LogMovement::create([
+                        'register_code'      => substr($line, 0, 1),
+                        'installation_number'=> substr($line, 1, 9),
+                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
+                        'product_cod'        => substr($line, 12, 3),
+                        'installment'        => substr($line, 15, 5),
+                        'reading_script'     => substr($line, 20, 15),
+                        'date_invoice'       => substr($line, 35, 6),
+                        'city_code'          => substr($line, 41, 3),
+                        'date_movement'      => substr($line, 44, 8),
+                        'value'              => substr($line, 52, 15),
+                        'code_return'        => substr($line, 67, 2),
+                        'future'             => $this->nullIfEmpty(substr($line, 69, 90)),
+                        'code_move'          => substr($line, 159, 1),
+                        'arquivo_data'       => $arquivoData,
+                    ]);
+                    
+                    Log::info("LogMovement criado com sucesso para linha: " . substr($line, 1, 9));
+                    
+                } catch (Exception $e) {
+                    Log::error("Erro ao criar LogMovement: " . $e->getMessage());
+                    Log::error("Linha que causou erro: " . $line);
+                }
+            }
+        }
+    }
+
+    private function nullIfEmpty($string)
+    {
+        $trimmed = trim($string);
+        return empty($trimmed) ? null : $trimmed;
+    }
+
+    private function extrairDataDoArquivo($nomeArquivo)
+    {
+        if (preg_match('/BEN_(\d{8})_/', $nomeArquivo, $matches)) {
+            $dataString = $matches[1];
+            return $this->formatDate($dataString);
+        }
+        
+        return null;
+    }
+
+    public function analisarEstruturaArquivo($txtPath)
+    {
+        $lines = file($txtPath, FILE_IGNORE_NEW_LINES);
+        
+        foreach ($lines as $index => $line) {
+            $tipoRegistro = substr($line, 0, 1);
+            
+            if ($tipoRegistro === 'B') {
+                Log::info("=== ANÁLISE REGISTRO B (Linha " . ($index + 1) . ") ===");
+                Log::info("Linha completa: " . $line);
+                Log::info("Tamanho: " . strlen($line));
+                
+                // Quebra a linha em blocos de 10 caracteres para análise
+                $chunks = str_split($line, 10);
+                foreach ($chunks as $i => $chunk) {
+                    $start = $i * 10;
+                    $end = $start + strlen($chunk) - 1;
+                    Log::info("Posições {$start}-{$end}: '{$chunk}'");
+                }
+                Log::info("=== FIM ANÁLISE ===");
             }
         }
     }
     
     private function formatDate($date)
     {
-        if (empty(trim($date)) || $date == '00000000') {
+        $trimmed = trim($date);
+        if (empty($trimmed) || $trimmed == '00000000' || strlen($trimmed) != 8) {
             return null;
         }
 
-        return substr($date, 0, 4) . '-' . substr($date, 4, 2) . '-' . substr($date, 6, 2);
+        return substr($trimmed, 0, 4) . '-' . substr($trimmed, 4, 2) . '-' . substr($trimmed, 6, 2);
     }
 
     public function processarArquivosEmMassa()
