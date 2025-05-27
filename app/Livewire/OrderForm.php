@@ -67,7 +67,7 @@ class OrderForm extends Component
                     'name' => $this->client['name'],
                     'mom_name' => $this->client['mom_name'],
                     'date_birth' => $this->client['date_birth'],
-                    'rg' => $rg ,
+                    'rg' => $rg,
                     'gender' => $this->client['gender'],
                     'marital_status' => $this->client['marital_status'],
                     'phone' => $phone,
@@ -88,6 +88,9 @@ class OrderForm extends Component
             // 2️⃣ Cadastrar ou atualizar os dependentes
             if (!empty($this->dependents)) {
                 foreach ($this->dependents as $dependent) {
+                    $dependent['cpf'] = preg_replace('/\D/', '', $dependent['cpf']);
+                    $dependent['rg'] = preg_replace('/\D/', '', $dependent['rg']);
+
                     $dep = Dependent::updateOrCreate(
                         ['cpf' => $dependent['cpf']], // Supondo que o CPF/RG seja único
                         [
