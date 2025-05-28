@@ -214,25 +214,25 @@ class EdpService
 
         foreach ($lines as $line) {
             $tipoRegistro = substr($line, 0, 1);
-            
+
             if ($tipoRegistro === 'B') {
                 try {
                     LogRegister::create([
-                        'register_code'      => substr($line, 0, 1),
-                        'installation_number'=> substr($line, 1, 9),  // CORRIGIDO: 9 dígitos, não 10
-                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),  // Ajustado: posição 10
-                        'product_cod'        => substr($line, 12, 3),  // Ajustado: posição 12
-                        'number_installment' => substr($line, 15, 2),  // Ajustado: posição 15
-                        'value_installment'  => substr($line, 17, 15), // Ajustado: posição 17
-                        'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),  // Ajustado: posição 32
-                        'city_code'          => substr($line, 41, 3),  // Ajustado: posição 41
-                        'start_date'         => $this->formatDate(substr($line, 44, 8)),
-                        'end_date'           => $this->formatDate(substr($line, 52, 8)),
-                        'address'            => $this->nullIfEmpty(substr($line, 60, 40)),
-                        'name'               => $this->nullIfEmpty(substr($line, 100, 40)),
-                        'future2'            => $this->nullIfEmpty(substr($line, 140, 17)),
-                        'code_anomaly'       => substr($line, 157, 2),
-                        'code_move'          => substr($line, 159, 1),
+                        'register_code'      => substr($line, 0, 1),           // B.01: posição 1
+                        'installation_number'=> substr($line, 1, 9),           // B.02: posições 2-10  
+                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),  // B.03: posições 11-12
+                        'product_cod'        => substr($line, 12, 3),          // B.04: posições 13-15
+                        'number_installment' => substr($line, 15, 2),          // B.05: posições 16-17
+                        'value_installment'  => substr($line, 17, 15),         // B.06: posições 18-32 (15 chars)
+                        'future1'            => $this->nullIfEmpty(substr($line, 32, 9)),   // B.07: posições 33-41 (9 chars)
+                        'city_code'          => substr($line, 41, 3),          // B.08: posições 42-44
+                        'start_date'         => $this->formatDate(substr($line, 44, 8)),    // B.09: posições 45-52
+                        'end_date'           => $this->formatDate(substr($line, 52, 8)),     // B.10: posições 53-60
+                        'address'            => $this->sanitizeString($this->nullIfEmpty(substr($line, 60, 40))),  // B.11: posições 61-100
+                        'name'               => $this->sanitizeString($this->nullIfEmpty(substr($line, 100, 40))), // B.12: posições 101-140
+                        'future2'            => $this->nullIfEmpty(substr($line, 140, 7)),  // B.13: posições 141-147 (7 chars, não 17!)
+                        'code_anomaly'       => substr($line, 147, 2),         // B.14: posições 148-149
+                        'code_move'          => substr($line, 149, 1),         // B.15: posição 150
                         'arquivo_data'       => $arquivoData,
                     ]);
                     
@@ -246,19 +246,19 @@ class EdpService
             } else if ($tipoRegistro === 'F') {
                 try {
                     LogMovement::create([
-                        'register_code'      => substr($line, 0, 1),
-                        'installation_number'=> substr($line, 1, 9),
-                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),
-                        'product_cod'        => substr($line, 12, 3),
-                        'installment'        => substr($line, 15, 5),
-                        'reading_script'     => substr($line, 20, 15),
-                        'date_invoice'       => substr($line, 35, 6),
-                        'city_code'          => substr($line, 41, 3),
-                        'date_movement'      => substr($line, 44, 8),
-                        'value'              => substr($line, 52, 15),
-                        'code_return'        => substr($line, 67, 2),
-                        'future'             => $this->nullIfEmpty(substr($line, 69, 90)),
-                        'code_move'          => substr($line, 159, 1),
+                        'register_code'      => substr($line, 0, 1),           // F.01
+                        'installation_number'=> substr($line, 1, 9),           // F.02
+                        'extra_value'        => $this->nullIfEmpty(substr($line, 10, 2)),  // F.03
+                        'product_cod'        => substr($line, 12, 3),          // F.04
+                        'installment'        => substr($line, 15, 5),          // F.05: 5 chars (era 2)
+                        'reading_script'     => substr($line, 20, 15),         // F.06: posições 21-35 (era 20, 15)
+                        'date_invoice'       => substr($line, 35, 6),          // F.07: posições 36-41 (era 35, 6)
+                        'city_code'          => substr($line, 41, 3),          // F.08
+                        'date_movement'      => substr($line, 44, 8),          // F.09
+                        'value'              => substr($line, 52, 15),         // F.10
+                        'code_return'        => substr($line, 67, 2),          // F.11: posições 68-69 (era 67, 2)
+                        'future'             => $this->sanitizeString($this->nullIfEmpty(substr($line, 69, 80))), // F.12: posições 70-149 (80 chars, era 90)
+                        'code_move'          => substr($line, 149, 1),         // F.13: posição 150 (era 159)
                         'arquivo_data'       => $arquivoData,
                     ]);
                     
@@ -272,8 +272,19 @@ class EdpService
         }
     }
 
-    private function nullIfEmpty($string)
-    {
+    private function sanitizeString($string) {
+        if ($string === null || empty($string)) {
+            return null;
+        }
+        
+        $string = mb_convert_encoding($string, 'UTF-8', 'ISO-8859-1');
+        $string = preg_replace('/[\x00-\x1F\x7F]/', '', $string);
+        $string = trim($string);
+        
+        return empty($string) ? null : $string;
+    }
+
+    private function nullIfEmpty($string) {
         $trimmed = trim($string);
         return empty($trimmed) ? null : $trimmed;
     }
