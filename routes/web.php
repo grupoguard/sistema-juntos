@@ -98,8 +98,11 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
     // Códigos de Movimento
     Route::resource('move_codes', MoveCodeController::class);
 
-    // Códigos de Movimento
-    Route::resource('reports', ReportsController::class);
+    // Listar Atualizações EDP
+    Route::group(['prefix' => 'reports', 'as' => 'reports.'], function () {
+        Route::get('edp', [ReportsController::class, 'edp'])->name('edp');
+        Route::get('financial', [ReportsController::class, 'financial'])->name('financial');
+    });
 
     // Pedidos e seus detalhes
     Route::resource('orders', OrderController::class);
