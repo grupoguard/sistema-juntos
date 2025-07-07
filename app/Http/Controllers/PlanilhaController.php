@@ -6,6 +6,7 @@ set_time_limit(0); // Remove limite de execução
 ini_set('max_execution_time', 0); // Garante que não há limite no PHP
 
 use App\Exports\FeedbackExport;
+use App\Imports\OptimizedPlanilhaImport;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\PlanilhaImport;
@@ -285,27 +286,178 @@ class PlanilhaController extends Controller
     public function gerarTxt(Request $request)
     {
         $request->validate([
-            'planilha' => 'required|mimes:xlsx,xls,csv'
+            'planilha' => 'required|mimes:csv'
         ]);
 
-        $import = new PlanilhaImport();
-        Excel::import($import, $request->file('planilha'));
-        $file = $import->rows;
+        $startTime = microtime(true);
+        Log::info("Iniciando processamento corrigido");
 
-        $data = []; // Aqui, você parseia a planilha e extrai as linhas necessárias
+        $fileName = 'arquivo_' . now()->format('Ymd_His') . '.txt';
+        $filePath = storage_path("app/public/txt/{$fileName}");
+        $csvPath = $request->file('planilha')->getPathname();
+        
+        $fileHandle = fopen($filePath, 'w');
+        $csvHandle = fopen($csvPath, 'r');
+        
+        if (!$fileHandle || !$csvHandle) {
+            throw new \Exception('Erro ao abrir arquivos');
+        }
 
-        $totalRecords = 0;
-        $totalAmount = 0;
-        $bodyContent = '';
-
-        //dd($data);
-
-        // Processa cada linha do body (registros do tipo B)
-        foreach ($file as $row) {
-            $instalacao = str_pad($row['instalacao'], 9, '0', STR_PAD_LEFT);
-            $valor = (int) ($row['valor'] * 100); // Converte o valor para inteiro
-            $codigoProduto = substr($row['produto'], 0, 3);
+        try {
+            // Header
+            fwrite($fileHandle, $this->generateHeader());
+            
+            $totalRecords = 0;
+            $totalAmount = 0;
             $dataInicial = Carbon::now()->addMonth()->startOfMonth()->format('Ymd');
+            
+            // Pular header do CSV
+            $headerLine = fgetcsv($csvHandle);
+            Log::info("Header do CSV", ['header' => $headerLine]);
+            
+            $batchLines = [];
+            $batchSize = 1000;
+            $lineNumber = 1;
+
+            
+            while (($row = fgetcsv($csvHandle)) !== false) {
+                $lineNumber++;
+                
+                // Debug das primeiras 5 linhas
+                if ($lineNumber <= 6) {
+                    Log::info("Linha {$lineNumber}", [
+                        'row_count' => count($row),
+                        'instalacao' => $row[0] ?? 'N/A',
+                        'titular' => $row[1] ?? 'N/A',
+                        'autorizado' => $row[2] ?? 'N/A',
+                        'produto' => $row[3] ?? 'N/A',
+                        'contato' => $row[4] ?? 'N/A',
+                        'data' => $row[5] ?? 'N/A',
+                        'valor' => $row[6] ?? 'N/A',
+                        'raw_row' => $row
+                    ]);
+                }
+                
+                $instalacao = trim($row[0] ?? '');
+                $codigoProduto = trim($row[3] ?? ''); // CORRIGIDO: agora valida o produto correto
+                $valorRaw = trim($row[6] ?? '');
+                
+                if (empty($instalacao) || empty($codigoProduto) || empty($valorRaw)) {
+                    Log::info("Linha {$lineNumber} ignorada - dados vazios", [
+                        'instalacao' => $instalacao,
+                        'produto' => $codigoProduto,
+                        'valor' => $valorRaw
+                    ]);
+                    continue;
+                }
+
+                // CORRIGIDO: Tratamento do valor com vírgula decimal
+                $valor = (float) str_replace(',', '.', $valorRaw);
+                
+                $instalacao = str_pad($instalacao, 9, '0', STR_PAD_LEFT);
+                $valorInt = (int) ($valor * 100);
+
+                $linha = sprintf(
+                    "B%-9s64%-3s01%015d%-12s%s%-8s%-40s%-47s012",
+                    $instalacao,
+                    $codigoProduto,
+                    $valorInt,
+                    "",
+                    $dataInicial,
+                    "00000000",
+                    "",
+                    ""
+                );
+                
+                $batchLines[] = $linha;
+                $totalRecords++;
+                $totalAmount += $valor;
+                
+                // Debug das primeiras linhas processadas
+                if ($totalRecords <= 5) {
+                    Log::info("Linha B gerada #{$totalRecords}", [
+                        'linha' => $linha,
+                        'instalacao' => $instalacao,
+                        'codigo_produto' => $codigoProduto,
+                        'valor_original' => $valorRaw,
+                        'valor_convertido' => $valor,
+                        'valor_int' => $valorInt
+                    ]);
+                }
+                
+                // Escrever em lotes
+                if (count($batchLines) >= $batchSize) {
+                    $content = implode("\n", $batchLines) . "\n";
+                    fwrite($fileHandle, $content);
+                    Log::info("Escrito lote", [
+                        'lines_in_batch' => count($batchLines),
+                        'total_records_so_far' => $totalRecords
+                    ]);
+                    $batchLines = [];
+                }
+                
+                if ($totalRecords % 1000 == 0) {
+                    Log::info("Processadas {$totalRecords} linhas válidas");
+                }
+            }
+            
+            // Escrever últimas linhas
+            if (!empty($batchLines)) {
+                $content = implode("\n", $batchLines) . "\n";
+                fwrite($fileHandle, $content);
+                Log::info("Escrito último lote", ['lines_in_batch' => count($batchLines)]);
+            }
+            
+            // Footer
+            fwrite($fileHandle, $this->generateFooter($totalRecords, $totalAmount));
+            
+        } finally {
+            fclose($fileHandle);
+            fclose($csvHandle);
+        }
+
+        $totalTime = microtime(true) - $startTime;
+        Log::info("Processamento finalizado", [
+            'total_time_seconds' => round($totalTime, 2),
+            'records_processed' => $totalRecords,
+            'total_amount' => $totalAmount,
+            'file_size' => filesize($filePath)
+        ]);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function generateHeader()
+    {
+        return sprintf(
+            "A2%-20s%-20s408%-20s%s%-76s\n",
+            "", 
+            "BANDEIRANTE",
+            substr("JUNTOS CLUBE DE BENEFICIO", 0, 20),
+            Carbon::now()->format('Ymd'),
+            ""
+        );
+    }
+
+    public function generateFooter($totalRecords, $totalAmount)
+    {
+        return sprintf(
+            "Z%06d%017d%-126s\n",
+            $totalRecords,
+            $totalAmount * 100,
+            ""
+        );
+    }
+
+    private function processChunk($chunk, &$totalRecords, &$totalAmount)
+    {
+        $bodyContent = '';
+        $dataInicial = Carbon::now()->addMonth()->startOfMonth()->format('Ymd');
+        
+        foreach ($chunk as $row) {
+            $instalacao = str_pad($row['instalacao'], 9, '0', STR_PAD_LEFT);
+            $valor = (int) ($row['valor'] * 100);
+            $codigoProduto = substr($row['produto'], 0, 3);
 
             $bodyContent .= sprintf(
                 "B%-9s64%-3s01%015d%-12s%s%-8s%-40s%-47s012\n",
@@ -322,17 +474,8 @@ class PlanilhaController extends Controller
             $totalRecords++;
             $totalAmount += $row['valor'];
         }
-
-        // Monta o conteúdo completo do arquivo TXT
-        $header = $this->generateHeader();
-        $footer = $this->generateFooter($totalRecords, $totalAmount);
-        $fileContent = $header . $bodyContent . $footer;
-
-        // Salva o arquivo para download
-        $fileName = 'arquivo_' . now()->format('Ymd_His') . '.txt';
-        Storage::put("public/txt/{$fileName}", $fileContent);
-
-        return response()->download(storage_path("app/public/txt/{$fileName}"))->deleteFileAfterSend(true);
+        
+        return $bodyContent;
     }
 
     public function downloadFeedback()
