@@ -119,12 +119,26 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.reports.index') ? 'active' : '') }} " href="{{ route('admin.reports.index') }}">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" aria-expanded="false" href="#reports">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="fa fa-file-pdf-o"></i>
+            <i class="fa fa-medkit"></i>
           </div>
           <span class="nav-link-text ms-1">Relatórios</span>
         </a>
+        <div class="collapse" id="reports" style="">
+          <ul class="nav nav-sm flex-column">
+            <li class="nav-item ">
+              <a class="nav-link {{ Request::is('admin/reports/edp*') ? 'active' : '' }}" href="{{ route('admin.reports.edp') }}">
+                Atualizações EDP
+              </a>
+            </li>
+            <li class="nav-item ">
+              <a class="nav-link {{ Request::is('admin/reports/financial*') ? 'active' : '' }}" href="{{ route('admin.reports.financial') }}">
+                Recebimentos EDP
+              </a>
+            </li>
+          </ul>
+        </div>
       </li>
       <li class="nav-item mt-2">
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder text-white">Rede de Parceiros</h6>
