@@ -13,6 +13,7 @@ class Seller extends Model
 
     protected $fillable = [
         'group_id',
+        'migration_id',
         'name',
         'date_birth',
         'cpf',
