@@ -133,15 +133,15 @@
                                 <h5 class="mb-0">Dados do Pedido</h5>
                             </div>
                         </div>
-
+                        
                         <!-- Seleção de Consultor -->
                         <div class="row {{ empty($additionals) ? 'align-items-center' : 'align-items-ender' }}">
                             <div class="col-lg-3 mb-3">
                                 <label for="seller_id" class="form-label">Consultor<span class="text-danger">*</span></label>
-                                <select id="seller_id" class="form-control" wire:model.change="seller_id">
+                                <select id="seller_id" class="form-control" wire:model="seller_id">
                                     <option value="">Selecione um consultor</option>
                                     @foreach($sellers as $seller)
-                                        <option value="{{ $seller->id }}" {{$seller->id === $order['seller_id'] ? 'selected' : ''}}>{{ $seller->name }}</option>
+                                        <option value="{{ (string) $seller['id'] }}">{{ $seller['name'] }}</option>
                                     @endforeach
                                 </select>
                                 @error('seller_id') <span class="text-danger">{{ $message }}</span> @enderror
@@ -149,14 +149,14 @@
         
                             <!-- Seleção de Produto -->
                             <div class="col-lg-6 mb-3">
-                                <label for="order.product_id" class="form-label">Produto<span class="text-danger">*</span></label>
-                                <select id="order.product_id" class="form-control" wire:model.change="order.product_id" wire:change="loadAdditionals">
+                                <label for="product_id" class="form-label">Produto<span class="text-danger">*</span></label>
+                                <select id="product_id" class="form-control" wire:model="product_id" wire:change="loadAdditionals">
                                     <option value="">Selecione um produto</option>
                                     @foreach($products as $product)
-                                        <option value="{{ $product->id }}" {{$product->id === $order['product_id'] ? 'selected' : ''}}>{{ $product->name }}</option>
+                                        <option value="{{ (string) $product->id }}" {{ $product->status !== 1 ? 'disabled' : '' }} >{{ $product->name }}</option>
                                     @endforeach
                                 </select>
-                                @error('order.product_id') <span class="text-danger">{{ $message }}</span> @enderror
+                                @error('product_id') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                             
                             <!-- Adicionais -->
@@ -173,15 +173,14 @@
                                     <p>Nenhum adicional disponível.</p>
                                 @endif
                             </div>
-
                             <div class="col-lg-3 mb-3">
                                 <label>Valor adesão (R$)<span class="text-danger">*</span></label>
-                                <input type="number" id="order.accession" step="0.1" class="form-control" placeholder="R$ Adesão" wire:model="order.accession">
+                                <input type="number" id="order.accession" step="0.1" class="form-control" placeholder="R$ Adesão" wire:ignore="order.accession" value="{{ $this->order->accession }}" min="0">
                                 @error('order.accession') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-lg-5 mb-3">
-                                <label for="order.accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
-                                <select id="order.accession_payment" class="form-control" wire:model.change="order.accession_payment">
+                                <label for="accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
+                                <select id="accession_payment" class="form-control" wire:model.change="accession_payment">
                                     <option value="">Selecione um pagamento</option>
                                     <option value="PIX">PIX</option>
                                     <option value="Boleto">Boleto</option>
@@ -215,6 +214,7 @@
                                     </div>
                                 @endif
                             </div>
+
                             @foreach($dependents as $index => $dependent)
                                 <div class="row align-items-end mt-4">
                                     <div class="col-md-12 mb-3">
@@ -228,6 +228,7 @@
                                             <option value="mae-pai">Mãe/Pai</option>
                                             <option value="irmao">Irmão(ã)</option>
                                             <option value="conjuge">Cônjuge</option>
+                                            <option value="filho">Filho</option>
                                             <option value="outro">Outro</option>
                                         </select>
                                         @error('dependents.{{ $index }}.relationship') <span class="text-danger">{{ $message }}</span> @enderror
@@ -254,6 +255,7 @@
                                             <option value="viuvo">Viúvo(a)</option>
                                             <option value="uniao_estavel">União Estável</option>
                                             <option value="outro">Outro</option>
+                                            <option value="nao_informado">Não informado</option>
                                         </select>
                                         @error('dependents.{{ $index }}.marital_status') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
