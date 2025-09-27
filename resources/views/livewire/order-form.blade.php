@@ -244,6 +244,7 @@
                                             <option value="filho">Filho(a)</option>
                                             <option value="conjuge">Cônjuge</option>
                                             <option value="outro">Outro</option>
+                                            <option value="nao_informado">Não Informado</option>
                                         </select>
                                         @error('dependents.'.$index.'.relationship') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>

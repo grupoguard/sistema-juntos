@@ -6,6 +6,7 @@ use App\Models\Aditional;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Seller;
 
 trait OrderFormTrait
 {

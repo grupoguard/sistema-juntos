@@ -34,9 +34,10 @@ class OrderForm extends Component
 
     public function mount($clientId = null)
     {
-        $this->clients = Client::where('status', 1)->orderBy('name')->get();
+        //Get products and sellers
         $this->sellers = Seller::where('status', 1)->orderBy('name')->get();
         $this->products = Product::where('status', 1)->orderBy('name')->get();
+        $this->clients = Client::where('status', 1)->orderBy('name')->get();
 
         if ($clientId) {
             $this->loadClient($clientId);
