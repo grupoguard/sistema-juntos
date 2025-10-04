@@ -97,7 +97,7 @@
                     </table>
                 </div>
 
-                {{ $groups->links() }}
+                <x-pagination :paginator="$groups" />
 
             </div>
         </div>

@@ -1,9 +1,17 @@
 a:hover {
     color: #FF9921 !important;
 }
+
 .modal {
     background-color: rgba(0, 0, 0, .35);
 }
+
 .table thead th {
     padding: 16px .5rem; 
+}
+
+ul.pagination li.page-item.active span{
+    color: #252525;
+    background-color: #FF9921;
+    border: 1px solid #252525;
 }

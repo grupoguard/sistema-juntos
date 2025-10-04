@@ -1,5 +1,7 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+
 return [
 
     'scheduled' => env('SCHEDULED_TIME', 15),
@@ -177,8 +179,7 @@ return [
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
-
+        App\Providers\RouteServiceProvider::class
     ],
 
     /*

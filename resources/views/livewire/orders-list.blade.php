@@ -68,7 +68,7 @@
                     </table>
                 </div>
 
-                {{ $orders->links() }}
+                <x-pagination :paginator="$orders" />
 
             </div>
         </div>

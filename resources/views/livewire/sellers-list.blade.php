@@ -97,8 +97,8 @@
                     </table>
                 </div>
 
-                {{ $sellers->links() }}
-
+                <x-pagination :paginator="$sellers" />
+                
             </div>
         </div>
     </div>

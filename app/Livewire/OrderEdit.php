@@ -19,6 +19,9 @@ class OrderEdit extends Component
 
     public $data;
 
+    //Funções separadas já que order.[...] não carrega corretamente
+    public $charge_type;
+
     public function mount($orderId)
     {
         $this->orderId = $orderId;
@@ -43,23 +46,27 @@ class OrderEdit extends Component
         $this->products = Product::orderByDesc('status')
         ->orderBy('name')
         ->get();
+        $this->charge_date = $this->order->charge_date;
         
-
         // Converte para string para Livewire não ter conflito de tipo
         $this->seller_id = (string) $this->order->seller_id;
         $this->product_id = (string) $this->order->product_id;
+        $this->charge_type = $this->order->charge_type;
 
         //Se for null define como não cobrada
         $this->accession_payment = $this->order->accession_payment ?? 'Não cobrada';
 
         //Define o valor total do pedido
         $this->total = $this->order->orderPrice->product_value + $this->order->dependents_value;
+
+        $this->dispatch('order-loaded');
     }
 
     public function render()
     {
         return view('livewire.order-edit', [
             'order' => $this->data,
+            'charge_type' => $this->charge_type,
         ]);
     }
 }
