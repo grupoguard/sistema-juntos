@@ -12,6 +12,7 @@ class Client extends Model
     protected $table = 'clients'; // Nome da tabela no banco
 
     protected $fillable = [
+        'asaas_customer_id',
         'group_id',
         'name',
         'mom_name',
