@@ -76,8 +76,8 @@
                     </table>
                 </div>
 
-                {{ $partners->links() }}
-
+                <x-pagination :paginator="$partners" />
+                
             </div>
         </div>
     </div>

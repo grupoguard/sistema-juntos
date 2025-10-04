@@ -293,17 +293,17 @@
                         <div class="row">
                             <div class="col-lg-3 mb-3">
                                 <label for="order.charge_type" class="form-label">Tipo de Cobrança<span class="text-danger">*</span></label>
-                                <select id="order.charge_type" class="form-control" wire:model.change="order.charge_type">
+                                <select id="charge_type" class="form-control" wire:model.change="charge_type">
                                     <option value="">Selecione</option>
                                     <option value="EDP">EDP</option>
                                     <option value="BOLETO">Boleto</option>
                                 </select>
-                                @error('order.charge_type') <span class="text-danger">{{ $message }}</span> @enderror
+                                @error('charge_type') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         </div>
 
                         <!-- Campos Condicionais -->
-                        @if($order['charge_type'] == 'EDP')
+                        @if($charge_type == 'EDP')
                             <div class="row">
                                 <div class="col-lg-3 mb-3">
                                     <label for="order.installation_number" class="form-label">Número da Instalação<span class="text-danger">*</span></label>
@@ -387,9 +387,9 @@
 
                         @if($order['charge_type'] == 'BOLETO')
                             <div class="col-lg-3 mb-3">
-                                <label for="order.charge_date" class="form-label">Data da Cobrança</label>
-                                <input type="number" class="form-control" id="order.charge_date" wire:model="order.charge_date">
-                                @error('order.charge_date') <span class="text-danger">{{ $message }}</span> @enderror
+                                <label for="charge_date" class="form-label">Data da Cobrança</label>
+                                <input type="number" class="form-control" id="charge_date" wire:model="charge_date">
+                                @error('charge_date') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
