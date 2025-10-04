@@ -21,6 +21,7 @@ class Order extends Model
         'audio',
         'charge_date',
         'accession',
+        'canceled_at'
     ];
 
     /**
