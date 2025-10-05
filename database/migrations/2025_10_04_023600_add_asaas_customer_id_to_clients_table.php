@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            $table->strinig('asaas_customer_id', 50)->nullable()->unique()->after('id');
+            $table->string('asaas_customer_id', 50)->nullable()->unique()->after('id');
 
             $table->index('asaas_customer_id');
         });
