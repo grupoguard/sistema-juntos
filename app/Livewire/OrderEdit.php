@@ -52,6 +52,10 @@ class OrderEdit extends Component
         $this->seller_id = (string) $this->order->seller_id;
         $this->product_id = (string) $this->order->product_id;
         $this->charge_type = $this->order->charge_type;
+        $this->installation_number = $this->order->installation_number;
+        $this->approval_name = $this->order->approval_name;
+        $this->approval_by = $this->order->approval_by;
+        $this->evidence_date = $this->order->evidence_date;
 
         //Se for null define como não cobrada
         $this->accession_payment = $this->order->accession_payment ?? 'Não cobrada';

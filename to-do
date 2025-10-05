@@ -1,6 +1,35 @@
 > Evidências
--- Criar possibilidade de cadastrar o cliente com a planilha assim que finalizar os envios para EDP; 
--- Criar a geração do arquivo de processamento;
+- Criar lógica: 
+-- Para envio de evidências na edição de pedido;
+-- Listagem das evidências com data de envio + status;
+-- Para dar baixar na evidência após processamento do retorno;
+-- Para enviar nova evidênia alterando a data da evidência;
 
-> BD
--- Criar todas as migrations do projeto após reunião com o Bruno
+> Finaneiro
+- Integração com asaas
+
+- Criar lógica:
+-- Para criar o cliente no asaas (ou verificar se já existe) após cadastro via boleto;
+--- Criar cliente no asaas caso altere de EDP para boleto; 
+-- Criar possibilidiade de edição + remoção + inclusão de uma cobrança
+-- (Para isso vamos)
+--- Ajustar as models deriação 
+--- Ajustar o fluxo 
+
+> Logs
+- Criar logs do Asaas
+- Criar logs do webhook do Asaas 
+
+> Commands
+- Criar command para realizar as cobranças mensalmente 
+- Ajustar command da EDP para receber corretamente os retornos (+ Incluir um botão de sincronismo)
+- Criar command para realizar as cobranças da EDP por calendário (+ Incluir um botão de sincronismo)
+
+> Logs do sistema
+- Implementar a biblioteca para gerar os logs do usuário
+- Implementar a biblioteca para gerar os logs do sistema
+
+> Usuários
+-- Implementar o cadastro de usuários 
+-- Implementar as roles de cadastro 
+-- Limitar as telas de cada usuário
