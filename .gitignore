@@ -13,3 +13,5 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+storage/app/private/credentials.json
+storage/app/private/tokens/token.json
