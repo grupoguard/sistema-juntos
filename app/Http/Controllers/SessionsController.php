@@ -16,30 +16,38 @@ class SessionsController extends Controller
     public function store()
     {
         $attributes = request()->validate([
-            'email'=>'required|email',
-            'password'=>'required' 
+            'email' => 'required|email',
+            'password' => 'required',
         ]);
 
-        if(Auth::attempt($attributes))
-        {
+        if (Auth::attempt($attributes)) {
             session()->regenerate();
             $user = Auth::user();
 
-            switch (strtoupper($user->role_name)) {
-                case 'ADMIN':
-                    return redirect('admin/dashboard')->with(['success' => 'Bem-vindo, Administrador!']);
-                case 'COOP':
-                    return redirect('coop/dashboard')->with(['success' => 'Bem-vindo! Gerencie a sua cooperativa aqui.']);
-                case 'SELLER':
-                    return redirect('seller/dashboard')->with(['success' => 'Bem-vindo, vendedor!']);
-                case 'PARTNER':
-                    return redirect('partner/dashboard')->with(['success' => 'Bem-vindo, Parceiro!']);
-                default:
-                    Auth::logout();
-                    return back()->withErrors(['email' => 'Acesso negado.']);
+            if ($user->hasRole('ADMIN')) {
+                return redirect('admin/dashboard')
+                    ->with(['success' => 'Bem-vindo, Administrador!']);
             }
+
+            if ($user->hasRole('COOP')) {
+                return redirect('coop/dashboard')
+                    ->with(['success' => 'Bem-vindo! Gerencie a sua cooperativa aqui.']);
+            }
+
+            if ($user->hasRole('SELLER')) {
+                return redirect('seller/dashboard')
+                    ->with(['success' => 'Bem-vindo, vendedor!']);
+            }
+
+            if ($user->hasRole('PARTNER')) {
+                return redirect('partner/dashboard')
+                    ->with(['success' => 'Bem-vindo, Parceiro!']);
+            }
+
+            Auth::logout();
+            return back()->withErrors(['email' => 'Acesso negado.']);
         }
-    
+
         return back()->withErrors(['email' => 'Email ou senha inválidos.']);
     }
     

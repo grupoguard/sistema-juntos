@@ -2,15 +2,15 @@
 <aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 bg-blue" id="sidenav-main">
   <div class="sidenav-header">
     <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-      <a class="align-items-center justify-content-center d-flex m-0 text-wrap" href="{{ route('admin.dashboard') }}">
-        <img src="{{ asset('assets/img/logo.png') }}" class="w-50" alt="Juntos Benefícios">
+      <a class="align-items-center justify-content-center d-flex m-0 text-wrap" href="<?php echo e(route('admin.dashboard')); ?>">
+        <img src="<?php echo e(asset('assets/img/logo.png')); ?>" class="w-50" alt="Juntos Benefícios">
       </a>
   </div>
   <hr class="horizontal light mt-0">
   <div class="collapse navbar-collapse  w-auto" id="sidenav-collapse-main">
     <ul class="navbar-nav">
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('dashboard') ? 'active' : '') }}" href="{{ route('admin.dashboard') }}">
+        <a class="nav-link <?php echo e((Request::is('dashboard') ? 'active' : '')); ?>" href="<?php echo e(route('admin.dashboard')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-th-large"></i>
           </div>
@@ -54,7 +54,7 @@
         </div>
       </li> -->
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.orders.index') ? 'active' : '') }} " href="{{ route('admin.orders.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.orders.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.orders.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-plus-circle"></i>
           </div>
@@ -62,7 +62,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.clients.index') ? 'active' : '') }} " href="{{ route('admin.clients.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.clients.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.clients.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-users"></i>
           </div>
@@ -70,7 +70,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.groups.index') ? 'active' : '') }} " href="{{ route('admin.groups.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.groups.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.groups.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-building"></i>
           </div>
@@ -78,7 +78,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.sellers.index') ? 'active' : '') }} " href="{{ route('admin.sellers.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.sellers.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.sellers.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-user-plus"></i>
           </div>
@@ -95,12 +95,12 @@
         <div class="collapse" id="produtos" style="">
           <ul class="nav nav-sm flex-column">
             <li class="nav-item ">
-              <a class="nav-link" href="{{ route('admin.products.index') }}">
+              <a class="nav-link" href="<?php echo e(route('admin.products.index')); ?>">
                 Gerenciar produtos
               </a>
             </li>
             <li class="nav-item ">
-              <a class="nav-link" href="{{ route('admin.aditionals.index') }}">
+              <a class="nav-link" href="<?php echo e(route('admin.aditionals.index')); ?>">
                 Gerenciar adicionais
               </a>
             </li>
@@ -128,12 +128,12 @@
         <div class="collapse" id="reports" style="">
           <ul class="nav nav-sm flex-column">
             <li class="nav-item ">
-              <a class="nav-link {{ Request::is('admin/reports/edp*') ? 'active' : '' }}" href="{{ route('admin.reports.edp') }}">
+              <a class="nav-link <?php echo e(Request::is('admin/reports/edp*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.reports.edp')); ?>">
                 Atualizações EDP
               </a>
             </li>
             <li class="nav-item ">
-              <a class="nav-link {{ Request::is('admin/reports/financial*') ? 'active' : '' }}" href="{{ route('admin.reports.financial') }}">
+              <a class="nav-link <?php echo e(Request::is('admin/reports/financial*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.reports.financial')); ?>">
                 Recebimentos EDP
               </a>
             </li>
@@ -144,7 +144,7 @@
         <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder text-white">Rede de Parceiros</h6>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.partners.index') ? 'active' : '') }} " href="{{ route('admin.partners.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.partners.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.partners.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-handshake-o"></i>
           </div>
@@ -152,7 +152,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.partner_categories.index') ? 'active' : '') }} " href="{{ route('admin.partner_categories.index') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.partner_categories.index') ? 'active' : '')); ?> " href="<?php echo e(route('admin.partner_categories.index')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-th-list"></i>
           </div>
@@ -213,7 +213,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link {{ (Request::is('admin.profile') ? 'active' : '') }} " href="{{ route('admin.profile') }}">
+        <a class="nav-link <?php echo e((Request::is('admin.profile') ? 'active' : '')); ?> " href="<?php echo e(route('admin.profile')); ?>">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-dark text-center me-2 d-flex align-items-center justify-content-center">
             <i class="fa fa-address-card"></i>
           </div>
@@ -223,3 +223,4 @@
     </ul>
   </div>
 </aside>
+<?php /**PATH /var/www/html/resources/views/layouts/navbars/auth/sidebar.blade.php ENDPATH**/ ?>

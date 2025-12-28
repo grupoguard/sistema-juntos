@@ -13,7 +13,7 @@
 --- Criar cliente no asaas caso altere de EDP para boleto; 
 -- Criar possibilidiade de edição + remoção + inclusão de uma cobrança
 -- (Para isso vamos)
---- Ajustar as models deriação 
+--- Ajustar as models de criação 
 --- Ajustar o fluxo 
 
 > Logs
@@ -33,3 +33,6 @@
 -- Implementar o cadastro de usuários 
 -- Implementar as roles de cadastro 
 -- Limitar as telas de cada usuário
+
+> Assinatura
+-- Criar sistema de assinatura válido

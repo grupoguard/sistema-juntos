@@ -286,7 +286,7 @@ class PlanilhaController extends Controller
     public function gerarTxt(Request $request)
     {
         $request->validate([
-            'planilha' => 'required|mimes:csv'
+            'planilha' => 'required|file'
         ]);
 
         $startTime = microtime(true);
@@ -312,7 +312,7 @@ class PlanilhaController extends Controller
             $dataInicial = Carbon::now()->addMonth()->startOfMonth()->format('Ymd');
             
             // Pular header do CSV
-            $headerLine = fgetcsv($csvHandle);
+            $headerLine = fgetcsv($csvHandle, 0, ',');
             Log::info("Header do CSV", ['header' => $headerLine]);
             
             $batchLines = [];
@@ -320,10 +320,18 @@ class PlanilhaController extends Controller
             $lineNumber = 1;
 
             
-            while (($row = fgetcsv($csvHandle)) !== false) {
+            while (($raw = fgetcsv($csvHandle)) !== false) {
                 $lineNumber++;
-                
-                // Debug das primeiras 5 linhas
+
+                // Linha real está toda no índice 0
+                if (!isset($raw[0]) || trim($raw[0]) === '') {
+                    continue;
+                }
+
+                // Explode manualmente por vírgula (respeitando aspas)
+                $row = str_getcsv($raw[0], ',', '"');
+
+                // Debug das primeiras linhas
                 if ($lineNumber <= 6) {
                     Log::info("Linha {$lineNumber}", [
                         'row_count' => count($row),
@@ -337,12 +345,18 @@ class PlanilhaController extends Controller
                         'raw_row' => $row
                     ]);
                 }
-                
-                $instalacao = trim($row[0] ?? '');
-                $codigoProduto = trim($row[3] ?? ''); // CORRIGIDO: agora valida o produto correto
-                $valorRaw = trim($row[6] ?? '');
-                
-                if (empty($instalacao) || empty($codigoProduto) || empty($valorRaw)) {
+
+                // Blindagem mínima
+                if (count($row) < 7) {
+                    Log::warning("Linha ignorada por formato inválido", ['row' => $row]);
+                    continue;
+                }
+
+                $instalacao    = trim($row[0]);
+                $codigoProduto = trim($row[3]);
+                $valorRaw      = trim($row[6]);
+
+                if ($instalacao === '' || $codigoProduto === '' || $valorRaw === '') {
                     Log::info("Linha {$lineNumber} ignorada - dados vazios", [
                         'instalacao' => $instalacao,
                         'produto' => $codigoProduto,
@@ -351,9 +365,7 @@ class PlanilhaController extends Controller
                     continue;
                 }
 
-                // CORRIGIDO: Tratamento do valor com vírgula decimal
                 $valor = (float) str_replace(',', '.', $valorRaw);
-                
                 $instalacao = str_pad($instalacao, 9, '0', STR_PAD_LEFT);
                 $valorInt = (int) ($valor * 100);
 
@@ -368,36 +380,14 @@ class PlanilhaController extends Controller
                     "",
                     ""
                 );
-                
+
                 $batchLines[] = $linha;
                 $totalRecords++;
                 $totalAmount += $valor;
-                
-                // Debug das primeiras linhas processadas
-                if ($totalRecords <= 5) {
-                    Log::info("Linha B gerada #{$totalRecords}", [
-                        'linha' => $linha,
-                        'instalacao' => $instalacao,
-                        'codigo_produto' => $codigoProduto,
-                        'valor_original' => $valorRaw,
-                        'valor_convertido' => $valor,
-                        'valor_int' => $valorInt
-                    ]);
-                }
-                
-                // Escrever em lotes
+
                 if (count($batchLines) >= $batchSize) {
-                    $content = implode("\n", $batchLines) . "\n";
-                    fwrite($fileHandle, $content);
-                    Log::info("Escrito lote", [
-                        'lines_in_batch' => count($batchLines),
-                        'total_records_so_far' => $totalRecords
-                    ]);
+                    fwrite($fileHandle, implode("\n", $batchLines) . "\n");
                     $batchLines = [];
-                }
-                
-                if ($totalRecords % 1000 == 0) {
-                    Log::info("Processadas {$totalRecords} linhas válidas");
                 }
             }
             
