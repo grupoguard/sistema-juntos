@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://www.cartaojuntos.com.br:8443/file-manager/
+HostUrl=https://www.cartaojuntos.com.br:8443/file-manager/backend/direct?id=%2Fhtdocs%2Fwww.cartaojuntos.com.br%2F.env&download=true

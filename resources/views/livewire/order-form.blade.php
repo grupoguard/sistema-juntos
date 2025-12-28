@@ -244,6 +244,7 @@
                                             <option value="filho">Filho(a)</option>
                                             <option value="conjuge">Cônjuge</option>
                                             <option value="outro">Outro</option>
+                                            <option value="nao_informado">Não Informado</option>
                                         </select>
                                         @error('dependents.'.$index.'.relationship') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
@@ -319,84 +320,6 @@
                                 @error('charge_type') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
                         </div>
-
-                        <!-- Campos Condicionais -->
-                        @if($charge_type == 'EDP')
-                            <div class="row">
-                                <div class="col-lg-3 mb-3">
-                                    <label for="installation_number" class="form-label">Número da Instalação<span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="installation_number" min="1" max="999999999" oninput="this.value = this.value.slice(0, 9)" wire:model="installation_number">
-                                    @error('installation_number') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="col-lg-3 mb-3">
-                                    <label for="approval_name" class="form-label">Nome do Titular<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="approval_name" wire:model="approval_name">
-                                    @error('approval_name') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="col-lg-3 mb-3">
-                                    <label for="approval_by" class="form-label">Autorizado por<span class="text-danger">*</span></label>
-                                    <select id="approval_by" class="form-control"  wire:model.change="approval_by">
-                                        <option value="">Selecione</option>
-                                        <option value="Titular">Titular</option>
-                                        <option value="Conjuge">Cônjuge</option>
-                                    </select>
-                                    @error('approval_by') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="col-lg-3 mb-3">
-                                    <label for="evidence_date" class="form-label">Data da Evidência<span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" id="evidence_date" wire:model="evidence_date">
-                                    @error('evidence_date') <span class="text-danger">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            <hr class="my-5">
-                            {{-- Documentos --}}
-                            <div class="row mt-4 mb-5">
-                                <div class="col-lg-6">
-                                    <h5 class="mb-0">Adicionar documentos</h5>
-                                    @error('evidences')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                <div class="col-lg-6 text-end">
-                                    <button type="button" class="btn bg-blue text-white" wire:click="addEvidence">Adicionar Documentos</button>
-                                </div>
-                                @foreach($evidences as $index => $evidence)
-                                    <div class="row align-items-end mt-4" wire:key="evidences-{{ $index }}">
-                                        <div class="col-md-4 mb-3">
-                                            <label>Tipo de evidência<span class="text-danger">*</span></label>
-                                            <select class="form-control" wire:model.change="evidences.{{ $index }}.evidence_type">
-                                                <option value="selecione">Selecione</option>
-                                                <option value="audio">Audio</option>
-                                                <option value="contrato">Contrato</option>
-                                                <option value="certidao de casamento">Certidão de Casamento</option>
-                                                <option value="cpf">CPF</option>
-                                                <option value="rg">RG</option>
-                                                <option value="cnh">Carteira de Motorista</option>
-                                                <option value="outro">Outro</option>
-                                            </select>
-                                            @error('evidences.{{ $index }}.evidence_type') <span class="text-danger">{{ $message }}</span> @enderror
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label>Documento<span class="text-danger">*</span></label>
-                                            <input type="file" class="form-control" wire:model="evidences.{{ $index }}.document">
-                                            @error('evidences.{{ $index }}.document') <span class="text-danger">{{ $message }}</span> @enderror
-                                        </div>
-                                        <div class="col-md-2 text-end">
-                                            <button type="button" class="btn btn-danger" wire:click="removeEvidence({{ $index }})">X</button>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        @if($charge_type == 'BOLETO')
-                            <div class="col-lg-3 mb-3">
-                                <label for="charge_date" class="form-label">Data da Cobrança</label>
-                                <input type="number" class="form-control" id="charge_date" wire:model="charge_date">
-                                @error('charge_date') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
-                        @endif
 
                         <!-- Botão de salvar -->
                         <div class="row">

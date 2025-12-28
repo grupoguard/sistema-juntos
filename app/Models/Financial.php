@@ -11,7 +11,24 @@ class Financial extends Model
 
     protected $table = 'financial';
 
-    protected $fillable = ['order_id', 'value', 'paid_value', 'charge_date', 'charge_paid', 'status'];
+    protected $fillable = [
+        'order_id', 
+        'asaas_payment_id',
+        'asaas_customer_id',
+        'value', 
+        'paid_value', 
+        'charge_date', 
+        'due_date',
+        'payment_method',
+        'external_reference',
+        'invoice_url',
+        'bank_slip_url',
+        'pix_qr_code',
+        'pix_qr_code_url',
+        'description',
+        'charge_paid', 
+        'status'
+    ];
 
     // Relacionamento com Order (pedido)
     public function order()

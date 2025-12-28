@@ -6,6 +6,7 @@ use App\Models\Aditional;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Seller;
 
 trait OrderFormTrait
 {
@@ -115,7 +116,7 @@ trait OrderFormTrait
             }
         }
     
-        if ($this->charge_type === 'EDP') {
+        /*if ($this->charge_type === 'EDP') {
             $rules['installation_number'] = 'required|string|max:9';
             $rules['approval_name'] = 'required|string|max:50';
             $rules['approval_by'] = 'required|string|max:20';
@@ -161,7 +162,7 @@ trait OrderFormTrait
                     }
                 }
             }
-        }
+        }*/
     
         return $rules;
     }

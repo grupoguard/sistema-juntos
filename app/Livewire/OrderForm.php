@@ -34,9 +34,10 @@ class OrderForm extends Component
 
     public function mount($clientId = null)
     {
-        $this->clients = Client::where('status', 1)->orderBy('name')->get();
+        //Get products and sellers
         $this->sellers = Seller::where('status', 1)->orderBy('name')->get();
         $this->products = Product::where('status', 1)->orderBy('name')->get();
+        $this->clients = Client::where('status', 1)->orderBy('name')->get();
 
         if ($clientId) {
             $this->loadClient($clientId);
@@ -49,17 +50,17 @@ class OrderForm extends Component
     {
         DB::beginTransaction(); // Iniciar transação para garantir a integridade dos dados
 
-        $this->validate($this->rules()); // 🔥 Valida os dados dinamicamente
+        $this->validate($this->rules()); // Valida os dados dinamicamente
 
         try {
-            // 3️⃣ Obter o `group_id` do usuário autenticado
+            // Obter o `group_id` do usuário autenticado
             $groupId = request()->user()->access()->first()->group_id;
 
             $cpf = preg_replace('/\D/', '', $this->client['cpf']);
             $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove pontos e traços
             $phone = preg_replace('/\D/', '', $this->client['phone']); // Remove caracteres não numéricos
 
-            // 1️⃣ Verificar se o cliente já existe
+            // Verificar se o cliente já existe
             $client = Client::updateOrCreate(
                 ['cpf' => $cpf], // Supondo que 'document' seja único
                 [
@@ -85,7 +86,7 @@ class OrderForm extends Component
             );
 
             $dependentsIds = [];
-            // 2️⃣ Cadastrar ou atualizar os dependentes
+            // Cadastrar ou atualizar os dependentes
             if (!empty($this->dependents)) {
                 foreach ($this->dependents as $dependent) {
                     $dependent['cpf'] = preg_replace('/\D/', '', $dependent['cpf']);
@@ -108,7 +109,7 @@ class OrderForm extends Component
                 }
             }
 
-            // 4️⃣ Criar o pedido
+            // Criar o pedido
             $order = Order::create([
                 'client_id' => $client->id,
                 'product_id' => $this->product_id,
@@ -126,7 +127,7 @@ class OrderForm extends Component
                 'discount_value' => $this->discount_value,
             ]);
 
-            // 5️⃣ Criar registro em `order_prices`
+            // Criar registro em `order_prices`
             $product = Product::find($this->product_id);
             if (!$product) {
                 throw new \Exception("Produto não encontrado.");
@@ -140,7 +141,7 @@ class OrderForm extends Component
                 'dependents_count' => count($dependentsIds),
             ]);
 
-            // 6️⃣ Cadastrar adicionais principais (não vinculados a dependentes)
+            // Cadastrar adicionais principais (não vinculados a dependentes)
             
             if (!empty($this->selectedAdditionals)) { // Agora verificamos os selecionados
                 foreach ($this->selectedAdditionals as $aditionalId) {
@@ -155,7 +156,7 @@ class OrderForm extends Component
                 }
             }
 
-            // 7️⃣ Associar dependentes ao pedido
+            // Associar dependentes ao pedido
             if (isset($dependentsIds) && !empty($dependentsIds)) {
                 foreach ($this->dependents as $index => $dependent) {
                     if (isset($dependent['additionals']) && is_array($dependent['additionals'])) {
@@ -173,8 +174,8 @@ class OrderForm extends Component
                 }
             }
 
-            // 9️⃣ Verificar charge_type e adicionar evidências ou financeiro
-            if ($this->charge_type === 'EDP') {
+            // Verificar charge_type e adicionar evidências ou financeiro
+            /*if ($this->charge_type === 'EDP') {
                 if (empty($this->evidences)) {
                     throw new \Exception("É obrigatório adicionar pelo menos um documento quando o tipo de cobrança for EDP.");
                 }
@@ -211,12 +212,12 @@ class OrderForm extends Component
                     'value' => $product->value,
                     'status' => 0
                 ]);
-            }
+            }*/
 
             DB::commit(); // Confirma a transação no banco de dados
 
             session()->flash('message', 'Pedido salvo com sucesso!');
-            return redirect()->route('admin.orders.index');
+            return redirect()->route('admin.orders'.$order->id.'edit');
 
         } catch (\Exception $e) {
             DB::rollBack(); // Desfazer alterações em caso de erro
@@ -229,27 +230,27 @@ class OrderForm extends Component
         DB::beginTransaction(); // Iniciar transação para garantir a integridade dos dados
 
         try {
-            // 1️⃣ Buscar o pedido
+            // Buscar o pedido
             $order = Order::findOrFail($orderId);
 
-            // 2️⃣ Remover dependentes vinculados ao pedido
+            // Remover dependentes vinculados ao pedido
             OrderDependent::where('order_id', $order->id)->delete();
             
-            // 3️⃣ Remover adicionais vinculados ao pedido
+            // Remover adicionais vinculados ao pedido
             OrderAditional::where('order_id', $order->id)->delete();
             OrderAditionalDependent::where('order_id', $order->id)->delete();
 
-            // 4️⃣ Remover preços vinculados ao pedido
+            // Remover preços vinculados ao pedido
             OrderPrice::where('order_id', $order->id)->delete();
 
-            // 5️⃣ Remover evidências e auditoria (caso existam)
+            // Remover evidências e auditoria (caso existam)
             EvidenceDocument::where('order_id', $order->id)->delete();
             EvidenceReturn::where('order_id', $order->id)->delete();
 
-            // 6️⃣ Remover registros financeiros
+            // Remover registros financeiros
             Financial::where('order_id', $order->id)->delete();
 
-            // 7️⃣ Por fim, remover o próprio pedido
+            // Por fim, remover o próprio pedido
             $order->delete();
 
             DB::commit(); // Confirmar remoção no banco de dados
@@ -262,7 +263,7 @@ class OrderForm extends Component
         }
     }
 
-    private function enviarEvidenciaEdp(EdpService $edpService, Order $order, $code, array $evidencePaths)
+    /*private function enviarEvidenciaEdp(EdpService $edpService, Order $order, $code, array $evidencePaths)
     {
         $dataEvidencia = Carbon::parse($order->evidence_date)->format('Y-m-d');
 
@@ -304,7 +305,7 @@ class OrderForm extends Component
         } catch (Exception $e) {
             session()->flash('error', 'Erro ao enviar evidência para a API da EDP: ' . $e->getMessage());
         }
-    }
+    }*/
 
     private function removeAccents($string)
     {

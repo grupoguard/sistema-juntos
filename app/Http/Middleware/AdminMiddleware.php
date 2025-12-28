@@ -17,7 +17,7 @@ public function handle(Request $request, Closure $next): Response
         }
 
         // Verifica se é admin
-        if (Auth::user()->role_name !== 'ADMIN') {
+        if (!Auth::user()->hasRole('ADMIN')) {
             abort(403, 'Acesso não autorizado. Apenas administradores podem acessar esta área.');
         }
 

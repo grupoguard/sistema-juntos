@@ -23,6 +23,7 @@ use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerPlanController;
 use App\Http\Controllers\PlanilhaController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ResetController;
@@ -128,6 +129,9 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
 
     // Usuários
     Route::resource('users', UserController::class);
+
+    // Usuários
+    Route::resource('profile', ProfileController::class);
 
 	Route::get('billing', function () {
 		return view('billing');
