@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::table('financial', function (Blueprint $table) {
             $table->text('obs')->nullable()->after('description');
-            $table->index('obs'); // Para facilitar busca por divergências
         });
     }
 
