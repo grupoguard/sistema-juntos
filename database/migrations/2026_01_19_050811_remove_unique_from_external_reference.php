@@ -10,8 +10,6 @@ return new class extends Migration
     {
         Schema::table('financial', function (Blueprint $table) {
             $table->dropUnique('financial_external_reference_unique');
-            // Mantém o índice para performance, mas sem unique
-            $table->index('external_reference');
         });
     }
 
@@ -19,7 +17,6 @@ return new class extends Migration
     {
         Schema::table('financial', function (Blueprint $table) {
             $table->dropIndex(['external_reference']);
-            $table->unique('external_reference');
         });
     }
 };
