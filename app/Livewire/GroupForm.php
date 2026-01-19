@@ -3,12 +3,17 @@
 namespace App\Livewire;
 
 use App\Models\Group;
+use App\Services\UserManagementService;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class GroupForm extends Component
 {
     public $group = [];
     public $groupId;
+    public $createUser = false; // Checkbox para criar usuário
+    public $userPassword; // Senha customizada (opcional)
+    public $generatedPassword; // Senha gerada para mostrar
 
     protected $rules = [
         'group.group_name'      => 'required|string|max:100',
@@ -27,13 +32,16 @@ class GroupForm extends Component
         'group.state'           => 'required|string|max:2',
         'group.status'          => 'nullable|integer',
         'group.obs'             => 'nullable|string',
+        'userPassword'          => 'nullable|string|min:8',
     ];
 
     public function mount($groupId = null)
     {
         if ($groupId) {
-            $group = Group::find($groupId);
+            $this->groupId = $groupId;
+            $group = Group::findOrFail($groupId);
             $this->group = $group->toArray();
+            $this->createUser = false; // Não criar usuário ao editar
         } else {
             $this->group = [
                 'group_name'    => null,
@@ -73,52 +81,76 @@ class GroupForm extends Component
         // Valida os dados
         $this->validate($rules);
 
-        if ($this->groupId) {
-            $group = Group::findOrFail($this->groupId);
-            $group->update($this->group);
-        } else {
-            $group = Group::create($this->group);
-        }
+        try {
+            DB::beginTransaction();
 
-        session()->flash('message', 'cooperativa' . ($this->groupId ? 'atualizado' : 'cadastrado') . ' com sucesso!');
-        return redirect()->route('admin.groups.edit', ['group' => $group->id]);
+            if ($this->groupId) {
+                // Atualizar grupo existente
+                $group = Group::findOrFail($this->groupId);
+                $group->update($this->group);
+                
+                session()->flash('message', 'Cooperativa atualizada com sucesso!');
+                
+            } else {
+                // Criar novo grupo
+                $group = Group::create($this->group);
+                
+                // Criar usuário se solicitado
+                if ($this->createUser) {
+                    $userService = app(UserManagementService::class);
+                    $result = $userService->createUserForGroup($group, $this->userPassword);
+                    
+                    $this->generatedPassword = $result['password'];
+                    
+                    session()->flash('message', 'Cooperativa cadastrada com sucesso!');
+                    session()->flash('user_created', true);
+                    session()->flash('user_email', $result['user']->email);
+                    session()->flash('user_password', $this->generatedPassword);
+                } else {
+                    session()->flash('message', 'Cooperativa cadastrada com sucesso!');
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('admin.groups.edit', ['group' => $group->id]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
+        }
     }
 
-    public function updatedgroupCnpj()
+    public function updatedGroupDocument()
     {
         if (!$this->groupId) {
-            $cnpj = preg_replace('/\D/', '', $this->group['cnpj']); // Remove caracteres não numéricos
+            $document = preg_replace('/\D/', '', $this->group['document']);
 
             // Verifica se já está cadastrado
-            if (Group::where('cnpj', $cnpj)->exists()) {
-                $this->resetErrorBag('group.cnpj'); // Resetamos qualquer erro anterior
-                $this->addError('group.cnpj', 'CNPJ já cadastrado.');
+            if (Group::where('document', $document)->exists()) {
+                $this->addError('group.document', 'Documento já cadastrado.');
                 return;
             }
 
-            if (!$this->validateCnpj($cnpj)) {
-                $this->addError('group.cnpj', 'CNPJ inválido.');
+            // Validar CNPJ
+            if (strlen($document) === 14 && !$this->validateCnpj($document)) {
+                $this->addError('group.document', 'CNPJ inválido.');
                 return;
             }
 
-            // Se passou em todas as validações, removemos qualquer erro anterior
-            $this->resetErrorBag('group.cnpj');
+            $this->resetErrorBag('group.document');
         }
     }
 
     private function validateCnpj($cnpj)
     {
-        // CNPJ precisa ter 14 dígitos
         if (strlen($cnpj) !== 14) {
             return false;
         }
 
-        // Evita CNPJs com todos os dígitos iguais (ex: 11.111.111/1111-11)
         if (preg_match('/(\d)\1{13}/', $cnpj)) {
             return false;
         }
 
-        // Calcula o primeiro dígito verificador
         $multipliers1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
         $sum = 0;
         for ($i = 0; $i < 12; $i++) {
@@ -126,7 +158,6 @@ class GroupForm extends Component
         }
         $firstDigit = ($sum % 11 < 2) ? 0 : (11 - $sum % 11);
 
-        // Calcula o segundo dígito verificador
         $multipliers2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
         $sum = 0;
         for ($i = 0; $i < 13; $i++) {
@@ -134,7 +165,6 @@ class GroupForm extends Component
         }
         $secondDigit = ($sum % 11 < 2) ? 0 : (11 - $sum % 11);
 
-        // Valida os dígitos verificadores
         return ($cnpj[12] == $firstDigit && $cnpj[13] == $secondDigit);
     }
 

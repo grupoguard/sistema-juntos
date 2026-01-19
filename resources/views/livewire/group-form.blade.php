@@ -2,6 +2,23 @@
     <div class="card">
         <div class="card-header pb-0">
             <div class="row align-items-center">
+                @if(session('user_created'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <h5 class="alert-heading">✅ Cooperativa e usuário criados com sucesso!</h5>
+                        <hr>
+                        <p><strong>Credenciais de Acesso:</strong></p>
+                        <p class="mb-1">
+                            <strong>Email:</strong> {{ session('user_email') }}<br>
+                            <strong>Senha:</strong> <code class="fs-5">{{ session('user_password') }}</code>
+                        </p>
+                        <hr>
+                        <p class="mb-0">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>IMPORTANTE:</strong> Anote esta senha! Ela não será exibida novamente.
+                        </p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
                 <div class="{{ $groupId ? 'col-lg-9' : 'col-lg-12' }}">
                     <h2 class="mb-0">{{ $groupId ? 'Editar Cooperativa' : 'Nova Cooperativa' }}</h2>
                 </div>
@@ -62,7 +79,46 @@
                     </div>
                 </div>
 
+                @if(!$groupId)
                 <hr class="my-5">
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h5 class="mb-0">Dados de acesso</h5>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                       <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" wire:model="createUser" id="createUser">
+                            <label class="form-check-label" for="createUser">
+                                <strong>Criar usuário para esta cooperativa</strong>
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            O usuário terá acesso ao sistema como COOP e poderá gerenciar seus vendedores e pedidos.
+                        </small>
+                    </div>
+                    @if($createUser)
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle"></i>
+                                <strong>Email do usuário:</strong> {{ $group['email'] ?? 'Preencha o email acima' }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Senha Customizada (Opcional)</label>
+                            <input type="password" wire:model="userPassword" class="form-control @error('userPassword') is-invalid @enderror" 
+                                placeholder="Deixe vazio para gerar automaticamente">
+                            @error('userPassword') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <small class="text-muted">
+                                Se deixar vazio, uma senha aleatória será gerada e exibida após o cadastro.
+                            </small>
+                        </div>
+                    @endif 
+                </div>
+                @endif
 
                 <div class="row mb-3">
                     <div class="col-12">
