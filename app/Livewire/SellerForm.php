@@ -2,14 +2,19 @@
 
 namespace App\Livewire;
 
+use App\Models\Group;
 use App\Models\Seller;
+use App\Services\UserManagementService;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class SellerForm extends Component
 {
     public $seller = [];
-    public $dependents = [];
     public $sellerId;
+    public $createUser = true;
+    public $userPassword;
+    public $generatedPassword;
 
     // Ouvindo o evento vindo do SelectGroup
     protected $listeners = ['groupSelected'];
@@ -34,36 +39,37 @@ class SellerForm extends Component
         'seller.state' => 'required|string|max:2',
         'seller.obs' => 'nullable|string',
         'seller.status' => 'nullable|integer',
+        'userPassword'              => 'nullable|string|min:8',
     ];
 
     public function mount($sellerId = null)
     {
         if ($sellerId) {
-            $seller = Seller::find($sellerId);
-            if ($seller) {
-                $this->seller = $seller->toArray();
-            }
+            $this->sellerId = $sellerId;
+            $sellerModel = Seller::findOrFail($sellerId);
+            $this->seller = $sellerModel->toArray();
+            $this->createUser = false;
         } else {
             $this->seller = [
-                'group_id' => null,
-                'name' => '',
-                'date_birth' => '',
-                'cpf' => '',
-                'rg' => '',
-                'phone' => '',
-                'email' => '',
-                'comission_type' => '',
-                'comission_value' => '',
-                'comission_recurrence' => '',
-                'zipcode' => '',
-                'address' => '',
-                'number' => '',
-                'complement' => '',
-                'neighborhood' => '',
-                'city' => '',
-                'state' => '',
-                'obs' => '',
-                'status' => 1,
+                'group_id'              => null,
+                'name'                  => '',
+                'date_birth'            => null,
+                'cpf'                   => '',
+                'rg'                    => '',
+                'phone'                 => '',
+                'email'                 => '',
+                'comission_type'        => 1,
+                'comission_value'       => 0,
+                'comission_recurrence'  => false,
+                'zipcode'               => '',
+                'address'               => '',
+                'number'                => '',
+                'complement'            => '',
+                'neighborhood'          => '',
+                'city'                  => '',
+                'state'                 => '',
+                'status'                => true,
+                'obs'                   => '',
             ];
         }
     }
@@ -75,36 +81,55 @@ class SellerForm extends Component
     
     public function storeOrUpdate()
     {
-        $cpf = preg_replace('/\D/', '', $this->seller['cpf']);
-        $rg = preg_replace('/\D/', '', $this->seller['rg']); // Remove pontos e traços
-        $phone = preg_replace('/\D/', '', $this->seller['phone']); // Remove caracteres não numéricos
-        $this->seller['phone'] = $phone;
-        $this->seller['cpf'] = $cpf;
-        $this->seller['rg'] = $rg;
+        // Limpar campos
+        $this->seller['cpf'] = preg_replace('/\D/', '', $this->seller['cpf']);
+        $this->seller['phone'] = preg_replace('/\D/', '', $this->seller['phone'] ?? '');
+        $this->seller['zipcode'] = preg_replace('/\D/', '', $this->seller['zipcode']);
 
-        // Atualiza as regras de validação dinamicamente
+        // Atualizar regras para edição
         $rules = $this->rules;
-        $rules['seller.cpf'] = 'required|string|min:11|max:14|unique:sellers,cpf,' . ($this->sellerId ?: 'NULL') . ',id';
-        $rules['seller.email'] = 'required|email|max:255|unique:sellers,email,' . ($this->sellerId ?: 'NULL') . ',id';
+        $rules['seller.cpf'] = 'required|string|size:11|unique:sellers,cpf,' . ($this->sellerId ?: 'NULL') . ',id';
+        $rules['seller.email'] = 'required|email|max:50|unique:sellers,email,' . ($this->sellerId ?: 'NULL') . ',id';
 
-        // Validação do RG
-        if (!$this->sellerId && !empty($rg) && !$this->validateRg($rg)) {
-            $this->addError('seller.rg', 'RG inválido.');
-            return;
-        }
-
-        // Valida os dados
         $this->validate($rules);
 
-        if ($this->sellerId) {
-            $seller = Seller::findOrFail($this->sellerId);
-            $seller->update($this->seller);
-        } else {
-            $seller = Seller::create($this->seller);
-        }
+        try {
+            DB::beginTransaction();
 
-        session()->flash('message', 'Consultor ' . ($this->sellerId ? 'atualizado' : 'cadastrado') . ' com sucesso!');
-        return redirect()->route('admin.sellers.edit', ['seller' => $seller->id]);
+            if ($this->sellerId) {
+                // Atualizar
+                $sellerModel = Seller::findOrFail($this->sellerId);
+                $sellerModel->update($this->seller);
+                
+                session()->flash('message', 'Vendedor atualizado com sucesso!');
+                
+            } else {
+                // Criar
+                $sellerModel = Seller::create($this->seller);
+                
+                // Criar usuário se solicitado
+                if ($this->createUser) {
+                    $userService = app(UserManagementService::class);
+                    $result = $userService->createUserForSeller($sellerModel, $this->userPassword);
+                    
+                    $this->generatedPassword = $result['password'];
+                    
+                    session()->flash('message', 'Vendedor cadastrado com sucesso!');
+                    session()->flash('user_created', true);
+                    session()->flash('user_email', $result['user']->email);
+                    session()->flash('user_password', $this->generatedPassword);
+                } else {
+                    session()->flash('message', 'Vendedor cadastrado com sucesso!');
+                }
+            }
+
+            DB::commit();
+            return redirect()->route('admin.sellers.edit', ['seller' => $sellerModel->id]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
+        }
     }
 
     public function updatedSellerCpf()
@@ -194,7 +219,8 @@ class SellerForm extends Component
 
     public function render()
     {
-        return view('livewire.seller-form');
+        $groups = Group::where('status', true)->get();
+        return view('livewire.seller-form', compact('groups'));
     }
 
     protected function messages()
