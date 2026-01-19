@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('financial', function (Blueprint $table) {
-            $table->dropUnique('financial_external_reference_unique');
+            $table->dropUnique('financial_external_reference_index');
         });
     }
 
     public function down(): void
     {
         Schema::table('financial', function (Blueprint $table) {
-            $table->dropIndex(['external_reference']);
+            $table->dropIndex(['financial_external_reference_index']);
         });
     }
 };
