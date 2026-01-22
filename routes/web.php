@@ -7,6 +7,7 @@ use App\Http\Controllers\CalendarEdpController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ComissionController;
+use App\Http\Controllers\CsvImportController;
 use App\Http\Controllers\DependentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EvidenceDocumentController;
@@ -160,6 +161,9 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
     Route::get('/login', function () {
 		return view('dashboard');
 	})->name('sign-up');
+
+    Route::get('/import-csv', [CsvImportController::class, 'showForm'])->name('csv.form');
+    Route::post('/import-csv', [CsvImportController::class, 'import'])->name('csv.import');
 });
 
 Route::group(['middleware' => 'guest'], function () {
