@@ -18,5 +18,13 @@ class AppServiceProvider extends ServiceProvider
         Paginator::currentPathResolver(function () {
             return request()->url();
         });
+
+         // Configura paginação bootstrap
+        Paginator::useBootstrapFive();
+        
+        // Resolve problema de path na paginação
+        Paginator::currentPathResolver(function () {
+            return request()->getPathInfo();
+        });
     }
 }
