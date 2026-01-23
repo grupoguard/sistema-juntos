@@ -15,9 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Paginator::currentPathResolver(function () {
-            return request()->url();
-        });
-        
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

@@ -1,5 +1,5 @@
 @props(['paginator'])
 
 @if ($paginator->hasPages())
-    {{ $paginator->links('vendor.pagination.bootstrap-5') }}
+    {{ $paginator->links('vendor.pagination.bootstrap-5-fixed') }}
 @endif
