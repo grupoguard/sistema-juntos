@@ -53,7 +53,9 @@ Route::get('/', function () {
 
 Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
 	
-    Route::get('/', [HomeController::class, 'home'])->name('dashboard');
+    Route::get('dashboard', function () {
+        return view('pages.admin.dashboard');
+    })->name('dashboard');
 
 	// Adicionais
     Route::resource('aditionals', AditionalController::class);
