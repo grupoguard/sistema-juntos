@@ -65,6 +65,8 @@ class OrdersList extends Component
             ->orderBy('created_at', 'desc')
             ->paginate($this->perPage);
 
+        $orders->setPath(route('admin.orders.index'));
+
         return view('livewire.orders-list', compact('orders'));
     }
 }
