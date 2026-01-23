@@ -150,9 +150,6 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
 
 	Route::get('/user-profile', [InfoUserController::class, 'create']);
 	Route::post('/user-profile', [InfoUserController::class, 'store']);
-    Route::get('/login', function () {
-		return view('dashboard');
-	})->name('sign-up');
 
     Route::get('/import-csv', [CsvImportController::class, 'showForm'])->name('csv.form');
     Route::post('/import-csv', [CsvImportController::class, 'import'])->name('csv.import');
