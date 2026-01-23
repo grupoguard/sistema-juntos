@@ -13,11 +13,14 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
+        // Força HTTPS apenas em produção
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
-            URL::forceRootUrl(config('app.url'));
         }
+        
+        // Configura paginação bootstrap
+        Paginator::useBootstrapFive();
     }
 }
