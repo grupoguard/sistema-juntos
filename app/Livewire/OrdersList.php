@@ -64,6 +64,20 @@ class OrdersList extends Component
             })
             ->orderBy('created_at', 'desc')
             ->paginate($this->perPage);
+        
+        dd([
+            'path' => $orders->path(),
+            'currentPage' => $orders->currentPage(),
+            'next' => $orders->nextPageUrl(),
+            'prev' => $orders->previousPageUrl(),
+            'url' => url()->current(),
+            'fullUrl' => request()->fullUrl(),
+            'requestUri' => $_SERVER['REQUEST_URI'] ?? null,
+            'scriptName' => $_SERVER['SCRIPT_NAME'] ?? null,
+            'phpSelf' => $_SERVER['PHP_SELF'] ?? null,
+            'baseUrl' => request()->getBaseUrl(),
+            'pathInfo' => request()->getPathInfo(),
+        ]);
 
         return view('livewire.orders-list', compact('orders'));
     }
