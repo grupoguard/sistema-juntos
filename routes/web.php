@@ -41,18 +41,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        // Se o usuário está logado, verifica se é admin
         if (Auth::user()->role_name === 'ADMIN') {
-            return redirect()->route('admin.dashboard'); // Usando o nome da rota
+            return redirect()->route('admin.dashboard');
         } else {
-            // Usuário logado mas não é admin - redireciona para uma página específica
-            // ou mostra mensagem de erro
-            Auth::logout(); // Faz logout
+            Auth::logout();
             return redirect('/login')->with('error', 'Acesso restrito apenas para administradores.');
         }
     }
-    
-    // Se não está logado, vai para login
     return redirect('/login');
 });
 
@@ -60,9 +55,6 @@ Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'a
 	
     Route::get('/', [HomeController::class, 'home'])->name('dashboard');
 
-	Route::get('dashboard', function () {
-        return view('pages.admin.dashboard'); // Caminho correto para a view
-    })->name('dashboard');
 	// Adicionais
     Route::resource('aditionals', AditionalController::class);
 
