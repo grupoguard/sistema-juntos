@@ -1,4 +1,3 @@
-{{ dd($paginator->nextPageUrl()) }}
 @if ($paginator->hasPages())
     <nav class="d-flex justify-items-center justify-content-between mt-4">
         <div class="d-flex justify-content-between flex-fill d-sm-none">
@@ -56,6 +55,7 @@
                     {{-- Pagination Elements --}}
                     @foreach ($elements as $element)
                         {{-- "Three Dots" Separator --}}
+                        {{ echo $element }}
                         @if (is_string($element))
                             <li class="page-item disabled" aria-disabled="true"><span class="page-link">{{ $element }}</span></li>
                         @endif
