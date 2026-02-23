@@ -14,7 +14,7 @@
     </ul>
     <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-            <form wire:submit.prevent="OrderEdit">
+            <form wire:submit.prevent="updateOrder">
                 @if(auth()->user()->isAdmin())
                     <!-- <div class="card mt-4">
                         <div class="card-body">
@@ -36,7 +36,6 @@
                         </div>
                     </div> -->
                 @endif
-            <form wire:submit.prevent="updateOrder">
                 <div class="container-fluid py-4">
                     <div class="card">
                         <div class="card-header pb-0">

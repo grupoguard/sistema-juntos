@@ -5179,3 +5179,27 @@ Did you mean one of these?
 #98 /var/www/html/server.php(21): require_once('...')
 #99 {main}
 "} 
+[2026-02-23 17:10:05] local.ERROR: Class "DOMDocument" not found {"exception":"[object] (Error(code: 0): Class \"DOMDocument\" not found at /home/vinicius/projects/juntos/vendor/nunomaduro/termwind/src/HtmlRenderer.php:32)
+[stacktrace]
+#0 /home/vinicius/projects/juntos/vendor/nunomaduro/termwind/src/HtmlRenderer.php(24): Termwind\\HtmlRenderer->parse()
+#1 /home/vinicius/projects/juntos/vendor/nunomaduro/termwind/src/Functions.php(41): Termwind\\HtmlRenderer->render()
+#2 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/View/Components/Component.php(52): Termwind\\render()
+#3 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/View/Components/Line.php(54): Illuminate\\Console\\View\\Components\\Component->renderView()
+#4 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/View/Components/Info.php(18): Illuminate\\Console\\View\\Components\\Line->render()
+#5 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/View/Components/Factory.php(60): Illuminate\\Console\\View\\Components\\Info->render()
+#6 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Foundation/Console/OptimizeClearCommand.php(35): Illuminate\\Console\\View\\Components\\Factory->__call()
+#7 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate\\Foundation\\Console\\OptimizeClearCommand->handle()
+#8 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#9 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate\\Container\\Util::unwrapIfClosure()
+#10 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod()
+#11 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate\\Container\\BoundMethod::call()
+#12 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate\\Container\\Container->call()
+#13 /home/vinicius/projects/juntos/vendor/symfony/console/Command/Command.php(279): Illuminate\\Console\\Command->execute()
+#14 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run()
+#15 /home/vinicius/projects/juntos/vendor/symfony/console/Application.php(1094): Illuminate\\Console\\Command->run()
+#16 /home/vinicius/projects/juntos/vendor/symfony/console/Application.php(342): Symfony\\Component\\Console\\Application->doRunCommand()
+#17 /home/vinicius/projects/juntos/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#18 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#19 /home/vinicius/projects/juntos/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#20 {main}
+"} 
