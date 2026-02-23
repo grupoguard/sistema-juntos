@@ -6,9 +6,12 @@ use App\Models\Group;
 use App\Services\UserManagementService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class GroupForm extends Component
 {
+    use AuthorizesRequests;
+    
     public $group = [];
     public $groupId;
     public $createUser = false; // Checkbox para criar usuário
@@ -40,9 +43,12 @@ class GroupForm extends Component
         if ($groupId) {
             $this->groupId = $groupId;
             $group = Group::findOrFail($groupId);
+            $this->authorize('view', $group); // ou update se a tela for estritamente edição
             $this->group = $group->toArray();
             $this->createUser = false; // Não criar usuário ao editar
         } else {
+            $this->authorize('create', Group::class);
+
             $this->group = [
                 'group_name'    => null,
                 'name'          => '',
@@ -66,6 +72,13 @@ class GroupForm extends Component
 
     public function storeOrUpdate()
     {
+        if ($this->groupId) {
+            $group = Group::findOrFail($this->groupId);
+            $this->authorize('update', $group);
+        } else {
+            $this->authorize('create', Group::class);
+        }
+
         $document = preg_replace('/\D/', '', $this->group['document']);
         $phone = preg_replace('/\D/', '', $this->group['phone']);
         $whatsapp = preg_replace('/\D/', '', $this->group['whatsapp']);

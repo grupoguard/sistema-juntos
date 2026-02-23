@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Order extends Model
 {
@@ -23,7 +25,17 @@ class Order extends Model
         'accession',
         'accession_payment',
         'discount_type',
-        'discount_value',   
+        'discount_value',
+        'canceled_at',
+        'document_file',
+        'document_file_type',
+        'address_proof_file',
+        'review_status',
+        'admin_viewed_at',
+        'admin_viewed_by',
+        'reviewed_at',
+        'reviewed_by',
+        'review_notes',
     ];
 
     /**
@@ -85,5 +97,61 @@ class Order extends Model
     public function evidences()
     {
         return $this->hasMany(EvidenceDocument::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        if ($user->isCoop()) {
+            $groupIds = $user->getAccessibleGroupIds();
+
+            // segurança: se não tiver groups vinculados, não retorna nada
+            if (empty($groupIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('group_id', $groupIds);
+        }
+
+        if ($user->isSeller()) {
+            $sellerIds = $user->getAccessibleSellerIds();
+
+            if (empty($sellerIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('seller_id', $sellerIds);
+        }
+
+        // fallback seguro
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function adminViewer()
+    {
+        return $this->belongsTo(User::class, 'admin_viewed_by');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function scopePendingReview($query)
+    {
+        return $query->where('review_status', 'PENDENTE');
+    }
+
+    public function markAsViewedBy(User $user): void
+    {
+        if (is_null($this->admin_viewed_at)) {
+            $this->update([
+                'admin_viewed_at' => now(),
+                'admin_viewed_by' => $user->id,
+            ]);
+        }
     }
 }

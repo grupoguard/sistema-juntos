@@ -21,6 +21,18 @@ class ProductionPermissionsSeeder extends Seeder
         $permissions = [
             // Dashboard
             'view-dashboard',
+
+            // Adicionais
+            'aditionals.view',
+            'aditionals.create',
+            'aditionals.edit',
+            'aditionals.delete',
+
+             // Product Aditionals
+            'product_aditionals.view',
+            'product_aditionals.create',
+            'product_aditionals.edit',
+            'product_aditionals.delete',
             
             // Groups/Cooperativas
             'groups.view',
@@ -76,18 +88,75 @@ class ProductionPermissionsSeeder extends Seeder
             // Settings
             'settings.view',
             'settings.edit',
+
+            // Calendar EDP
+            'calendar.view',
+            'calendar.create',
+            'calendar.edit',
+            'calendar.delete',
+
+            // Anomaly Codes
+            'anomaly.view',
+            'anomaly.create',
+            'anomaly.edit',
+            'anomaly.delete',
+
+            // Comission
+            'comission.view',
+            'comission.create',
+            'comission.edit',
+            'comission.delete',
+
+            // Dependents
+            'dependents.view',
+            'dependents.create',
+            'dependents.edit',
+            'dependents.delete',
+
+            // Employees
+            'employees.view',
+            'employees.create',
+            'employees.edit',
+            'employees.delete',
+
+            // Evidences
+            'evidences.view',
+
+            // Return Codes
+            'return.view',
+            'return.create',
+            'return.edit',
+            'return.delete',
+
+            // Partner
+            'partner.view',
+            'partner.create',
+            'partner.edit',
+            'partner.delete',
+
+            // Partner Categories
+            'partner_categories.view',
+            'partner_categories.create',
+            'partner_categories.edit',
+            'partner_categories.delete',
+
+            // Partner Plans
+            'partner_plans.view',
+            'partner_plans.create',
+            'partner_plans.edit',
+            'partner_plans.delete',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web',]);
         }
 
         // ============ CRIAR ROLES ============
-        
-        $admin = Role::firstOrCreate(['name' => 'ADMIN']);
-        $coop = Role::firstOrCreate(['name' => 'COOP']);
-        $seller = Role::firstOrCreate(['name' => 'SELLER']);
-        $financial = Role::firstOrCreate(['name' => 'FINANCIAL']);
+         
+        $admin = Role::firstOrCreate(['name' => 'ADMIN', 'guard_name' => 'web']);
+        $coop = Role::firstOrCreate(['name' => 'COOP', 'guard_name' => 'web']);
+        $seller = Role::firstOrCreate(['name' => 'SELLER', 'guard_name' => 'web']);
+        $financial = Role::firstOrCreate(['name' => 'FINANCIAL', 'guard_name' => 'web']);
 
         // ============ ATRIBUIR PERMISSIONS ============
         
@@ -139,5 +208,6 @@ class ProductionPermissionsSeeder extends Seeder
         ]);
 
         $this->command->info('✅ Permissões criadas com sucesso!');
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

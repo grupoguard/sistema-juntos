@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Seller extends Model
 {
@@ -34,11 +36,37 @@ class Seller extends Model
         'status',
     ];
 
-    /**
-     * Relacionamento com a tabela Group (vários vendedores pertencem a um grupo)
-     */
-    public function group()
+     public function group()
     {
         return $this->belongsTo(Group::class, 'group_id');
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        if ($user->isCoop()) {
+            $groupIds = $user->getAccessibleGroupIds();
+
+            if (empty($groupIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('group_id', $groupIds);
+        }
+
+        if ($user->isSeller()) {
+            $sellerIds = $user->getAccessibleSellerIds();
+
+            if (empty($sellerIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('id', $sellerIds);
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 }

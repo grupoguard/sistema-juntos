@@ -15,18 +15,19 @@ use App\Models\Seller;
 use App\Models\Financial;
 use App\Services\EdpService;
 use App\Traits\OrderFormTrait;
-use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OrderEdit extends Component
 {
-    use WithFileUploads, OrderFormTrait;
+    use WithFileUploads, OrderFormTrait, AuthorizesRequests;
 
     public $data;
 
     public $charge_type;
+    public $review_notes;
     public $financials = [];
 
     protected function rules()
@@ -82,8 +83,36 @@ class OrderEdit extends Component
     public function mount($orderId)
     {
         $this->orderId = $orderId;
-        $this->order = Order::findOrFail($this->orderId);
-        $this->financials = \App\Models\Financial::where('order_id', $this->orderId)
+        $this->order = Order::findOrFail($orderId);
+
+        $user = auth()->user();
+
+        if ($user->isAdmin()) {
+            $this->order->markAsViewedBy($user);
+            $this->order->refresh();
+        }
+
+        // trava acesso ao pedido específico
+        $this->authorize('view', $this->order);
+        $this->authorize('update', $this->order);
+
+        $this->client = $this->order->client->toArray();
+
+        // seller/coop/admin devem enxergar listas limitadas também
+        $user = auth()->user();
+
+        $this->sellers = Seller::query()
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->when($user->isSeller(), fn ($q) => $q->whereIn('id', $user->getAccessibleSellerIds()))
+            ->orderBy('name')
+            ->get();
+
+        // produtos por enquanto como está (depois refinamos)
+        $this->products = Product::orderByDesc('status')->orderBy('name')->get();
+
+        $this->charge_date = $this->order->charge_date;
+
+        $this->financials = Financial::where('order_id', $this->orderId)
             ->orderBy('due_date', 'asc') // mais antigo -> mais novo
             ->get();
         // Carregar dependentes COM seus adicionais
@@ -126,7 +155,6 @@ class OrderEdit extends Component
             : null;
 
         // Listas
-        $this->sellers = Seller::orderBy('name')->get();
         $this->products = Product::orderByDesc('status')->orderBy('name')->get();
         
         // Pedido
@@ -137,6 +165,7 @@ class OrderEdit extends Component
         $this->approval_name = $this->order->approval_name;
         $this->approval_by = $this->order->approval_by;
         $this->evidence_date = $this->order->evidence_date;
+        $this->total = $this->order->orderPrice->product_value + $this->order->dependents_value;
         $this->charge_date = $this->order->charge_date;
         $this->accession = $this->order->accession ?? 0.00;
         $this->accession_payment = $this->order->accession_payment ?? 'Não cobrada';
@@ -157,6 +186,44 @@ class OrderEdit extends Component
         $this->dispatch('order-loaded');
     }
 
+    public function approveOrder()
+    {
+        $order = Order::findOrFail($this->orderId);
+        $this->authorize('update', $order); // ou policy específica de revisão
+
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $order->update([
+            'review_status' => 'APROVADO',
+            'reviewed_at' => now(),
+            'reviewed_by' => auth()->id(),
+            'review_notes' => $this->review_notes ?? null,
+        ]);
+
+        session()->flash('message', 'Pedido aprovado com sucesso!');
+    }
+
+    public function rejectOrder()
+    {
+        $order = Order::findOrFail($this->orderId);
+        $this->authorize('update', $order);
+
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $order->update([
+            'review_status' => 'REJEITADO',
+            'reviewed_at' => now(),
+            'reviewed_by' => auth()->id(),
+            'review_notes' => $this->review_notes ?? null,
+        ]);
+
+        session()->flash('message', 'Pedido rejeitado com sucesso!');
+    }
+        
     public function updateOrder(EdpService $edpService)
     {
         DB::beginTransaction();
@@ -177,7 +244,7 @@ class OrderEdit extends Component
 
         try {
             $order = Order::findOrFail($this->orderId);
-            
+            $this->authorize('update', $order);
             \Log::info('Order encontrado', ['order_id' => $order->id]);
             
             // Atualizar cliente
@@ -423,7 +490,7 @@ class OrderEdit extends Component
     public function render()
     {
         return view('livewire.order-edit', [
-            'order' => $this->data,
+            'order' => $this->order,
             'charge_type' => $this->charge_type,
         ]);
     }

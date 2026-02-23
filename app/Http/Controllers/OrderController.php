@@ -20,4 +20,11 @@ class OrderController extends Controller
     {
         return view('pages.admin.orders.edit', compact('id'));
     }
+
+    public function easyform()
+    {
+        $this->authorize('create', \App\Models\Order::class);
+        
+        return view('pages.admin.orders.easyform');
+    }
 }

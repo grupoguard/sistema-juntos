@@ -14,6 +14,28 @@
     </ul>
     <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+            <form wire:submit.prevent="OrderEdit">
+                @if(auth()->user()->isAdmin())
+                    <!-- <div class="card mt-4">
+                        <div class="card-body">
+                            <h5>Análise do Pedido</h5>
+
+                            <div class="mb-3">
+                                <label>Observações da análise (opcional)</label>
+                                <textarea class="form-control" wire:model="review_notes" rows="3"></textarea>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success" wire:click="approveOrder">
+                                    Aprovar pedido
+                                </button>
+                                <button type="button" class="btn btn-danger" wire:click="rejectOrder">
+                                    Rejeitar pedido
+                                </button>
+                            </div>
+                        </div>
+                    </div> -->
+                @endif
             <form wire:submit.prevent="updateOrder">
                 <div class="container-fluid py-4">
                     <div class="card">

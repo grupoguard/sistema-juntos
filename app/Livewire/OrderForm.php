@@ -25,10 +25,19 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OrderForm extends Component
 {
-    use WithFileUploads, OrderFormTrait;
+    use WithFileUploads, OrderFormTrait, AuthorizesRequests;
+
+    public $document_file; // upload temporário livewire (RG/CNH)
+    public $document_file_type = 'RG'; // RG ou CNH
+    public $address_proof_file; // upload temporário livewire
+
+    // Se for edição e quiser exibir arquivos atuais
+    public $existing_document_file;
+    public $existing_address_proof_file;
 
     protected $listeners = ['clientSelected' => 'loadClient', 'loadAdditionals'];
 
@@ -138,10 +147,28 @@ class OrderForm extends Component
 
     public function mount($clientId = null)
     {
-        //Get products and sellers
-        $this->sellers = Seller::where('status', 1)->orderBy('name')->get();
+        $this->authorize('create', Order::class);
+
+        $user = auth()->user();
+
+        // SELLERS visíveis conforme role
+        $this->sellers = Seller::query()
+            ->where('status', 1)
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->when($user->isSeller(), fn ($q) => $q->whereIn('id', $user->getAccessibleSellerIds()))
+            ->orderBy('name')
+            ->get();
+
+        // Produtos (deixa aberto por enquanto)
         $this->products = Product::where('status', 1)->orderBy('name')->get();
-        $this->clients = Client::where('status', 1)->orderBy('name')->get();
+
+        // Clientes visíveis por role (ideal: criar scopeVisibleTo em Client)
+        $this->clients = Client::query()
+            ->where('status', 1)
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->when($user->isSeller(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->orderBy('name')
+            ->get();
 
         if ($clientId) {
             $this->loadClient($clientId);
@@ -157,8 +184,55 @@ class OrderForm extends Component
         $this->validate($this->rules()); // Valida os dados dinamicamente
 
         try {
-            // Obter o `group_id` do usuário autenticado
-            $groupId = request()->user()->access()->first()->group_id;
+            $user = auth()->user();
+
+            $this->authorize('create', Order::class);
+
+            // Resolver group e seller de forma segura
+            $groupId = null;
+            $sellerId = $this->seller_id;
+
+            // ADMIN: pode escolher ambos (depois você pode validar seller x group)
+            if ($user->isAdmin()) {
+                // Aqui você precisa ter um campo de group no form se ADMIN escolhe group.
+                // Se ainda não tem, pode derivar pelo seller selecionado:
+                if (!empty($sellerId)) {
+                    $seller = Seller::findOrFail($sellerId);
+                    $groupId = $seller->group_id;
+                }
+            }
+
+            // COOP: group é do(s) groups dela, seller deve pertencer ao group dela
+            if ($user->isCoop()) {
+                $allowedGroupIds = $user->getAccessibleGroupIds();
+
+                if (empty($allowedGroupIds)) {
+                    throw new \Exception('Usuário COOP sem grupo vinculado.');
+                }
+
+                // Se COOP trabalha com 1 group principal, pega o primeiro
+                // Se tiver seleção de group no form no futuro, valide o selecionado aqui
+                $groupId = (int) $allowedGroupIds[0];
+
+                if (!empty($sellerId)) {
+                    $seller = Seller::query()
+                        ->where('id', $sellerId)
+                        ->where('group_id', $groupId)
+                        ->first();
+
+                    if (! $seller) {
+                        throw new \Exception('Vendedor inválido para a cooperativa.');
+                    }
+                }
+            }
+
+            // SELLER: ignora seller enviado no frontend e força vínculo real
+            if ($user->isSeller()) {
+                $seller = Seller::findOrFail($user->currentSellerId());
+
+                $sellerId = $seller->id;
+                $groupId = $seller->group_id;
+            }
 
             $cpf = preg_replace('/\D/', '', $this->client['cpf']);
             $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove pontos e traços
@@ -166,7 +240,10 @@ class OrderForm extends Component
 
             // Verificar se o cliente já existe
             $client = Client::updateOrCreate(
-                ['cpf' => $cpf], // Supondo que 'document' seja único
+                [
+                    'cpf' => $cpf,
+                    'group_id' => $groupId,
+                ],
                 [
                     'group_id' => $groupId,
                     'name' => $this->client['name'],
@@ -218,7 +295,7 @@ class OrderForm extends Component
                 'client_id' => $client->id,
                 'product_id' => $this->product_id,
                 'group_id' => $groupId,
-                'seller_id' => $this->seller_id,
+                'seller_id' => $sellerId,
                 'charge_type' => $this->charge_type,
                 'installation_number' => $this->installation_number,
                 'approval_name' => $this->approval_name,
@@ -318,10 +395,30 @@ class OrderForm extends Component
                 ]);
             }*/
 
+            // Upload documento (RG/CNH)
+            if ($this->document_file) {
+                $documentPath = $this->document_file->store('orders/documents', 'public');
+
+                $order->document_file = $documentPath;
+                $order->document_file_type = $this->document_file_type ?: 'RG';
+            }
+
+            // Upload comprovante de endereço
+            if ($this->address_proof_file) {
+                $addressProofPath = $this->address_proof_file->store('orders/address_proofs', 'public');
+
+                $order->address_proof_file = $addressProofPath;
+            }
+
+            // Status inicial para revisão administrativa
+            $order->review_status = 'PENDENTE';
+
+            $order->save();
+
             DB::commit(); // Confirma a transação no banco de dados
 
             session()->flash('message', 'Pedido salvo com sucesso!');
-            return redirect()->route('admin.orders'.$order->id.'edit');
+            return redirect()->route('admin.orders.edit', $order->id);
 
         } catch (\Exception $e) {
             DB::rollBack(); // Desfazer alterações em caso de erro
@@ -336,6 +433,8 @@ class OrderForm extends Component
         try {
             // Buscar o pedido
             $order = Order::findOrFail($orderId);
+
+            $this->authorize('delete', $order);
 
             // Remover dependentes vinculados ao pedido
             OrderDependent::where('order_id', $order->id)->delete();
@@ -419,7 +518,7 @@ class OrderForm extends Component
     public function render()
     {
         return view('livewire.order-form', [
-            'products' => Product::all(),
+            'products' => $this->products,
         ]);
     }
 }
