@@ -19,3 +19,4 @@ yarn-error.log
 !/storage/app/.gitignore
 !/storage/framework/.gitignore
 !/storage/logs/.gitignore
+
