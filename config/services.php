@@ -35,4 +35,10 @@ return [
         'api_url' => env('ASAAS_API_URL', 'https://www.asaas.com/api/v3'),
     ],
 
+    'edp' => [
+        'base_url' => env('EDP_API_URL'),
+        'username' => env('EDP_USERNAME'),
+        'password' => env('EDP_PASSWORD'),
+    ],
+
 ];

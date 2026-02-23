@@ -21,7 +21,6 @@ class Order extends Model
         'approval_name',
         'approval_by',
         'evidence_date',
-        'audio',
         'charge_date',
         'accession',
         'accession_payment',
