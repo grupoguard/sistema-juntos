@@ -25,19 +25,150 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OrderForm extends Component
 {
-    use WithFileUploads, OrderFormTrait;
+    use WithFileUploads, OrderFormTrait, AuthorizesRequests;
+
+    public $document_file; // upload temporário livewire (RG/CNH)
+    public $document_file_type = 'RG'; // RG ou CNH
+    public $address_proof_file; // upload temporário livewire
+
+    // Se for edição e quiser exibir arquivos atuais
+    public $existing_document_file;
+    public $existing_address_proof_file;
 
     protected $listeners = ['clientSelected' => 'loadClient', 'loadAdditionals'];
 
+    protected function rules()
+    {
+        $rules = [
+            'client.name' => 'required|string|max:100',
+            'client.mom_name' => 'required|string|max:100',
+            'client.date_birth' => 'required|date',
+            'client.rg' => 'nullable|string|min:9|max:12',
+            'client.gender' => 'required|string|max:15',
+            'client.marital_status' => 'required|string|max:15',
+            'client.phone' => 'nullable|string|max:15',
+            'client.zipcode' => 'required|string|max:8',
+            'client.address' => 'required|string|max:100',
+            'client.number' => 'required|string|max:10',
+            'client.complement' => 'nullable|string|max:40',
+            'client.neighborhood' => 'required|string|max:50',
+            'client.city' => 'required|string|max:50',
+            'client.state' => 'required|string|max:2',
+            'client.obs' => 'nullable|string',
+            'client.status' => 'nullable|integer',
+            'dependents' => 'nullable|array',
+            'client_id' => 'nullable|integer',
+            'product_id' => 'required|integer',
+            'seller_id' => 'required|integer',
+            'charge_type' => 'required|string|max:20',
+            'accession' => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+            'accession_payment' => 'required|string|max:20',
+            'discount_type' => 'nullable|string|max:9',
+            'discount_value' => 'nullable|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+        ];
+
+        if (!$this->client_id) {
+            $rules['client.cpf'] = 'required|string|min:11|max:14|unique:clients,cpf';
+            $rules['client.email'] = 'required|email|max:50|unique:clients,email';
+        }
+
+        // ✅ Se existirem dependentes no array, aplicar regras
+        if (!empty($this->dependents)) {
+            foreach ($this->dependents as $index => $dependent) {
+                // CPF sempre obrigatório se o dependente existir
+                $rules["dependents.{$index}.cpf"] = 'required|string|min:11|max:14';
+                
+                // Outros campos obrigatórios quando CPF preenchido
+                $rules["dependents.{$index}.name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.mom_name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.date_birth"] = 'required|date';
+                $rules["dependents.{$index}.marital_status"] = 'required|string|max:15';
+                $rules["dependents.{$index}.relationship"] = 'required|string|max:20';
+                $rules["dependents.{$index}.rg"] = 'nullable|string|min:9|max:12';
+                $rules["dependents.{$index}.additionals"] = 'nullable|array';
+                $rules["dependents.{$index}.additionals.*"] = 'nullable|integer|exists:aditionals,id';
+            }
+        }
+    
+        /*if ($this->charge_type === 'EDP') {
+            $rules['installation_number'] = 'required|string|max:9';
+            $rules['approval_name'] = 'required|string|max:50';
+            $rules['approval_by'] = 'required|string|max:20';
+            $rules['evidence_date'] = 'required|date';
+            $rules['charge_date'] = 'nullable|integer';
+            $rules['evidences'] = 'required|array|min:1';
+            $rules['evidences.*.evidence_type'] = 'required|string';
+            $rules['evidences.*.document'] = 'required|mimes:pdf,jpg,png,mp3,wav';
+    
+            $hasContrato = in_array('contrato', array_column($this->evidences, 'evidence_type'));
+            $hasRequiredDocs = !empty(array_intersect(['rg', 'cpf', 'cnh'], array_column($this->evidences, 'evidence_type')));
+    
+            if ($hasContrato && !$hasRequiredDocs) {
+                $rules['evidences.*.document'] = 'required|mimes:pdf,jpg,png';
+            }
+        } else {
+            $rules['installation_number'] = 'nullable|string|max:9';
+            $rules['approval_name'] = 'nullable|string|max:50';
+            $rules['approval_by'] = 'nullable|string|max:20';
+            $rules['evidence_date'] = 'nullable|date';
+            $rules['charge_date'] = 'required|integer';
+        }
+    
+        if ($this->approval_by === 'Conjuge') {
+            $rules['evidences'] = 'required|array|min:1';
+            $rules['evidences.*.evidence_type'] = 'required|string';
+            $rules['evidences.*.document'] = 'required_if:evidences.*.evidence_type,certidao de casamento|nullable|mimes:pdf,jpg,png';
+        }
+    
+        // Validação condicional para contrato e RG, CPF, CNH
+        if (isset($this->evidences) && is_array($this->evidences)) {
+            foreach ($this->evidences as $index => $evidence) {
+                if (isset($evidence['evidence_type']) && $evidence['evidence_type'] === 'contrato') {
+                    $hasRequiredDocs = false;
+                    foreach ($this->evidences as $doc) {
+                        if (isset($doc['evidence_type']) && in_array($doc['evidence_type'], ['rg', 'cpf', 'cnh'])) {
+                            $hasRequiredDocs = true;
+                            break;
+                        }
+                    }
+                    if (!$hasRequiredDocs) {
+                        $rules["evidences.{$index}.document"] = 'required|mimes:pdf,jpg,png';
+                    }
+                }
+            }
+        }*/
+    
+        return $rules;
+    }
+
     public function mount($clientId = null)
     {
-        //Get products and sellers
-        $this->sellers = Seller::where('status', 1)->orderBy('name')->get();
+        $this->authorize('create', Order::class);
+
+        $user = auth()->user();
+
+        // SELLERS visíveis conforme role
+        $this->sellers = Seller::query()
+            ->where('status', 1)
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->when($user->isSeller(), fn ($q) => $q->whereIn('id', $user->getAccessibleSellerIds()))
+            ->orderBy('name')
+            ->get();
+
+        // Produtos (deixa aberto por enquanto)
         $this->products = Product::where('status', 1)->orderBy('name')->get();
-        $this->clients = Client::where('status', 1)->orderBy('name')->get();
+
+        // Clientes visíveis por role (ideal: criar scopeVisibleTo em Client)
+        $this->clients = Client::query()
+            ->where('status', 1)
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->when($user->isSeller(), fn ($q) => $q->whereIn('group_id', $user->getAccessibleGroupIds()))
+            ->orderBy('name')
+            ->get();
 
         if ($clientId) {
             $this->loadClient($clientId);
@@ -53,8 +184,55 @@ class OrderForm extends Component
         $this->validate($this->rules()); // Valida os dados dinamicamente
 
         try {
-            // Obter o `group_id` do usuário autenticado
-            $groupId = request()->user()->access()->first()->group_id;
+            $user = auth()->user();
+
+            $this->authorize('create', Order::class);
+
+            // Resolver group e seller de forma segura
+            $groupId = null;
+            $sellerId = $this->seller_id;
+
+            // ADMIN: pode escolher ambos (depois você pode validar seller x group)
+            if ($user->isAdmin()) {
+                // Aqui você precisa ter um campo de group no form se ADMIN escolhe group.
+                // Se ainda não tem, pode derivar pelo seller selecionado:
+                if (!empty($sellerId)) {
+                    $seller = Seller::findOrFail($sellerId);
+                    $groupId = $seller->group_id;
+                }
+            }
+
+            // COOP: group é do(s) groups dela, seller deve pertencer ao group dela
+            if ($user->isCoop()) {
+                $allowedGroupIds = $user->getAccessibleGroupIds();
+
+                if (empty($allowedGroupIds)) {
+                    throw new \Exception('Usuário COOP sem grupo vinculado.');
+                }
+
+                // Se COOP trabalha com 1 group principal, pega o primeiro
+                // Se tiver seleção de group no form no futuro, valide o selecionado aqui
+                $groupId = (int) $allowedGroupIds[0];
+
+                if (!empty($sellerId)) {
+                    $seller = Seller::query()
+                        ->where('id', $sellerId)
+                        ->where('group_id', $groupId)
+                        ->first();
+
+                    if (! $seller) {
+                        throw new \Exception('Vendedor inválido para a cooperativa.');
+                    }
+                }
+            }
+
+            // SELLER: ignora seller enviado no frontend e força vínculo real
+            if ($user->isSeller()) {
+                $seller = Seller::findOrFail($user->currentSellerId());
+
+                $sellerId = $seller->id;
+                $groupId = $seller->group_id;
+            }
 
             $cpf = preg_replace('/\D/', '', $this->client['cpf']);
             $rg = preg_replace('/\D/', '', $this->client['rg']); // Remove pontos e traços
@@ -62,7 +240,10 @@ class OrderForm extends Component
 
             // Verificar se o cliente já existe
             $client = Client::updateOrCreate(
-                ['cpf' => $cpf], // Supondo que 'document' seja único
+                [
+                    'cpf' => $cpf,
+                    'group_id' => $groupId,
+                ],
                 [
                     'group_id' => $groupId,
                     'name' => $this->client['name'],
@@ -114,7 +295,7 @@ class OrderForm extends Component
                 'client_id' => $client->id,
                 'product_id' => $this->product_id,
                 'group_id' => $groupId,
-                'seller_id' => $this->seller_id,
+                'seller_id' => $sellerId,
                 'charge_type' => $this->charge_type,
                 'installation_number' => $this->installation_number,
                 'approval_name' => $this->approval_name,
@@ -214,10 +395,30 @@ class OrderForm extends Component
                 ]);
             }*/
 
+            // Upload documento (RG/CNH)
+            if ($this->document_file) {
+                $documentPath = $this->document_file->store('orders/documents', 'public');
+
+                $order->document_file = $documentPath;
+                $order->document_file_type = $this->document_file_type ?: 'RG';
+            }
+
+            // Upload comprovante de endereço
+            if ($this->address_proof_file) {
+                $addressProofPath = $this->address_proof_file->store('orders/address_proofs', 'public');
+
+                $order->address_proof_file = $addressProofPath;
+            }
+
+            // Status inicial para revisão administrativa
+            $order->review_status = 'PENDENTE';
+
+            $order->save();
+
             DB::commit(); // Confirma a transação no banco de dados
 
             session()->flash('message', 'Pedido salvo com sucesso!');
-            return redirect()->route('admin.orders'.$order->id.'edit');
+            return redirect()->route('admin.orders.edit', $order->id);
 
         } catch (\Exception $e) {
             DB::rollBack(); // Desfazer alterações em caso de erro
@@ -232,6 +433,8 @@ class OrderForm extends Component
         try {
             // Buscar o pedido
             $order = Order::findOrFail($orderId);
+
+            $this->authorize('delete', $order);
 
             // Remover dependentes vinculados ao pedido
             OrderDependent::where('order_id', $order->id)->delete();
@@ -315,7 +518,7 @@ class OrderForm extends Component
     public function render()
     {
         return view('livewire.order-form', [
-            'products' => Product::all(),
+            'products' => $this->products,
         ]);
     }
 }

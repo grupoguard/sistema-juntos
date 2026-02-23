@@ -305,6 +305,73 @@
                         <hr class="my-5">
 
                         <div class="col-12 mb-3">
+                            <h5 class="mb-0">Documentos</h5>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label>Tipo do documento</label>
+                                <select class="form-control" wire:model="document_file_type">
+                                    <option value="RG">RG</option>
+                                    <option value="CNH">CNH</option>
+                                </select>
+                                @error('document_file_type') <span class="text-danger">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <label>{{ $document_file_type === 'CNH' ? 'CNH (imagem/foto)' : 'RG (imagem/foto)' }}</label>
+                                <input type="file" class="form-control" wire:model="document_file" accept="image/*" capture="environment">
+                                @error('document_file') <span class="text-danger">{{ $message }}</span> @enderror
+
+                                <div wire:loading wire:target="document_file" class="text-muted mt-1">
+                                    Enviando documento...
+                                </div>
+                            </div>
+
+                            <div class="col-md-5">
+                                @if ($document_file)
+                                    <label>Pré-visualização documento</label>
+                                    <div class="border rounded p-2">
+                                        <img src="{{ $document_file->temporaryUrl() }}" alt="Documento" class="img-fluid rounded">
+                                    </div>
+                                @elseif(!empty($existing_document_file))
+                                    <label>Documento atual</label>
+                                    <div class="border rounded p-2">
+                                        <a href="{{ Storage::url($existing_document_file) }}" target="_blank">Visualizar documento atual</a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label>Comprovante de endereço (imagem/foto)</label>
+                                <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*" capture="environment">
+                                @error('address_proof_file') <span class="text-danger">{{ $message }}</span> @enderror
+
+                                <div wire:loading wire:target="address_proof_file" class="text-muted mt-1">
+                                    Enviando comprovante...
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                @if ($address_proof_file)
+                                    <label>Pré-visualização comprovante</label>
+                                    <div class="border rounded p-2">
+                                        <img src="{{ $address_proof_file->temporaryUrl() }}" alt="Comprovante" class="img-fluid rounded">
+                                    </div>
+                                @elseif(!empty($existing_address_proof_file))
+                                    <label>Comprovante atual</label>
+                                    <div class="border rounded p-2">
+                                        <a href="{{ Storage::url($existing_address_proof_file) }}" target="_blank">Visualizar comprovante atual</a>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <hr class="my-5">
+
+                        <div class="col-12 mb-3">
                             <h5 class="mb-0">Dados de cobrança</h5>
                         </div>
 

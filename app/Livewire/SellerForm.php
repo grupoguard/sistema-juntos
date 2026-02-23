@@ -7,9 +7,14 @@ use App\Models\Seller;
 use App\Services\UserManagementService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class SellerForm extends Component
 {
+    use AuthorizesRequests;
+
     public $seller = [];
     public $sellerId;
     public $createUser = true;
@@ -20,16 +25,16 @@ class SellerForm extends Component
     protected $listeners = ['groupSelected'];
 
     protected $rules = [
-        'seller.group_id' => 'required|integer|max:8',
+        'seller.group_id' => 'required|integer|exists:groups,id',
         'seller.name' => 'required|string|max:100',
         'seller.date_birth' => 'required|date',
         'seller.cpf' => 'required|string|min:11|max:14|unique:sellers,cpf',
         'seller.rg' => 'nullable|string|min:7|max:15',
         'seller.phone' => 'nullable|string|max:15',
         'seller.email' => 'required|email|max:50|unique:sellers,email',
-        'seller.comission_type' => 'required|integer|max:1',
+        'seller.comission_type' => 'required|integer|in:0,1,2',
         'seller.comission_value' => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
-        'seller.comission_recurrence' => 'required|integer|max:1',    
+        'seller.comission_recurrence' => 'required|integer|min:1|max:120',  
         'seller.zipcode' => 'required|string|max:8',
         'seller.address' => 'required|string|max:100',
         'seller.number' => 'required|string|max:10',
@@ -45,11 +50,15 @@ class SellerForm extends Component
     public function mount($sellerId = null)
     {
         if ($sellerId) {
+            $sellerModel = Seller::findOrFail($sellerId);
+            $this->authorize('view', $sellerModel); // ou update se for tela de edição
+
             $this->sellerId = $sellerId;
             $sellerModel = Seller::findOrFail($sellerId);
             $this->seller = $sellerModel->toArray();
             $this->createUser = false;
         } else {
+            $this->authorize('create', Seller::class);
             $this->seller = [
                 'group_id'              => null,
                 'name'                  => '',
@@ -81,8 +90,32 @@ class SellerForm extends Component
     
     public function storeOrUpdate()
     {
+        logger('SellerForm storeOrUpdate FOI CHAMADO');
+        session()->flash('message', 'Entrou no método storeOrUpdate');
+
+        $user = auth()->user();
+
+        if ($this->sellerId) {
+            $sellerModel = Seller::findOrFail($this->sellerId);
+            $this->authorize('update', $sellerModel);
+        } else {
+            $this->authorize('create', Seller::class);
+        }
+
+        if ($user->isCoop()) {
+            $allowedGroupIds = $user->getAccessibleGroupIds();
+
+            if (empty($allowedGroupIds)) {
+                throw new \Exception('Usuário COOP sem cooperativa vinculada.');
+            }
+
+            // Se coop trabalha com 1 grupo
+            $this->seller['group_id'] = (int) $allowedGroupIds[0];
+        }
+
         // Limpar campos
         $this->seller['cpf'] = preg_replace('/\D/', '', $this->seller['cpf']);
+        $this->seller['rg'] = preg_replace('/\D/', '', $this->seller['rg'] ?? '');
         $this->seller['phone'] = preg_replace('/\D/', '', $this->seller['phone'] ?? '');
         $this->seller['zipcode'] = preg_replace('/\D/', '', $this->seller['zipcode']);
 
@@ -126,8 +159,14 @@ class SellerForm extends Component
             DB::commit();
             return redirect()->route('admin.sellers.edit', ['seller' => $sellerModel->id]);
             
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+
+            logger()->error('Erro ao salvar seller', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
         }
     }
@@ -219,7 +258,13 @@ class SellerForm extends Component
 
     public function render()
     {
-        $groups = Group::where('status', true)->get();
+        $user = auth()->user();
+
+        $groups = Group::query()
+            ->where('status', true)
+            ->when($user->isCoop(), fn ($q) => $q->whereIn('id', $user->getAccessibleGroupIds()))
+            ->get();
+
         return view('livewire.seller-form', compact('groups'));
     }
 

@@ -22,10 +22,6 @@
                 <div class="{{ $sellerId ? 'col-lg-6' : 'col-lg-8' }}">
                     <h2 class="mb-0">{{ $sellerId ? 'Editar Consultor' : 'Novo Consultor' }}</h2>
                 </div>
-                <div class="{{ $sellerId ? 'col-lg-3' : 'col-lg-4' }}">
-                    <livewire:components.select-group :group_id="$seller['group_id']" />
-                    @error('seller.group_id') <span class="text-danger">{{ $message }}</span> @enderror
-                </div>
                 @if($sellerId)
                     <div class="col-lg-3">
                         <label>Status<span class="text-danger">*</span></label>
@@ -42,6 +38,10 @@
         <div class="card-body">
             <form wire:submit.prevent="storeOrUpdate">
                 <div class="row mb-3">
+                    <div class="col-md-6 offset-lg-6 mb-4">
+                        <livewire:components.select-group :group_id="$seller['group_id']" />
+                        @error('seller.group_id') <span class="text-danger">{{ $message }}</span> @enderror
+                    </div>
                     <div class="col-md-9">
                         <label>Nome do consultor<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" wire:model="seller.name">
@@ -84,6 +84,7 @@
                             <option value="1">Fixo (R$)</option>
                             <option value="2">Porcentagem (%)</option>
                         </select>
+                        @error('seller.comission_type') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-lg-4">
                         <label>Valor da comissão<span class="text-danger">*</span></label>
@@ -189,11 +190,21 @@
                 </div>
 
                 <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn btn-lg btn-success" wire:click="storeOrUpdate">
+                    <button type="submit" class="btn btn-lg btn-success">
                         {{ $sellerId ? 'Atualizar Consultor' : 'Cadastrar Consultor' }}
                     </button>
                 </div>
             </form>
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </div>
     </div>
 </div>

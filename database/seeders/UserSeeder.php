@@ -4,14 +4,11 @@ namespace Database\Seeders;
 
 use App\Models\Admin;
 use App\Models\AdminModel;
-use App\Models\Role;
-use App\Models\RolesModel;
 use App\Models\User;
-use App\Models\UserAccess;
-use App\Models\UserAccessModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -22,39 +19,39 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        $adminUser = User::create([
+        // Garante que a role existe no guard web
+        Role::firstOrCreate(['name' => 'ADMIN', 'guard_name' => 'web']);
+
+        $adminUser = User::updateOrCreate(
+            ['email' => 'admin@juntosbeneficios.com.br'],
+            [
                 'name' => 'admin',
-                'email' => 'admin@juntosbeneficios.com.br',
                 'password' => Hash::make('secret'),
                 'status' => true,
-                'created_at' => now(),
-                'updated_at' => now(), 
-        ]);
+            ]
+        );
 
-        $adminData = Admin::create([
-            'group_id' => null,
-            'name' => 'Administrador',
-            'date_birth' => '1990-01-01',
-            'cpf' => '11111111111',
-            'rg' => '123456789',
-            'phone' => '11999999999',
-            'email' => 'admin@cartaojuntos.com.br',
-            'zipcode' => '12345678',
-            'address' => 'Rua dos Administradores',
-            'number' => '100',
-            'complement' => 'Sala 1',
-            'neighborhood' => 'Centro',
-            'city' => 'São Paulo',
-            'state' => 'SP',
-            'obs' => 'Usuário administrador'
-        ]);
+        Admin::updateOrCreate(
+            ['email' => 'admin@cartaojuntos.com.br'],
+            [
+                'group_id' => null,
+                'name' => 'Administrador',
+                'date_birth' => '1990-01-01',
+                'cpf' => '11111111111',
+                'rg' => '123456789',
+                'phone' => '11999999999',
+                'zipcode' => '12345678',
+                'address' => 'Rua dos Administradores',
+                'number' => '100',
+                'complement' => 'Sala 1',
+                'neighborhood' => 'Centro',
+                'city' => 'São Paulo',
+                'state' => 'SP',
+                'obs' => 'Usuário administrador'
+            ]
+        );
 
-        UserAccess::create([
-            'user_id' => $adminUser->id,
-            'group_id' => null, // Admin global
-            'userable_id' => $adminData->id,
-            'userable_type' => Admin::class,
-            'role_id' => Role::where('name', 'ADMIN')->first()->id
-        ]);
+        // Atribui a role ao usuário criado
+        $adminUser->syncRoles(['ADMIN']);
     }
 }

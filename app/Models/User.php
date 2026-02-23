@@ -128,4 +128,24 @@ class User extends Authenticatable
     {
         return in_array($sellerId, $this->getAccessibleSellerIds());
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('ADMIN');
+    }
+
+    public function isCoop(): bool
+    {
+        return $this->hasRole('COOP');
+    }
+
+    public function isSeller(): bool
+    {
+        return $this->hasRole('SELLER');
+    }
+
+    public function currentSellerId(): ?int
+    {
+        return $this->sellers()->value('sellers.id');
+    }
 }

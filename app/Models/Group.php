@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Group extends Model
 {
@@ -29,4 +31,23 @@ class Group extends Model
         'status',
         'obs',
     ];
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        if ($user->isCoop()) {
+            $groupIds = $user->getAccessibleGroupIds();
+
+            if (empty($groupIds)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('id', $groupIds);
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
 }

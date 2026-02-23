@@ -16,9 +16,8 @@ public function handle(Request $request, Closure $next): Response
             return redirect('/login');
         }
 
-        // Verifica se é admin
-        if (!Auth::user()->hasRole('ADMIN')) {
-            abort(403, 'Acesso não autorizado. Apenas administradores podem acessar esta área.');
+        if (!Auth::user()->hasAnyRole(['ADMIN', 'COOP', 'SELLER', 'PARTNER'])) {
+            abort(403);
         }
 
         return $next($request);
