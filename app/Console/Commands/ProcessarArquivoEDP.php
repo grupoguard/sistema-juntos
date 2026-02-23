@@ -7,31 +7,33 @@ use Illuminate\Console\Command;
 
 class ProcessarArquivoEDP extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'edp:pegar-todos-retornos';
+   protected $signature = 'edp:pegar-todos-retornos 
+                            {--local-first : Processa arquivos locais antes da API}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
+    protected $description = 'Processa arquivos de retorno EDP (API ou locais+API)';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
+        // Se --local-first, processar locais primeiro
+        if ($this->option('local-first')) {
+            $this->info('📁 Processando arquivos locais primeiro...');
+            $this->call('edp:processar-locais');
+            $this->newLine();
+        }
+
+        // Depois processar da API
+        $this->info('📡 Buscando arquivos da API EDP...');
+        
         $edpService = new EdpService();
 
         try {
-            $this->info($edpService->processarArquivosEmMassa());
+            $resultado = $edpService->processarArquivosEmMassa();
+            $this->info($resultado);
         } catch (\Exception $e) {
             $this->error('Erro: ' . $e->getMessage());
+            return Command::FAILURE;
         }
+
+        return Command::SUCCESS;
     }
 }

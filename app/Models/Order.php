@@ -17,11 +17,13 @@ class Order extends Model
         'charge_type',
         'installation_number',
         'approval_name',
+        'approval_by',
         'evidence_date',
-        'audio',
         'charge_date',
         'accession',
-        'canceled_at'
+        'accession_payment',
+        'discount_type',
+        'discount_value',   
     ];
 
     /**

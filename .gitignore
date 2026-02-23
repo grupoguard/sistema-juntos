@@ -15,3 +15,4 @@ yarn-error.log
 /.vscode
 storage/app/private/credentials.json
 storage/app/private/tokens/token.json
+storage/app/retornos
