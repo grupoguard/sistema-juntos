@@ -231,6 +231,15 @@
     </div>
   @endif
 
+  @if(auth()->check() && auth()->user()->isAdmin() && ($financialDivergencesCount ?? 0) > 0)
+    <div class="alert alert-danger">
+        <strong>{{ $financialDivergencesCount }}</strong> pedido(s) com divergência entre valor calculado e valor cobrado no financeiro.
+        <a href="{{ route('admin.orders.financial-divergences') }}" class="alert-link">
+            Ver divergências
+        </a>
+    </div>
+  @endif
+
 @endsection
 @push('dashboard')
   <script>

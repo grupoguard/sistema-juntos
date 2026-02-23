@@ -229,6 +229,15 @@
     </div>
   <?php endif; ?>
 
+  <?php if(auth()->check() && auth()->user()->isAdmin() && ($financialDivergencesCount ?? 0) > 0): ?>
+    <div class="alert alert-danger">
+        <strong><?php echo e($financialDivergencesCount); ?></strong> pedido(s) com divergência entre valor calculado e valor cobrado no financeiro.
+        <a href="<?php echo e(route('admin.orders.financial-divergences')); ?>" class="alert-link">
+            Ver divergências
+        </a>
+    </div>
+  <?php endif; ?>
+
 <?php $__env->stopSection(); ?>
 <?php $__env->startPush('dashboard'); ?>
   <script>

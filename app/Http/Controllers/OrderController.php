@@ -27,4 +27,9 @@ class OrderController extends Controller
         
         return view('pages.admin.orders.easyform');
     }
+
+    public function financialDivergences()
+    {
+        return view('pages.admin.orders.financial-divergences');
+    }
 }

@@ -62,6 +62,10 @@ Route::group([
     Route::get('dashboard', [DashboardController::class, 'index'])
         ->middleware('permission:view-dashboard')
         ->name('dashboard');
+    
+        Route::get('orders/financial-divergences', [OrderController::class, 'financialDivergences'])
+            ->middleware('permission:orders.edit') // ou permission:reports.financial se preferir
+            ->name('orders.financial-divergences');
 
 	// Adicionais
     Route::resource('aditionals', AditionalController::class)
