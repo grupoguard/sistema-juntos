@@ -14,7 +14,7 @@
     </ul>
     <div class="tab-content" id="pills-tabContent">
         <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-            <form wire:submit.prevent="saveOrder">
+            <form wire:submit.prevent="updateOrder">
                 <div class="container-fluid py-4">
                     <div class="card">
                         <div class="card-header pb-0">
@@ -62,12 +62,12 @@
                                 <div class="row mb-3">
                                     <div class="col-md-3">
                                         <label>CPF<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="cpf" wire:model.defer.live="client.cpf">
+                                        <input type="text" class="form-control" id="cpf" wire:model.defer.live="client.cpf" disabled>
                                         @error('client.cpf') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3">
                                         <label>RG</label>
-                                        <input type="text" class="form-control" id="rg" wire:model.defer.live="client.rg">
+                                        <input type="text" class="form-control" id="rg" wire:model.defer.live="client.rg" disabled>
                                         @error('client.rg') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3">
@@ -174,7 +174,7 @@
                                     </div>
                 
                                     <!-- Seleção de Produto -->
-                                    <div class="col-lg-6 mb-3">
+                                    <div class="col-lg-9 mb-3">
                                         <label for="product_id" class="form-label">Produto<span class="text-danger">*</span></label>
                                         <select id="product_id" class="form-control" wire:model="product_id" wire:change="loadAdditionals">
                                             <option value="">Selecione um produto</option>
@@ -184,6 +184,29 @@
                                         </select>
                                         @error('product_id') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
+
+                                    <!-- CAMPOS DE DESCONTO -->
+                                    <div class="col-lg-4 mb-3">
+                                        <label for="discount_type" class="form-label">Tipo de Desconto</label>
+                                        <select id="discount_type" class="form-control" wire:model.live="discount_type">
+                                            <option value="">Sem desconto</option>
+                                            <option value="R$">Valor (R$)</option>
+                                            <option value="%">Percentual (%)</option>
+                                        </select>
+                                        @error('discount_type') <span class="text-danger">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <div class="col-lg-8 mb-3">
+                                        <label for="discount_value" class="form-label">Valor do Desconto</label>
+                                        <input type="number" step="0.01" class="form-control" 
+                                            placeholder="{{ $discount_type === '%' ? '0.00%' : 'R$ 0.00' }}" 
+                                            wire:model.live="discount_value" 
+                                            min="0" 
+                                            {{ empty($discount_type) ? 'disabled' : '' }}
+                                            max="{{ $discount_type === '%' ? '100' : '' }}">
+                                        @error('discount_value') <span class="text-danger">{{ $message }}</span> @enderror
+                                    </div>
+
                                     
                                     <!-- Adicionais -->
                                     <div class="col-lg-3 mb-3">
@@ -191,7 +214,7 @@
                                             <label class="form-label">Adicionais</label>
                                             @foreach($additionals as $additional)
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" wire:model.change="selectedAdditionals" value="{{ $additional['id'] }}">
+                                                    <input type="checkbox" class="form-check-input" wire:model.live="selectedAdditionals" value="{{ $additional['id'] }}">
                                                     <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                 </div>
                                             @endforeach
@@ -199,12 +222,12 @@
                                             <p>Nenhum adicional disponível.</p>
                                         @endif
                                     </div>
-                                    <div class="col-lg-3 mb-3">
+                                    <div class="col-lg-2 mb-3">
                                         <label>Valor adesão (R$)<span class="text-danger">*</span></label>
-                                        <input type="number" id="order.accession" step="0.1" class="form-control" placeholder="R$ Adesão" wire:ignore="order.accession" value="{{ $this->order->accession }}" min="0">
-                                        @error('order.accession') <span class="text-danger">{{ $message }}</span> @enderror
+                                       <input type="number" step="0.01" class="form-control" placeholder="R$ Adesão" wire:model="accession" min="0">
+                                        @error('accession') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
-                                    <div class="col-lg-5 mb-3">
+                                    <div class="col-lg-4 mb-3">
                                         <label for="accession_payment" class="form-label">Pagamento adesão<span class="text-danger">*</span></label>
                                         <select id="accession_payment" class="form-control" wire:model.change="accession_payment">
                                             <option value="">Selecione um pagamento</option>
@@ -214,9 +237,9 @@
                                             <option value="Cartão de débito">Cartão de débito</option>
                                             <option value="Não cobrada">Não cobrada</option>
                                         </select>
-                                        @error('order.accession_payment') <span class="text-danger">{{ $message }}</span> @enderror
+                                        @error('accession_payment') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
-                                    <div class="col-lg-4 mt-4">
+                                    <div class="col-lg-3 mt-4">
                                         <h3>
                                             Total:
                                             <span class="total" id="total">
@@ -273,7 +296,7 @@
                                             </div>
                                             <div class="col-md-2 mb-3">
                                                 <label>Estado Civil<span class="text-danger">*</span></label>
-                                                <select class="form-control" wire:model.change="dependents.{{ $index }}.marital_status">
+                                                <select class="form-control" wire:model.live="dependents.{{ $index }}.marital_status">
                                                     <option value="">Selecione</option>
                                                     <option value="solteiro">Solteiro(a)</option>
                                                     <option value="casado">Casado(a)</option>
@@ -420,18 +443,98 @@
                                 <select id="charge_type" class="form-control" wire:model.change="charge_type" disabled>
                                     <option value="">Selecione</option>
                                     <option value="EDP">EDP</option>
-                                    <option value="BOLETO">Boleto</option>
+                                    <option value="ASAAS">Asaas</option>
                                 </select>
                                 @error('charge_type') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
 
-                            @if($order['charge_type'] == 'BOLETO')
+                            @if($order['charge_type'] == 'ASAAS')
                                 <div class="col-lg-3 mb-3">
                                     <label for="charge_date" class="form-label">Data da Cobrança</label>
                                     <input type="number" class="form-control" id="charge_date" wire:model="charge_date">
                                     @error('charge_date') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                             @endif
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5 class="mb-3">Histórico Financeiro</h5>
+
+                                @if(!empty($financials) && count($financials) > 0)
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Data Vencimento</th>
+                                                    <th>Valor</th>
+                                                    <th>Pago</th>
+                                                    <th>Método</th>
+                                                    <th>Status</th>
+                                                    <th>Link</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($financials as $fin)
+                                                    @php
+                                                        $isPaid = in_array($fin->status, ['RECEIVED', 'CONFIRMED']);
+                                                    @endphp
+
+                                                    <tr style="background-color: {{ $isPaid ? '#e8f5e9' : '#fdecea' }};">
+                                                        <td>{{ $fin->id }}</td>
+
+                                                        <td>
+                                                            {{ $fin->due_date ? \Carbon\Carbon::parse($fin->due_date)->format('d/m/Y') : '-' }}
+                                                        </td>
+
+                                                        <td>
+                                                            R$ {{ number_format($fin->value, 2, ',', '.') }}
+                                                        </td>
+
+                                                        <td>
+                                                            R$ {{ number_format($fin->paid_value ?? 0, 2, ',', '.') }}
+                                                        </td>
+
+                                                        <td>
+                                                            {{ $fin->payment_method ?? '-' }}
+                                                        </td>
+
+                                                        <td>
+                                                            <span class="badge 
+                                                                {{ $isPaid ? 'bg-success' : 'bg-danger' }}">
+                                                                {{ $fin->status }}
+                                                            </span>
+                                                        </td>
+
+                                                        <td class="text-center">
+                                                            @if($fin->invoice_url)
+                                                                <a href="{{ $fin->invoice_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                                    Ver
+                                                                </a>
+                                                            @elseif($fin->bank_slip_url)
+                                                                <a href="{{ $fin->bank_slip_url }}" target="_blank" class="btn btn-sm btn-warning">
+                                                                    Boleto
+                                                                </a>
+                                                            @elseif($fin->pix_qr_code_url)
+                                                                <a href="{{ $fin->pix_qr_code_url }}" target="_blank" class="btn btn-sm btn-success">
+                                                                    Pix
+                                                                </a>
+                                                            @else
+                                                                -
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="alert alert-info">
+                                        Nenhum registro financeiro encontrado para este pedido.
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

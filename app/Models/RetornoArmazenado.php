@@ -7,5 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class RetornoArmazenado extends Model
 {
     protected $table = 'retornos_armazenados';
-    protected $fillable = ['arquivo_id', 'nome_arquivo', 'baixado_em', 'processado', 'processado_em'];
+    protected $fillable = [
+        'arquivo_id',
+        'nome_arquivo',
+        'baixado_em',
+        'processado',
+        'processado_em'
+    ];
+
+    protected $casts = [
+        'baixado_em' => 'datetime',
+        'processado' => 'boolean',
+        'processado_em' => 'datetime'
+    ];
 }

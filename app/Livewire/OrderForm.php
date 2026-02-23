@@ -32,6 +32,110 @@ class OrderForm extends Component
 
     protected $listeners = ['clientSelected' => 'loadClient', 'loadAdditionals'];
 
+    protected function rules()
+    {
+        $rules = [
+            'client.name' => 'required|string|max:100',
+            'client.mom_name' => 'required|string|max:100',
+            'client.date_birth' => 'required|date',
+            'client.rg' => 'nullable|string|min:9|max:12',
+            'client.gender' => 'required|string|max:15',
+            'client.marital_status' => 'required|string|max:15',
+            'client.phone' => 'nullable|string|max:15',
+            'client.zipcode' => 'required|string|max:8',
+            'client.address' => 'required|string|max:100',
+            'client.number' => 'required|string|max:10',
+            'client.complement' => 'nullable|string|max:40',
+            'client.neighborhood' => 'required|string|max:50',
+            'client.city' => 'required|string|max:50',
+            'client.state' => 'required|string|max:2',
+            'client.obs' => 'nullable|string',
+            'client.status' => 'nullable|integer',
+            'dependents' => 'nullable|array',
+            'client_id' => 'nullable|integer',
+            'product_id' => 'required|integer',
+            'seller_id' => 'required|integer',
+            'charge_type' => 'required|string|max:20',
+            'accession' => 'required|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+            'accession_payment' => 'required|string|max:20',
+            'discount_type' => 'nullable|string|max:9',
+            'discount_value' => 'nullable|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+        ];
+
+        if (!$this->client_id) {
+            $rules['client.cpf'] = 'required|string|min:11|max:14|unique:clients,cpf';
+            $rules['client.email'] = 'required|email|max:50|unique:clients,email';
+        }
+
+        // ✅ Se existirem dependentes no array, aplicar regras
+        if (!empty($this->dependents)) {
+            foreach ($this->dependents as $index => $dependent) {
+                // CPF sempre obrigatório se o dependente existir
+                $rules["dependents.{$index}.cpf"] = 'required|string|min:11|max:14';
+                
+                // Outros campos obrigatórios quando CPF preenchido
+                $rules["dependents.{$index}.name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.mom_name"] = 'required|string|max:100';
+                $rules["dependents.{$index}.date_birth"] = 'required|date';
+                $rules["dependents.{$index}.marital_status"] = 'required|string|max:15';
+                $rules["dependents.{$index}.relationship"] = 'required|string|max:20';
+                $rules["dependents.{$index}.rg"] = 'nullable|string|min:9|max:12';
+                $rules["dependents.{$index}.additionals"] = 'nullable|array';
+                $rules["dependents.{$index}.additionals.*"] = 'nullable|integer|exists:aditionals,id';
+            }
+        }
+    
+        /*if ($this->charge_type === 'EDP') {
+            $rules['installation_number'] = 'required|string|max:9';
+            $rules['approval_name'] = 'required|string|max:50';
+            $rules['approval_by'] = 'required|string|max:20';
+            $rules['evidence_date'] = 'required|date';
+            $rules['charge_date'] = 'nullable|integer';
+            $rules['evidences'] = 'required|array|min:1';
+            $rules['evidences.*.evidence_type'] = 'required|string';
+            $rules['evidences.*.document'] = 'required|mimes:pdf,jpg,png,mp3,wav';
+    
+            $hasContrato = in_array('contrato', array_column($this->evidences, 'evidence_type'));
+            $hasRequiredDocs = !empty(array_intersect(['rg', 'cpf', 'cnh'], array_column($this->evidences, 'evidence_type')));
+    
+            if ($hasContrato && !$hasRequiredDocs) {
+                $rules['evidences.*.document'] = 'required|mimes:pdf,jpg,png';
+            }
+        } else {
+            $rules['installation_number'] = 'nullable|string|max:9';
+            $rules['approval_name'] = 'nullable|string|max:50';
+            $rules['approval_by'] = 'nullable|string|max:20';
+            $rules['evidence_date'] = 'nullable|date';
+            $rules['charge_date'] = 'required|integer';
+        }
+    
+        if ($this->approval_by === 'Conjuge') {
+            $rules['evidences'] = 'required|array|min:1';
+            $rules['evidences.*.evidence_type'] = 'required|string';
+            $rules['evidences.*.document'] = 'required_if:evidences.*.evidence_type,certidao de casamento|nullable|mimes:pdf,jpg,png';
+        }
+    
+        // Validação condicional para contrato e RG, CPF, CNH
+        if (isset($this->evidences) && is_array($this->evidences)) {
+            foreach ($this->evidences as $index => $evidence) {
+                if (isset($evidence['evidence_type']) && $evidence['evidence_type'] === 'contrato') {
+                    $hasRequiredDocs = false;
+                    foreach ($this->evidences as $doc) {
+                        if (isset($doc['evidence_type']) && in_array($doc['evidence_type'], ['rg', 'cpf', 'cnh'])) {
+                            $hasRequiredDocs = true;
+                            break;
+                        }
+                    }
+                    if (!$hasRequiredDocs) {
+                        $rules["evidences.{$index}.document"] = 'required|mimes:pdf,jpg,png';
+                    }
+                }
+            }
+        }*/
+    
+        return $rules;
+    }
+
     public function mount($clientId = null)
     {
         //Get products and sellers
