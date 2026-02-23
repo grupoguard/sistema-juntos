@@ -29,7 +29,7 @@ foreach ($attributes->all() as $__key => $__value) {
 unset($__defined_vars); ?>
 
 <!--[if BLOCK]><![endif]--><?php if($paginator->hasPages()): ?>
-    <?php echo e($paginator->links('vendor.pagination.bootstrap-5')); ?>
+    <?php echo e($paginator->links('vendor.pagination.bootstrap-5-fixed')); ?>
 
 <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
 <?php /**PATH /var/www/html/resources/views/components/pagination.blade.php ENDPATH**/ ?>

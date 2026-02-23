@@ -2,7 +2,7 @@
     <div class="container-fluid py-4">
         <div class="card">
             <div class="card-header pb-0">
-                <h5 class="mb-0">Lista de Cooperativas</h5>
+                <h5 class="mb-0">Lista de Produtos</h5>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
@@ -10,7 +10,7 @@
                         <input 
                             type="text" 
                             class="form-control" 
-                            placeholder="Buscar cooperativa..." 
+                            placeholder="Nome/Código/Valor" 
                             wire:model.live="search"
                         >
                     </div>
@@ -29,9 +29,9 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <a 
-                            href="<?php echo e(route('admin.groups.create')); ?>" 
+                            href="<?php echo e(route('admin.products.create')); ?>" 
                             class="btn bg-blue text-white">
-                                + Nova Cooperativa
+                                + Novo Produto
                         </a>
                     </div>
                 </div>
@@ -40,13 +40,13 @@
                         <thead>
                             <tr>
                                 <th>
-                                    ID
+                                    Código
                                 </th>
                                 <th>
                                     Nome
                                 </th>
                                 <th>
-                                    Telefone
+                                    Valor
                                 </th>
                                 <th>
                                     Status
@@ -60,36 +60,36 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $groups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $group): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
                                 <td>
-                                    <?php echo e($group->id); ?>
+                                    <?php echo e($product->code); ?>
 
                                 </td>
                                 <td>
-                                    <?php echo e($group->name); ?>
+                                    <?php echo e($product->name); ?>
 
                                 </td>
                                 <td>
-                                    <?php echo e($group->phone); ?>
+                                    R$<?php echo e(number_format($product->value, 2, ',', '.')); ?>
 
                                 </td>
                                 <td>
-                                    <span class="badge bg-<?php echo e($group->status ? 'success' : 'danger'); ?>">
-                                        <?php echo e($group->status ? 'Ativo' : 'Inativo'); ?>
+                                    <span class="badge bg-<?php echo e($product->status ? 'success' : 'danger'); ?>">
+                                        <?php echo e($product->status ? 'Ativo' : 'Inativo'); ?>
 
                                     </span>
                                 </td>
                                 <td class="text-center">
                                     <a 
-                                        href="<?php echo e(route('admin.groups.edit', $group->id)); ?>" 
+                                        href="<?php echo e(route('admin.products.edit', $product->id)); ?>" 
                                         class="btn btn-link text-dark fs-5 p-0 mb-0">
                                         <i class="fa fa-edit me-1"></i>
                                     </a>
                                 </td>
                                 <td class="text-center">
                                     <button 
-                                        wire:click="confirmDelete(<?php echo e($group->id); ?>)" 
+                                        wire:click="confirmDelete(<?php echo e($product->id); ?>)" 
                                         class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
                                     >
                                         <i class="fa fa-trash me-1"></i>
@@ -103,14 +103,14 @@
 
                 <?php if (isset($component)) { $__componentOriginal41032d87daf360242eb88dbda6c75ed1 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal41032d87daf360242eb88dbda6c75ed1 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.pagination','data' => ['paginator' => $groups]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.pagination','data' => ['paginator' => $products]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('pagination'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['paginator' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($groups)]); ?>
+<?php $component->withAttributes(['paginator' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($products)]); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal41032d87daf360242eb88dbda6c75ed1)): ?>
@@ -133,7 +133,7 @@
                         <h5 class="modal-title">Confirmar Exclusão</h5>
                     </div>
                     <div class="modal-body">
-                        Tem certeza que deseja excluir esta cooperativa? Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir este producte? Esta ação não pode ser desfeita.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>
@@ -144,4 +144,4 @@
         </div>
     <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
 </div>
-<?php /**PATH /var/www/html/resources/views/livewire/groups-list.blade.php ENDPATH**/ ?>
+<?php /**PATH /var/www/html/resources/views/livewire/products-list.blade.php ENDPATH**/ ?>

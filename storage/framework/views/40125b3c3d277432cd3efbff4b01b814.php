@@ -20,6 +20,10 @@
                             class="btn bg-blue text-white">
                                 + Novo pedido
                         </a>
+                        <br>
+                        <a href="<?php echo e(route('admin.orders.easy-create')); ?>" class="btn btn-primary">
+                            Cadastro Facilitado
+                        </a>
                     </div>
                 </div>
                 <div class="table-responsive">

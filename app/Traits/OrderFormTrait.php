@@ -91,6 +91,9 @@ trait OrderFormTrait
             'accession_payment' => 'required|string|max:20',
             'discount_type' => 'nullable|string|max:9',
             'discount_value' => 'nullable|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+            'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'document_file_type' => 'nullable|in:RG,CNH',
+            'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ];
 
         if (!$this->client_id) {

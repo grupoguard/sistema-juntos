@@ -1,6 +1,4 @@
-@extends('layouts.user_type.auth')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 
   <!-- <div class="row">
     <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
@@ -222,17 +220,17 @@
     </div>
   </div>
 
-  @if(auth()->check() && auth()->user()->isAdmin() && $pendingOrdersCount > 0)
+  <?php if(auth()->check() && auth()->user()->isAdmin() && $pendingOrdersCount > 0): ?>
     <div class="alert alert-warning">
-        <strong>{{ $pendingOrdersCount }}</strong> pedido(s) pendente(s) de visualização.
-        <a href="{{ route('admin.orders.index', ['only_pending' => 1]) }}" class="alert-link">
+        <strong><?php echo e($pendingOrdersCount); ?></strong> pedido(s) pendente(s) de visualização.
+        <a href="<?php echo e(route('admin.orders.index', ['only_pending' => 1])); ?>" class="alert-link">
             Ver pedidos
         </a>
     </div>
-  @endif
+  <?php endif; ?>
 
-@endsection
-@push('dashboard')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('dashboard'); ?>
   <script>
     window.onload = function() {
       var ctx = document.getElementById("chart-bars").getContext("2d");
@@ -405,5 +403,7 @@
       });
     }
   </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
+
+<?php echo $__env->make('layouts.user_type.auth', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/html/resources/views/dashboard.blade.php ENDPATH**/ ?>
