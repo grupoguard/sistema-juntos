@@ -318,7 +318,6 @@ class OrderForm extends Component
                 'order_id' => $order->id,
                 'product_id' => $this->product_id,
                 'product_value' => $product->value,
-                'dependents_count' => count($dependentsIds),
             ]);
 
             // Cadastrar adicionais principais (não vinculados a dependentes)
