@@ -59,7 +59,9 @@
                         <tbody>
                             @foreach($rows as $row)
                                 @php
-                                    $diff = (float) $row->difference_value;
+                                    $calculated = (float) $row->calculated_order_total;
+                                    $financial = (float) $row->financial_total_value;
+                                    $diff = round($calculated - $financial, 2);
                                 @endphp
                                 <tr>
                                     <td>#{{ $row->id }}</td>
