@@ -318,7 +318,6 @@ class OrderForm extends Component
                 'order_id' => $order->id,
                 'product_id' => $this->product_id,
                 'product_value' => $product->value,
-                'dependent_value' => 0,
                 'dependents_count' => count($dependentsIds),
             ]);
 

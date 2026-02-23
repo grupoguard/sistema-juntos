@@ -227,6 +227,8 @@ Route::group([
 		return view('profile');
 	})->name('profile');
 
+    Route::post('profile', [ProfileController::class, 'store'])->name('profile.store');
+
 	Route::get('billing', function () {
 		return view('billing');
 	})->name('billing');
