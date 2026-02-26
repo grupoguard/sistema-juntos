@@ -1,6 +1,20 @@
 <div>
     <div class="container-fluid py-4">
         <div class="card">
+            @if ($successMessage)
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ $successMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
+                </div>
+            @endif
+
+            @if ($errorMessage)
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ $errorMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+                </div>
+            @endif
+
             <div class="card-header pb-0">
                 <h5 class="mb-0">Lista de Cooperativas</h5>
             </div>
@@ -28,11 +42,11 @@
                         </select>
                     </div>
                     <div class="col-md-4 text-end">
-                        <a 
-                            href="{{ route('admin.groups.create') }}" 
-                            class="btn bg-blue text-white">
+                        @can('groups.create')
+                            <a href="{{ route('admin.groups.create') }}" class="btn bg-blue text-white">
                                 + Nova Cooperativa
-                        </a>
+                            </a>
+                        @endcan
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -51,12 +65,13 @@
                                 <th>
                                     Status
                                 </th>
-                                <th class="text-center">
-                                    Editar
-                                </th>
-                                <th class="text-center">
-                                    Excluir
-                                </th>
+                                @can('groups.edit')
+                                    <th class="text-center">Editar</th>
+                                @endcan
+
+                                @can('groups.delete')
+                                    <th class="text-center">Excluir</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -76,21 +91,21 @@
                                         {{ $group->status ? 'Ativo' : 'Inativo' }}
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <a 
-                                        href="{{ route('admin.groups.edit', $group->id) }}" 
-                                        class="btn btn-link text-dark fs-5 p-0 mb-0">
-                                        <i class="fa fa-edit me-1"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center">
-                                    <button 
-                                        wire:click="confirmDelete({{ $group->id }})" 
-                                        class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
-                                    >
-                                        <i class="fa fa-trash me-1"></i>
-                                    </button>
-                                </td>
+                               @can('groups.edit')
+                                    <td class="text-center">
+                                        <a href="{{ route('admin.groups.edit', $group->id) }}" class="btn btn-link text-dark fs-5 p-0 mb-0">
+                                            <i class="fa fa-edit me-1"></i>
+                                        </a>
+                                    </td>
+                                @endcan
+
+                                @can('groups.delete')
+                                    <td class="text-center">
+                                        <button wire:click="confirmDelete({{ $group->id }})" class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0">
+                                            <i class="fa fa-trash me-1"></i>
+                                        </button>
+                                    </td>
+                                @endcan
                             </tr>
                             @endforeach
                         </tbody>

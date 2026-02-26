@@ -1,6 +1,21 @@
 <div>
     <div class="container-fluid py-4">
         <div class="card">
+            <!--[if BLOCK]><![endif]--><?php if($successMessage): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <?php echo e($successMessage); ?>
+
+                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
+                </div>
+            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+
+            <!--[if BLOCK]><![endif]--><?php if($errorMessage): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?php echo e($errorMessage); ?>
+
+                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+                </div>
+            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
             <div class="card-header pb-0">
                 <h5 class="mb-0">Lista de Produtos</h5>
             </div>
@@ -28,11 +43,11 @@
                         </select>
                     </div>
                     <div class="col-md-4 text-end">
-                        <a 
-                            href="<?php echo e(route('admin.products.create')); ?>" 
-                            class="btn bg-blue text-white">
+                        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('products.create')): ?>
+                            <a href="<?php echo e(route('admin.products.create')); ?>" class="btn bg-blue text-white">
                                 + Novo Produto
-                        </a>
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -51,12 +66,13 @@
                                 <th>
                                     Status
                                 </th>
-                                <th class="text-center">
-                                    Editar
-                                </th>
-                                <th class="text-center">
-                                    Excluir
-                                </th>
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('products.edit')): ?>
+                                    <th class="text-center">Editar</th>
+                                <?php endif; ?>
+
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('products.delete')): ?>
+                                    <th class="text-center">Excluir</th>
+                                <?php endif; ?>
                             </tr>
                         </thead>
                         <tbody>
@@ -80,21 +96,21 @@
 
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <a 
-                                        href="<?php echo e(route('admin.products.edit', $product->id)); ?>" 
-                                        class="btn btn-link text-dark fs-5 p-0 mb-0">
-                                        <i class="fa fa-edit me-1"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center">
-                                    <button 
-                                        wire:click="confirmDelete(<?php echo e($product->id); ?>)" 
-                                        class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
-                                    >
-                                        <i class="fa fa-trash me-1"></i>
-                                    </button>
-                                </td>
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('products.edit')): ?>
+                                    <td class="text-center">
+                                        <a href="<?php echo e(route('admin.products.edit', $product->id)); ?>" class="btn btn-link text-dark fs-5 p-0 mb-0">
+                                            <i class="fa fa-edit me-1"></i>
+                                        </a>
+                                    </td>
+                                <?php endif; ?>
+
+                                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('products.delete')): ?>
+                                    <td class="text-center">
+                                        <button wire:click="confirmDelete(<?php echo e($product->id); ?>)" class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0">
+                                            <i class="fa fa-trash me-1"></i>
+                                        </button>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
                         </tbody>

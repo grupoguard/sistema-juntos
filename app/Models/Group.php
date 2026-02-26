@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\User;
@@ -49,5 +50,15 @@ class Group extends Model
         }
 
         return $query->whereRaw('1 = 0');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(\App\Models\Order::class, 'group_id');
+    }
+
+    public function sellers(): HasMany
+    {
+        return $this->hasMany(\App\Models\Seller::class, 'group_id');
     }
 }

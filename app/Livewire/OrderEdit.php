@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\WithFileUploads;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
 
 class OrderEdit extends Component
 {
@@ -29,6 +30,14 @@ class OrderEdit extends Component
     public $charge_type;
     public $review_notes;
     public $financials = [];
+
+    public $document_file; // novo upload RG/CNH
+    public $document_file_type = 'RG'; // RG ou CNH
+    public $address_proof_file; // novo upload comprovante
+
+    public $existing_document_file; // path atual
+    public $existing_document_file_type; // tipo atual
+    public $existing_address_proof_file; // path atual
 
     protected function rules()
     {
@@ -57,6 +66,9 @@ class OrderEdit extends Component
                 'numeric',
                 'min:0',
             ],
+            'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'document_file_type' => 'nullable|in:RG,CNH',
+            'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ];
 
         if ($this->discount_type === '%') {
@@ -171,6 +183,11 @@ class OrderEdit extends Component
         $this->accession_payment = $this->order->accession_payment ?? 'Não cobrada';
         $this->discount_type = $this->order->discount_type;
         $this->discount_value = $this->order->discount_value ?? 0.00;
+        $this->existing_document_file = $this->order->document_file;
+        $this->existing_document_file_type = $this->order->document_file_type ?: 'RG';
+        $this->existing_address_proof_file = $this->order->address_proof_file;
+        // default do select pra manter o tipo atual
+        $this->document_file_type = $this->existing_document_file_type;
 
         // Carregar adicionais do produto
         $this->loadAdditionals();
@@ -270,7 +287,40 @@ class OrderEdit extends Component
                 'city' => $this->client['city'],
                 'state' => $this->client['state'],
             ]);
-            
+
+            // Substituir documento (RG/CNH)
+            if ($this->document_file) {
+                // apaga arquivo antigo (se existir)
+                if ($order->document_file && Storage::disk('public')->exists($order->document_file)) {
+                    Storage::disk('public')->delete($order->document_file);
+                }
+
+                $documentPath = $this->document_file->store('orders/documents', 'public');
+
+                $order->update([
+                    'document_file' => $documentPath,
+                    'document_file_type' => $this->document_file_type ?: 'RG',
+                ]);
+
+                $this->existing_document_file = $documentPath;
+                $this->existing_document_file_type = $this->document_file_type ?: 'RG';
+            }
+
+            // Substituir comprovante de endereço
+            if ($this->address_proof_file) {
+                if ($order->address_proof_file && Storage::disk('public')->exists($order->address_proof_file)) {
+                    Storage::disk('public')->delete($order->address_proof_file);
+                }
+
+                $addressProofPath = $this->address_proof_file->store('orders/address_proofs', 'public');
+
+                $order->update([
+                    'address_proof_file' => $addressProofPath,
+                ]);
+
+                $this->existing_address_proof_file = $addressProofPath;
+            }
+                        
             \Log::info('Dados do cliente depois', $client->fresh()->toArray());
 
             // LOGS DOS DEPENDENTES
@@ -462,6 +512,8 @@ class OrderEdit extends Component
             }
 
             \Log::info('=== FIM PROCESSAMENTO ===');
+            
+            $this->reset(['document_file', 'address_proof_file']);
 
             DB::commit();
 

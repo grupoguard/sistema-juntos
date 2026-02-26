@@ -15,6 +15,8 @@ class GroupsList extends Component
     public $statusFilter = '';
     public $confirmingDelete = false;
     public $deleteId;
+    public $successMessage = null;
+    public $errorMessage = null;
 
     public function mount()
     {
@@ -31,6 +33,11 @@ class GroupsList extends Component
 
     public function confirmDelete($id)
     {
+        $group = Group::findOrFail($id);
+        $this->authorize('delete', $group);
+
+        $this->successMessage = null;
+        $this->errorMessage = null;
         $this->deleteId = $id;
         $this->confirmingDelete = true;
     }
@@ -42,18 +49,41 @@ class GroupsList extends Component
         $group = Group::findOrFail($this->deleteId);
         $this->authorize('delete', $group);
 
-        // Se tiver relação orders()
-        if (method_exists($group, 'orders') && $group->orders()->exists()) {
-            $this->addError('delete', 'Esta cooperativa possui pedidos vinculados e não pode ser excluída.');
+        // checagens prévias (ótimo manter)
+        if ($group->orders()->exists()) {
+            $this->errorMessage = 'Esta cooperativa possui pedidos vinculados e não pode ser excluída.';
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
             return;
         }
 
-        $group->delete();
+        if ($group->sellers()->exists()) {
+            $this->errorMessage = 'Esta cooperativa possui consultores vinculados e não pode ser excluída.';
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+            return;
+        }
 
-        $this->confirmingDelete = false;
-        $this->deleteId = null;
+        try {
+            $group->delete();
 
-        session()->flash('message', 'Cooperativa excluída com sucesso!');
+            $this->successMessage = 'Cooperativa excluída com sucesso!';
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+
+        } catch (QueryException $e) {
+            // FK violation MySQL: 1451
+            $errorCode = $e->errorInfo[1] ?? null;
+
+            if ($errorCode === 1451) {
+                $this->errorMessage = 'Não é possível excluir esta cooperativa porque existem registros vinculados (ex.: pedidos/consultores).';
+            } else {
+                $this->errorMessage = 'Erro ao excluir cooperativa: ' . $e->getMessage();
+            }
+
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+        }
     }
 
     private function getGroups()

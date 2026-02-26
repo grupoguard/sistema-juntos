@@ -1,6 +1,20 @@
 <div>
     <div class="container-fluid py-4">
         <div class="card">
+            @if ($successMessage)
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ $successMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
+                </div>
+            @endif
+
+            @if ($errorMessage)
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ $errorMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+                </div>
+            @endif
+
             <div class="card-header pb-0">
                 <h5 class="mb-0">Lista de Consultores</h5>
             </div>
@@ -103,21 +117,37 @@
         </div>
     </div>
     @if($confirmingDelete)
-        <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade show d-block"
+            tabindex="-1"
+            role="dialog"
+            aria-labelledby="exampleModalLabel"
+            aria-modal="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Confirmar Exclusão</h5>
+                        <h5 class="modal-title" id="exampleModalLabel">Confirmar Exclusão</h5>
                     </div>
                     <div class="modal-body">
                         Tem certeza que deseja excluir este consultor? Esta ação não pode ser desfeita.
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="$set('confirmingDelete', false)">Cancelar</button>
-                        <button type="button" class="btn btn-danger" wire:click="delete()">Excluir</button>
+                        <button type="button"
+                                class="btn btn-secondary"
+                                wire:click="$set('confirmingDelete', false)">
+                            Cancelar
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-danger"
+                                onclick="this.blur()"
+                                wire:click="delete">
+                            Excluir
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="modal-backdrop fade show"></div>
     @endif
 </div>
