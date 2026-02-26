@@ -169,7 +169,29 @@
                         @error('client.email') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
                 </div>
-            @endif
+
+                <div class="row mt-3">
+                    <div class="col-md-9">
+                        <label>Nome da mãe <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" wire:model.defer="client.mom_name">
+                        @error('client.mom_name') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+
+                    <div class="col-md-3">
+                        <label>Estado civil <span class="text-danger">*</span></label>
+                        <select class="form-control" wire:model.defer="client.marital_status">
+                            <option value="">Selecione</option>
+                            <option value="solteiro">Solteiro(a)</option>
+                            <option value="casado">Casado(a)</option>
+                            <option value="divorciado">Divorciado(a)</option>
+                            <option value="viuvo">Viúvo(a)</option>
+                            <option value="uniao_estavel">União Estável</option>
+                            <option value="nao_informado">Não informado</option>
+                        </select>
+                        @error('client.marital_status') <small class="text-danger">{{ $message }}</small> @enderror
+                    </div>
+                </div>
+                            @endif
 
             {{-- ETAPA 2 - Endereço --}}
             @if($step === 2)
@@ -368,8 +390,26 @@
                                     <label>Estado civil</label>
                                     <input type="text" class="form-control" wire:model.defer="dependents.{{ $index }}.marital_status">
                                 </div>
+                                @if(!empty($additionals))
+                                    <div class="col-md-6">
+                                        <label class="mb-1"><strong>Adicionais do dependente</strong></label>
+                                        @foreach($additionals as $aditional)
+                                            <div class="form-check">
+                                                <input class="form-check-input"
+                                                    type="checkbox"
+                                                    value="{{ $aditional['id'] }}"
+                                                    id="dep_{{ $index }}_add_{{ $aditional['id'] }}"
+                                                    wire:model.defer="dependents.{{ $index }}.additionals">
+                                                <label class="form-check-label" for="dep_{{ $index }}_add_{{ $aditional['id'] }}">
+                                                    {{ $aditional['name'] }} - R$ {{ number_format((float)($aditional['value'] ?? 0), 2, ',', '.') }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
+                        @error("dependents.$index.name") <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
                 @empty
                     <div class="alert alert-light border">

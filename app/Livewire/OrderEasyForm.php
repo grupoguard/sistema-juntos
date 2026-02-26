@@ -85,15 +85,6 @@ class OrderEasyForm extends Component
             ->get()
             ->toArray();
 
-        // Adicionais ativos (ajuste se houver filtro por produto depois)
-        if (class_exists(Aditional::class)) {
-            $this->additionals = Aditional::query()
-                ->where('status', 1)
-                ->orderBy('name')
-                ->get()
-                ->toArray();
-        }
-
         $this->resetDefaultState();
 
         // SELLER: trava seller_id automaticamente
@@ -993,27 +984,40 @@ class OrderEasyForm extends Component
 
     public function loadAdditionalsForEasyForm()
     {
-        $productId = $this->orderData['product_id'] ?? null;
+        $productId = (int) ($this->orderData['product_id'] ?? 0);
 
-        if ($productId) {
-            $product = \App\Models\Product::find($productId);
+        // quando muda o produto, zera os adicionais selecionados (titular e dependentes)
+        $this->orderData['selectedAdditionals'] = [];
 
-            if ($product) {
-                $this->total = (float) $product->value;
-
-                $this->additionals = \App\Models\Aditional::select('aditionals.*', 'product_aditionals.value')
-                    ->join('product_aditionals', 'product_aditionals.aditional_id', '=', 'aditionals.id')
-                    ->where('product_aditionals.product_id', $productId)
-                    ->get()
-                    ->toArray();
-            } else {
-                $this->total = 0;
-                $this->additionals = [];
-            }
-        } else {
-            $this->total = 0;
-            $this->additionals = [];
+        foreach ($this->dependents as $i => $dep) {
+            $this->dependents[$i]['additionals'] = [];
         }
+
+        if (!$productId) {
+            $this->additionals = [];
+            $this->recalculateEasyTotal();
+            $this->saveDraft();
+            return;
+        }
+
+        $product = Product::find($productId);
+
+        if (!$product) {
+            $this->additionals = [];
+            $this->recalculateEasyTotal();
+            $this->saveDraft();
+            return;
+        }
+
+        // ✅ SOMENTE adicionais vinculados ao produto
+        $this->additionals = Aditional::query()
+            ->select('aditionals.id', 'aditionals.name', 'product_aditionals.value')
+            ->join('product_aditionals', 'product_aditionals.aditional_id', '=', 'aditionals.id')
+            ->where('product_aditionals.product_id', $productId)
+            ->where('aditionals.status', 1)
+            ->orderBy('aditionals.name')
+            ->get()
+            ->toArray();
 
         $this->recalculateEasyTotal();
         $this->saveDraft();

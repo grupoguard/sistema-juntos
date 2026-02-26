@@ -369,7 +369,7 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
 
                     <div class="col-md-6">
                         <label>Produto <span class="text-danger">*</span></label>
-                        <select class="form-control" wire:model.defer="orderData.product_id">
+                        <select class="form-control" wire:model.change="orderData.product_id">
                             <option value="">Selecione</option>
                             <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option value="<?php echo e($product['id']); ?>"><?php echo e($product['name']); ?></option>
@@ -500,6 +500,24 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                                     <label>Estado civil</label>
                                     <input type="text" class="form-control" wire:model.defer="dependents.<?php echo e($index); ?>.marital_status">
                                 </div>
+                                <!--[if BLOCK]><![endif]--><?php if(!empty($additionals)): ?>
+                                    <div class="col-md-6">
+                                        <label class="mb-1"><strong>Adicionais do dependente</strong></label>
+                                        <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $additionals; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $aditional): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <div class="form-check">
+                                                <input class="form-check-input"
+                                                    type="checkbox"
+                                                    value="<?php echo e($aditional['id']); ?>"
+                                                    id="dep_<?php echo e($index); ?>_add_<?php echo e($aditional['id']); ?>"
+                                                    wire:model.defer="dependents.<?php echo e($index); ?>.additionals">
+                                                <label class="form-check-label" for="dep_<?php echo e($index); ?>_add_<?php echo e($aditional['id']); ?>">
+                                                    <?php echo e($aditional['name']); ?> - R$ <?php echo e(number_format((float)($aditional['value'] ?? 0), 2, ',', '.')); ?>
+
+                                                </label>
+                                            </div>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
+                                    </div>
+                                <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                             </div>
                         </div>
                     </div>
@@ -534,9 +552,9 @@ unset($__errorArgs, $__bag); ?><!--[if ENDBLOCK]><![endif]-->
                         <label>Dia de pagamento <span class="text-danger">*</span></label>
                         <select class="form-control" wire:model.defer="billing.charge_date">
                             <option value="">Selecione</option>
-                            <!--[if BLOCK]><![endif]--><?php for($i = 1; $i <= 31; $i++): ?>
-                                <option value="<?php echo e($i); ?>"><?php echo e($i); ?></option>
-                            <?php endfor; ?><!--[if ENDBLOCK]><![endif]-->
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="30">30</option>
                         </select>
                         <!--[if BLOCK]><![endif]--><?php $__errorArgs = ['billing.charge_date'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
