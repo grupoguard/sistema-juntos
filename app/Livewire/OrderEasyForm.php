@@ -802,7 +802,6 @@ class OrderEasyForm extends Component
                 'order_id' => $order->id,
                 'product_id' => $productId,
                 'product_value' => $product->value,
-                'dependents_count' => count($dependentsToSave),
             ]);
 
             // Adicionais do titular
