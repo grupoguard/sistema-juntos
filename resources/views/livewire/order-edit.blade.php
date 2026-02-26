@@ -353,6 +353,100 @@
                                     @endforeach
                                 </div>
 
+                                <hr class="my-5">
+
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h5 class="mb-4">Documentos</h5>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Documento (RG/CNH)</h6>
+
+                                        @if($existing_document_file)
+                                            <div class="mb-2">
+                                                <small class="text-muted">Arquivo atual ({{ $existing_document_file_type ?? 'RG' }}):</small><br>
+
+                                                @php
+                                                    $ext = strtolower(pathinfo($existing_document_file, PATHINFO_EXTENSION));
+                                                    $url = asset('storage/' . $existing_document_file);
+                                                @endphp
+
+                                                @if(in_array($ext, ['jpg','jpeg','png','webp']))
+                                                    <a href="{{ $url }}" target="_blank">
+                                                        <img src="{{ $url }}" class="img-fluid rounded border" style="max-height: 250px;">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                        Ver documento (PDF)
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="alert alert-warning py-2">
+                                                Nenhum documento anexado.
+                                            </div>
+                                        @endif
+
+                                        <div class="mb-2">
+                                            <label class="form-label">Tipo do documento</label>
+                                            <select class="form-control" wire:model="document_file_type">
+                                                <option value="RG">RG</option>
+                                                <option value="CNH">CNH</option>
+                                            </select>
+                                            @error('document_file_type') <small class="text-danger">{{ $message }}</small> @enderror
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="form-label">Substituir documento</label>
+                                            <input type="file" class="form-control" wire:model="document_file">
+                                            @error('document_file') <small class="text-danger">{{ $message }}</small> @enderror
+
+                                            <div wire:loading wire:target="document_file" class="text-muted mt-1">
+                                                Carregando arquivo...
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <h6>Comprovante de Endereço</h6>
+
+                                        @if($existing_address_proof_file)
+                                            <div class="mb-2">
+                                                <small class="text-muted">Arquivo atual:</small><br>
+
+                                                @php
+                                                    $ext = strtolower(pathinfo($existing_address_proof_file, PATHINFO_EXTENSION));
+                                                    $url = asset('storage/' . $existing_address_proof_file);
+                                                @endphp
+
+                                                @if(in_array($ext, ['jpg','jpeg','png','webp']))
+                                                    <a href="{{ $url }}" target="_blank">
+                                                        <img src="{{ $url }}" class="img-fluid rounded border" style="max-height: 250px;">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                        Ver comprovante (PDF)
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="alert alert-warning py-2">
+                                                Nenhum comprovante anexado.
+                                            </div>
+                                        @endif
+
+                                        <div class="mb-2">
+                                            <label class="form-label">Substituir comprovante</label>
+                                            <input type="file" class="form-control" wire:model="address_proof_file">
+                                            @error('address_proof_file') <small class="text-danger">{{ $message }}</small> @enderror
+
+                                            <div wire:loading wire:target="address_proof_file" class="text-muted mt-1">
+                                                Carregando arquivo...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Botão de salvar -->
                                 <div class="row">
                                     <div class="col-lg-5 text-end">

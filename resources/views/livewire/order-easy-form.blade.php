@@ -260,7 +260,7 @@
 
                     <div class="col-md-6">
                         <label>Produto <span class="text-danger">*</span></label>
-                        <select class="form-control" wire:model.defer="orderData.product_id">
+                        <select class="form-control" wire:model.change="orderData.product_id">
                             <option value="">Selecione</option>
                             @foreach($products as $product)
                                 <option value="{{ $product['id'] }}">{{ $product['name'] }}</option>
@@ -395,9 +395,9 @@
                         <label>Dia de pagamento <span class="text-danger">*</span></label>
                         <select class="form-control" wire:model.defer="billing.charge_date">
                             <option value="">Selecione</option>
-                            @for($i = 1; $i <= 31; $i++)
-                                <option value="{{ $i }}">{{ $i }}</option>
-                            @endfor
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="30">30</option>
                         </select>
                         @error('billing.charge_date') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>

@@ -6,16 +6,21 @@ use App\Models\Seller;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\QueryException;
 
 class SellersList extends Component
 {
     use WithPagination, AuthorizesRequests;
 
+    public ?string $successMessage = null;
+    public ?string $errorMessage = null;    
     public $search = '';
     public $statusFilter = '';
     public $confirmingDelete = false;
     public $deleteId;
-
+    
     public function mount()
     {
         $this->authorize('viewAny', Seller::class);
@@ -39,19 +44,66 @@ class SellersList extends Component
         $this->confirmingDelete = true;
     }
 
-    public function delete()
+   public function delete()
     {
-        if (! $this->deleteId) return;
+        // limpa mensagens antigas ao tentar excluir novamente
+        $this->successMessage = null;
+        $this->errorMessage = null;
 
-        $seller = Seller::findOrFail($this->deleteId);
-        $this->authorize('delete', $seller);
+        if (! $this->deleteId) {
+            $this->setError('Nenhum consultor foi selecionado para exclusão.');
+            return;
+        }
 
-        $seller->delete();
+        try {
+            $seller = Seller::findOrFail($this->deleteId);
 
-        $this->confirmingDelete = false;
-        $this->deleteId = null;
+            $this->authorize('delete', $seller);
 
-        session()->flash('message', 'Consultor excluído com sucesso!');
+            $seller->delete();
+
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+
+            $this->setSuccess('Consultor excluído com sucesso!');
+            return;
+
+        } catch (ModelNotFoundException $e) {
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+
+            $this->setError('Consultor não encontrado.');
+            return;
+
+        } catch (AuthorizationException $e) {
+            // aqui você decide se fecha ou mantém aberto
+            $this->confirmingDelete = false; // <- fecha para mostrar melhor
+            $this->setError('Você não tem permissão para excluir este consultor.');
+            return;
+
+        } catch (QueryException $e) {
+            $sqlState   = $e->errorInfo[0] ?? null;
+            $driverCode = $e->errorInfo[1] ?? null;
+
+            // FK constraint
+            if ($sqlState === '23000' && (int) $driverCode === 1451) {
+                // RECOMENDO fechar o modal no erro de vínculo
+                $this->confirmingDelete = false;
+                $this->setError('Não é possível excluir este consultor, pois existem registros vinculados.');
+                return;
+            }
+
+            report($e);
+            $this->confirmingDelete = false;
+            $this->setError('Erro no banco de dados ao excluir o consultor.');
+            return;
+
+        } catch (\Throwable $e) {
+            report($e);
+            $this->confirmingDelete = false;
+            $this->setError('Ocorreu um erro inesperado ao excluir o consultor.');
+            return;
+        }
     }
 
     private function getSellers()
@@ -71,6 +123,18 @@ class SellersList extends Component
             })
             ->orderBy('name')
             ->paginate(10);
+    }
+
+    private function setSuccess(string $message): void
+    {
+        $this->successMessage = $message;
+        $this->errorMessage = null;
+    }
+
+    private function setError(string $message): void
+    {
+        $this->errorMessage = $message;
+        $this->successMessage = null;
     }
 
     public function render()

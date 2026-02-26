@@ -1,3 +1,6 @@
+> Cadastrar Produto
+>> Após cadastro direcionar para a tela de edição 
+
 > Evidências
 - Criar lógica: 
 -- Para envio de evidências na edição de pedido;
@@ -5,20 +8,10 @@
 -- Para dar baixar na evidência após processamento do retorno;
 -- Para enviar nova evidênia alterando a data da evidência;
 
-> Finaneiro
-- Integração com asaas
-
 - Criar lógica:
 -- Para criar o cliente no asaas (ou verificar se já existe) após cadastro via boleto;
 --- Criar cliente no asaas caso altere de EDP para boleto; 
 -- Criar possibilidiade de edição + remoção + inclusão de uma cobrança
--- (Para isso vamos)
---- Ajustar as models de criação 
---- Ajustar o fluxo 
-
-> Logs
-- Criar logs do Asaas
-- Criar logs do webhook do Asaas 
 
 > Commands
 - Criar command para realizar as cobranças mensalmente 
@@ -33,6 +26,3 @@
 -- Implementar o cadastro de usuários 
 -- Implementar as roles de cadastro 
 -- Limitar as telas de cada usuário
-
-> Assinatura
--- Criar sistema de assinatura válido

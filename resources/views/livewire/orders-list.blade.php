@@ -1,6 +1,19 @@
 <div>
     <div class="container-fluid py-4">
         <div class="card">
+            @if ($successMessage)
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ $successMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
+                </div>
+            @endif
+
+            @if ($errorMessage)
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ $errorMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+                </div>
+            @endif
             <div class="card-header pb-0">
                 <h5 class="mb-0">Pedidos</h5>
             </div>
@@ -15,15 +28,17 @@
                         >
                     </div>
                     <div class="col-md-9 text-end">
-                        <a 
-                            href="{{ route('admin.orders.create') }}" 
-                            class="btn bg-blue text-white">
+                        @can('orders.create')
+                            <a href="{{ route('admin.orders.create') }}" class="btn bg-blue text-white">
                                 + Novo pedido
-                        </a>
+                            </a>
+                        @endcan
                         <br>
-                        <a href="{{ route('admin.orders.easy-create') }}" class="btn btn-primary">
-                            Cadastro Facilitado
-                        </a>
+                        @can('orders.create')
+                            <a href="{{ route('admin.orders.easy-create') }}" class="btn btn-primary">
+                                Cadastro Facilitado
+                            </a>
+                        @endcan
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -35,12 +50,13 @@
                                 <th>Produto</th>
                                 <th>Consultor</th>
                                 <th>Data</th>
-                                <th class="text-center">
-                                    Editar
-                                </th>
-                                <th class="text-center">
-                                    Excluir
-                                </th>
+                                @can('orders.edit')
+                                    <th class="text-center">Editar</th>
+                                @endcan
+
+                                @can('orders.delete')
+                                    <th class="text-center">Excluir</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -51,21 +67,21 @@
                                     <td>{{ $order->product->name }}</td>
                                     <td>{{ $order->seller->name }}</td>
                                     <td>{{ $order->created_at->format('d/m/Y') }}</td>
-                                    <td class="text-center">
-                                        <a 
-                                            href="{{ route('admin.orders.edit', $order->id) }}"
-                                            class="btn btn-link text-dark fs-5 p-0 mb-0">
-                                            <i class="fa fa-edit me-1"></i>
-                                        </a>
-                                    </td>
-                                    <td class="text-center">
-                                        <button 
-                                            wire:click="confirmDelete({{ $order->id }})" 
-                                            class="btn btn-danger btn-sm"
-                                        >
-                                            <i class="fa fa-trash me-1"></i>
-                                        </button>
-                                    </td>
+                                    @can('orders.edit')
+                                        <td class="text-center">
+                                            <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-link text-dark fs-5 p-0 mb-0">
+                                                <i class="fa fa-edit me-1"></i>
+                                            </a>
+                                        </td>
+                                    @endcan
+
+                                    @can('orders.delete')
+                                        <td class="text-center">
+                                            <button wire:click="confirmDelete({{ $order->id }})" class="btn btn-danger btn-sm">
+                                                <i class="fa fa-trash me-1"></i>
+                                            </button>
+                                        </td>
+                                    @endcan
                                 </tr>
                             @endforeach
                         </tbody>

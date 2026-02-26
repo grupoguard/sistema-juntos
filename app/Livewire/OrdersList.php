@@ -17,6 +17,9 @@ class OrdersList extends Component
     public $confirmingDelete = false;
     public $deleteId;
 
+    public $successMessage = null;
+    public $errorMessage = null;
+
     public function mount()
     {
         $this->authorize('viewAny', Order::class);
@@ -29,6 +32,9 @@ class OrdersList extends Component
 
     public function confirmDelete($id)
     {
+        $this->successMessage = null;
+        $this->errorMessage = null;
+
         $order = Order::findOrFail($id);
         $this->authorize('delete', $order);
 
@@ -38,33 +44,37 @@ class OrdersList extends Component
 
     public function deleteOrder()
     {
-        if (!$this->deleteId) return;
+        if (! $this->deleteId) return;
 
-        $orderId = $this->deleteId;
+        $order = Order::findOrFail($this->deleteId);
+        $this->authorize('delete', $order);
 
-        DB::transaction(function () use ($orderId) {
-            $order = Order::findOrFail($orderId);
-            $this->authorize('delete', $order);
+        // trava se tiver financeiro
+        if ($order->financials()->exists()) {
+            $this->errorMessage = 'Este pedido possui registros financeiros e não pode ser excluído.';
+            $this->confirmingDelete = false;
+            $this->deleteId = null;
+            return;
+        }
 
-            // Deletando registros relacionados ao pedido
+        $orderId = $order->id;
+
+        DB::transaction(function () use ($orderId, $order) {
             DB::table('order_aditionals')->where('order_id', $orderId)->delete();
             DB::table('order_dependents')->where('order_id', $orderId)->delete();
             DB::table('order_prices')->where('order_id', $orderId)->delete();
-    
-            if ($order && $order->charge_type === 'EDP') {
+
+            if ($order->charge_type === 'EDP') {
                 DB::table('evidence_documents')->where('order_id', $orderId)->delete();
                 DB::table('evidence_return')->where('order_id', $orderId)->delete();
             }
-    
-            // Deletando o pedido principal
+
             Order::where('id', $orderId)->delete();
-            
         });
 
+        $this->successMessage = 'Pedido deletado com sucesso!';
         $this->confirmingDelete = false;
         $this->deleteId = null;
-    
-        session()->flash('message', 'Pedido deletado com sucesso!');
     }
 
     public function render()

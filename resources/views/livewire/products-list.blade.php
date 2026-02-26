@@ -1,6 +1,19 @@
 <div>
     <div class="container-fluid py-4">
         <div class="card">
+            @if ($successMessage)
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ $successMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
+                </div>
+            @endif
+
+            @if ($errorMessage)
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ $errorMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+                </div>
+            @endif
             <div class="card-header pb-0">
                 <h5 class="mb-0">Lista de Produtos</h5>
             </div>
@@ -28,11 +41,11 @@
                         </select>
                     </div>
                     <div class="col-md-4 text-end">
-                        <a 
-                            href="{{ route('admin.products.create') }}" 
-                            class="btn bg-blue text-white">
+                        @can('products.create')
+                            <a href="{{ route('admin.products.create') }}" class="btn bg-blue text-white">
                                 + Novo Produto
-                        </a>
+                            </a>
+                        @endcan
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -51,12 +64,13 @@
                                 <th>
                                     Status
                                 </th>
-                                <th class="text-center">
-                                    Editar
-                                </th>
-                                <th class="text-center">
-                                    Excluir
-                                </th>
+                                @can('products.edit')
+                                    <th class="text-center">Editar</th>
+                                @endcan
+
+                                @can('products.delete')
+                                    <th class="text-center">Excluir</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -76,21 +90,21 @@
                                         {{ $product->status ? 'Ativo' : 'Inativo' }}
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <a 
-                                        href="{{ route('admin.products.edit', $product->id) }}" 
-                                        class="btn btn-link text-dark fs-5 p-0 mb-0">
-                                        <i class="fa fa-edit me-1"></i>
-                                    </a>
-                                </td>
-                                <td class="text-center">
-                                    <button 
-                                        wire:click="confirmDelete({{ $product->id }})" 
-                                        class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0"
-                                    >
-                                        <i class="fa fa-trash me-1"></i>
-                                    </button>
-                                </td>
+                                @can('products.edit')
+                                    <td class="text-center">
+                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-link text-dark fs-5 p-0 mb-0">
+                                            <i class="fa fa-edit me-1"></i>
+                                        </a>
+                                    </td>
+                                @endcan
+
+                                @can('products.delete')
+                                    <td class="text-center">
+                                        <button wire:click="confirmDelete({{ $product->id }})" class="btn btn-link text-danger text-gradient fs-5 p-0 mb-0">
+                                            <i class="fa fa-trash me-1"></i>
+                                        </button>
+                                    </td>
+                                @endcan
                             </tr>
                             @endforeach
                         </tbody>

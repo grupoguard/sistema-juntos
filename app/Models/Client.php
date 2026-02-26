@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 
 class Client extends Model
 {
@@ -62,5 +64,29 @@ class Client extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->isAdmin()) return $query;
+
+        if ($user->isCoop()) {
+            $groupIds = $user->getAccessibleGroupIds();
+            return empty($groupIds) ? $query->whereRaw('1=0') : $query->whereIn('group_id', $groupIds);
+        }
+
+        if ($user->isSeller()) {
+            $sellerIds = $user->getAccessibleSellerIds();
+            if (empty($sellerIds)) return $query->whereRaw('1=0');
+
+            return $query->whereIn('id', function ($sub) use ($sellerIds) {
+                $sub->select('client_id')
+                    ->from('orders')
+                    ->whereIn('seller_id', $sellerIds)
+                    ->groupBy('client_id');
+            });
+        }
+
+        return $query->whereRaw('1=0');
     }
 }

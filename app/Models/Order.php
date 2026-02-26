@@ -154,4 +154,9 @@ class Order extends Model
             ]);
         }
     }
+
+    public function financials()
+    {
+        return $this->hasMany(Financial::class, 'order_id');
+    }
 }
