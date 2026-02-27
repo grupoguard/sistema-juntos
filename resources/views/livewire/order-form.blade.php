@@ -332,12 +332,20 @@
                                 @if ($document_file)
                                     <label>Pré-visualização documento</label>
                                     <div class="border rounded p-2">
-                                        <img src="{{ $document_file->temporaryUrl() }}" alt="Documento" class="img-fluid rounded">
-                                    </div>
-                                @elseif(!empty($existing_document_file))
-                                    <label>Documento atual</label>
-                                    <div class="border rounded p-2">
-                                        <a href="{{ Storage::url($existing_document_file) }}" target="_blank">Visualizar documento atual</a>
+
+                                        @if (str_starts_with($document_file->getMimeType(), 'image/'))
+                                            <img src="{{ $document_file->temporaryUrl() }}" alt="Documento" class="img-fluid rounded">
+                                        @elseif ($document_file->getMimeType() === 'application/pdf')
+                                            <a href="{{ $document_file->temporaryUrl() }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                Abrir PDF para visualizar
+                                            </a>
+
+                                            {{-- opcional: embed/iframe --}}
+                                            <div class="mt-2" style="height: 500px;">
+                                                <iframe src="{{ $document_file->temporaryUrl() }}" style="width:100%; height:100%;" class="rounded border"></iframe>
+                                            </div>
+                                        @endif
+
                                     </div>
                                 @endif
                             </div>
@@ -346,7 +354,7 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label>Comprovante de endereço (imagem/foto)</label>
-                                <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*,application/pdf"capture="environment">
+                                <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*,application/pdf" capture="environment">
                                 @error('address_proof_file') <span class="text-danger">{{ $message }}</span> @enderror
 
                                 <div wire:loading wire:target="address_proof_file" class="text-muted mt-1">
@@ -358,7 +366,20 @@
                                 @if ($address_proof_file)
                                     <label>Pré-visualização comprovante</label>
                                     <div class="border rounded p-2">
-                                        <img src="{{ $address_proof_file->temporaryUrl() }}" alt="Comprovante" class="img-fluid rounded">
+
+                                        @if (str_starts_with($address_proof_file->getMimeType(), 'image/'))
+                                            <img src="{{ $address_proof_file->temporaryUrl() }}" alt="Comprovante" class="img-fluid rounded">
+                                        @elseif ($address_proof_file->getMimeType() === 'application/pdf')
+                                            <a href="{{ $address_proof_file->temporaryUrl() }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                Abrir PDF para visualizar
+                                            </a>
+
+                                            {{-- opcional (só se você liberar pdf em preview_mimes) --}}
+                                            <div class="mt-2" style="height: 500px;">
+                                                <iframe src="{{ $address_proof_file->temporaryUrl() }}" style="width:100%; height:100%;" class="rounded border"></iframe>
+                                            </div>
+                                        @endif
+
                                     </div>
                                 @elseif(!empty($existing_address_proof_file))
                                     <label>Comprovante atual</label>
