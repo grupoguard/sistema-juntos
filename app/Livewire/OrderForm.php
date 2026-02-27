@@ -183,7 +183,7 @@ class OrderForm extends Component
     public function saveOrder(EdpService $edpService)
     {
         DB::beginTransaction(); // Iniciar transação para garantir a integridade dos dados
-
+        $this->client_id = $this->client_id ?: null;
         $this->validate($this->rules()); // Valida os dados dinamicamente
 
         try {
