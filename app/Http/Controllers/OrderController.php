@@ -29,7 +29,7 @@ class OrderController extends Controller
     {
         $this->authorize('view', $order);
 
-        return view('admin.orders.show', compact('order'));
+        return view('pages.admin.orders.show', compact('order'));
     }
 
     public function easyform()
