@@ -299,7 +299,7 @@ class AsaasImportAndNormalize extends Command
     private function mapOrderChargeType(?string $billingType): string
     {
         return match ($billingType) {
-            'CREDIT_CARD', 'DEBIT_CARD' => 'CARTAO',
+            'CREDIT_CARD', 'DEBIT_CARD' => 'CREDIT_CARD',
             default => 'BOLETO', // PIX cai aqui também como você pediu
         };
     }
