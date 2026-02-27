@@ -163,6 +163,14 @@ Route::group([
         ->middlewareFor(['edit', 'update'], 'permission:orders.edit')
         ->middlewareFor(['destroy'], 'permission:orders.delete');
 
+    Route::get('orders/{order}/contract', [OrderController::class, 'contractPreview'])
+    ->name('orders.contract.preview')
+    ->middleware('permission:orders.view');
+
+    Route::get('orders/{order}/contract/pdf', [OrderController::class, 'contractPdf'])
+        ->name('orders.contract.pdf')
+        ->middleware('permission:orders.view');
+
     Route::get('order-easy-form', [OrderController::class, 'easyform'])
         ->middleware('auth', 'permission:orders.create')
         ->name('orders.easy-create');

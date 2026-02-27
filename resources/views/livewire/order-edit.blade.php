@@ -3,6 +3,12 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">Dados do pedido</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pills-docs-tab" data-bs-toggle="pill" data-bs-target="#pills-docs"
+                    type="button" role="tab" aria-controls="pills-docs" aria-selected="false">
+                Documentos
+            </button>
+        </li>
         @if($charge_type == 'EDP')
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Evidências</button>
@@ -286,7 +292,7 @@
                                     </div>
 
                                     @foreach($dependents as $index => $dependent)
-                                        <div class="row align-items-end mt-4">
+                                        <div class="row align-items-end mt-4" wire:key="dep-{{ $dependent['dependent_id'] ?? $index }}">
                                             <div class="col-md-12 mb-3">
                                                 <label>Nome do dependente<span class="text-danger">*</span></label>
                                                 <input type="text" class="form-control" placeholder="Nome do Dependente" wire:model="dependents.{{ $index }}.name">
@@ -353,103 +359,10 @@
                                     @endforeach
                                 </div>
 
-                                <hr class="my-5">
-
-                                <div class="row mt-4">
-                                    <div class="col-12">
-                                        <h5 class="mb-4">Documentos</h5>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6>Documento (RG/CNH)</h6>
-
-                                        @if($existing_document_file)
-                                            <div class="mb-2">
-                                                <small class="text-muted">Arquivo atual ({{ $existing_document_file_type ?? 'RG' }}):</small><br>
-
-                                                @php
-                                                    $ext = strtolower(pathinfo($existing_document_file, PATHINFO_EXTENSION));
-                                                    $url = asset('storage/' . $existing_document_file);
-                                                @endphp
-
-                                                @if(in_array($ext, ['jpg','jpeg','png','webp']))
-                                                    <a href="{{ $url }}" target="_blank">
-                                                        <img src="{{ $url }}" class="img-fluid rounded border" style="max-height: 250px;">
-                                                    </a>
-                                                @else
-                                                    <a href="{{ $url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                        Ver documento (PDF)
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        @else
-                                            <div class="alert alert-warning py-2">
-                                                Nenhum documento anexado.
-                                            </div>
-                                        @endif
-
-                                        <div class="mb-2">
-                                            <label class="form-label">Tipo do documento</label>
-                                            <select class="form-control" wire:model="document_file_type">
-                                                <option value="RG">RG</option>
-                                                <option value="CNH">CNH</option>
-                                            </select>
-                                            @error('document_file_type') <small class="text-danger">{{ $message }}</small> @enderror
-                                        </div>
-
-                                        <div class="mb-2">
-                                            <label class="form-label">Substituir documento</label>
-                                            <input type="file" class="form-control" wire:model="document_file">
-                                            @error('document_file') <small class="text-danger">{{ $message }}</small> @enderror
-
-                                            <div wire:loading wire:target="document_file" class="text-muted mt-1">
-                                                Carregando arquivo...
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <h6>Comprovante de Endereço</h6>
-
-                                        @if($existing_address_proof_file)
-                                            <div class="mb-2">
-                                                <small class="text-muted">Arquivo atual:</small><br>
-
-                                                @php
-                                                    $ext = strtolower(pathinfo($existing_address_proof_file, PATHINFO_EXTENSION));
-                                                    $url = asset('storage/' . $existing_address_proof_file);
-                                                @endphp
-
-                                                @if(in_array($ext, ['jpg','jpeg','png','webp']))
-                                                    <a href="{{ $url }}" target="_blank">
-                                                        <img src="{{ $url }}" class="img-fluid rounded border" style="max-height: 250px;">
-                                                    </a>
-                                                @else
-                                                    <a href="{{ $url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                        Ver comprovante (PDF)
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        @else
-                                            <div class="alert alert-warning py-2">
-                                                Nenhum comprovante anexado.
-                                            </div>
-                                        @endif
-
-                                        <div class="mb-2">
-                                            <label class="form-label">Substituir comprovante</label>
-                                            <input type="file" class="form-control" wire:model="address_proof_file">
-                                            @error('address_proof_file') <small class="text-danger">{{ $message }}</small> @enderror
-
-                                            <div wire:loading wire:target="address_proof_file" class="text-muted mt-1">
-                                                Carregando arquivo...
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
                                 <!-- Botão de salvar -->
                                 <div class="row">
-                                    <div class="col-lg-5 text-end">
+                                    <div class="col-lg-5">
                                         <button type="submit" class="btn btn-success btn-lg">Alterar Pedido</button>
                                     </div>
                                 </div>
@@ -548,6 +461,121 @@
                 </div>
             </div>
         @endif
+        <div class="tab-pane fade" id="pills-docs" role="tabpanel" aria-labelledby="pills-docs-tab">
+            <div class="container-fluid py-4">
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <h5 class="mb-0">Documentos e Contrato</h5>
+                    </div>
+
+                    <div class="card-body">
+                        {{-- CONTRATO GERADO (visualização + PDF) --}}
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h6>Visualização do contrato</h6>
+                                <a class="btn btn-outline-primary btn-sm"
+                                href="{{ route('admin.orders.contract.preview', $order->id) }}" target="_blank">
+                                    Abrir visualização
+                                </a>
+
+                                <a class="btn btn-primary btn-sm"
+                                href="{{ route('admin.orders.contract.pdf', $order->id) }}" target="_blank">
+                                    Baixar PDF
+                                </a>
+
+                                <div class="text-muted mt-2">
+                                    O contrato gerado sempre usa os dados atuais do pedido.
+                                    O que vale juridicamente é o contrato assinado (link ou físico).
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <h6>Contrato assinado (digital)</h6>
+                                <input type="text" class="form-control" placeholder="https://..."
+                                    wire:model.defer="order.signed_contract_url">
+
+                                <small class="text-muted d-block mt-1">
+                                    Cole aqui a URL do serviço de assinatura após o cliente assinar.
+                                </small>
+
+                                <hr>
+
+                                <h6>Contrato físico (scan)</h6>
+
+                                @if(!empty($order->signed_physical_contract_file))
+                                    <a class="btn btn-outline-primary btn-sm"
+                                    href="{{ Storage::url($order->signed_physical_contract_file) }}" target="_blank">
+                                        Ver contrato físico atual
+                                    </a>
+                                @else
+                                    <div class="alert alert-light border py-2 mt-2">
+                                        Contrato físico não enviado.
+                                    </div>
+                                @endif
+
+                                <input type="file" class="form-control mt-2" wire:model="signed_physical_contract_file"
+                                    accept="image/*,application/pdf">
+                                @error('signed_physical_contract_file') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        {{-- RG/CNH e COMPROVANTE --}}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Documento (RG/CNH)</h6>
+
+                                @if(!empty($order->document_file))
+                                    <a href="{{ Storage::url($order->document_file) }}" target="_blank">
+                                        Ver documento atual ({{ $order->document_file_type ?? 'RG' }})
+                                    </a>
+                                @else
+                                    <div class="alert alert-warning py-2 mt-2">Nenhum documento anexado.</div>
+                                @endif
+
+                                <div class="mt-2">
+                                    <label>Tipo</label>
+                                    <select class="form-control" wire:model="document_file_type">
+                                        <option value="RG">RG</option>
+                                        <option value="CNH">CNH</option>
+                                    </select>
+                                </div>
+
+                                <div class="mt-2">
+                                    <label>Substituir documento</label>
+                                    <input type="file" class="form-control" wire:model="document_file" accept="image/*,application/pdf">
+                                    @error('document_file') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6>Comprovante de endereço</h6>
+
+                                @if(!empty($order->address_proof_file))
+                                    <a href="{{ Storage::url($order->address_proof_file) }}" target="_blank">
+                                        Ver comprovante atual
+                                    </a>
+                                @else
+                                    <div class="alert alert-warning py-2 mt-2">Nenhum comprovante anexado.</div>
+                                @endif
+
+                                <div class="mt-2">
+                                    <label>Substituir comprovante</label>
+                                    <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*,application/pdf">
+                                    @error('address_proof_file') <small class="text-danger">{{ $message }}</small> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-4">
+                            <button type="submit" class="btn btn-success btn-lg" wire:click="saveDocuments">Salvar alterações do documento</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">
             <div class="container-fluid py-4">
                 <div class="card">

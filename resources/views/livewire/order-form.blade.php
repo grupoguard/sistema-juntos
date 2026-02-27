@@ -320,7 +320,7 @@
 
                             <div class="col-md-4">
                                 <label>{{ $document_file_type === 'CNH' ? 'CNH (imagem/foto)' : 'RG (imagem/foto)' }}</label>
-                                <input type="file" class="form-control" wire:model="document_file" accept="image/*" capture="environment">
+                                <input type="file" class="form-control" wire:model="document_file" accept="image/*,application/pdf" capture="environment">
                                 @error('document_file') <span class="text-danger">{{ $message }}</span> @enderror
 
                                 <div wire:loading wire:target="document_file" class="text-muted mt-1">
@@ -346,7 +346,7 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label>Comprovante de endereço (imagem/foto)</label>
-                                <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*" capture="environment">
+                                <input type="file" class="form-control" wire:model="address_proof_file" accept="image/*,application/pdf"capture="environment">
                                 @error('address_proof_file') <span class="text-danger">{{ $message }}</span> @enderror
 
                                 <div wire:loading wire:target="address_proof_file" class="text-muted mt-1">
@@ -368,7 +368,7 @@
                                 @endif
                             </div>
                         </div>
-
+                        
                         <hr class="my-5">
 
                         <div class="col-12 mb-3">
