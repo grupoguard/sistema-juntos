@@ -419,7 +419,11 @@ class OrderForm extends Component
             DB::commit(); // Confirma a transação no banco de dados
 
             session()->flash('message', 'Pedido salvo com sucesso!');
-            return redirect()->route('admin.orders.edit', $order->id);
+            if (auth()->user()->can('update', $order)) {
+                return redirect()->route('admin.orders.edit', $order->id);
+            }
+
+            return redirect()->route('admin.orders.view', $order->id);
 
         } catch (\Exception $e) {
             DB::rollBack(); // Desfazer alterações em caso de erro

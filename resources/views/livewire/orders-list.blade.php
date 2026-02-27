@@ -67,6 +67,11 @@
                                     <td>{{ $order->product->name }}</td>
                                     <td>{{ $order->seller->name }}</td>
                                     <td>{{ $order->created_at->format('d/m/Y') }}</td>
+                                    @can('view', $order)
+                                        <a href="{{ route('admin.orders.view', $order) }}" class="btn btn-sm btn-info">
+                                            Ver
+                                        </a>
+                                    @endcan
                                     @can('orders.edit')
                                         <td class="text-center">
                                             <a href="{{ route('admin.orders.edit', $order->id) }}" class="btn btn-link text-dark fs-5 p-0 mb-0">
