@@ -156,6 +156,10 @@ Route::group([
         Route::get('financial', [ReportsController::class, 'financial'])->name('financial');
     });
 
+    Route::get('orders/{order}/view', [OrderController::class, 'show'])
+        ->name('orders.view')
+        ->middleware('permission:orders.view');
+
     // Pedidos e seus detalhes
     Route::resource('orders', OrderController::class)
         ->middlewareFor(['index', 'show'], 'permission:orders.view')
