@@ -1,5 +1,5 @@
 @extends('layouts.user_type.auth')
 
 @section('content')
-    <livewire:order-show :orderId="$order" />
+    <livewire:order-show :orderId="$order->id" />
 @endsection
