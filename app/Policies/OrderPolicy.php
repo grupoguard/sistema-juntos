@@ -14,7 +14,22 @@ class OrderPolicy
 
     public function view(User $user, Order $order): bool
     {
-        return $user->can('orders.view');
+        if (! $user->can('orders.view')) return false;
+
+        if ($user->isAdmin()) return true;
+
+        // Mesma lógica do scopeVisibleTo, só que no nível do recurso
+        if ($user->isCoop()) {
+            $groupIds = $user->getAccessibleGroupIds();
+            return !empty($groupIds) && in_array((int) $order->group_id, array_map('intval', $groupIds), true);
+        }
+
+        if ($user->isSeller()) {
+            $sellerIds = $user->getAccessibleSellerIds();
+            return !empty($sellerIds) && in_array((int) $order->seller_id, array_map('intval', $sellerIds), true);
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -24,13 +39,16 @@ class OrderPolicy
 
     public function update(User $user, Order $order): bool
     {
-        if ($user->isAdmin()) {
-            return $user->can('orders.edit');
-        }
+        // precisa ao menos poder ver o pedido
+        if (! $this->view($user, $order)) return false;
 
-        // COOP/SELLER só podem editar se estiver REJEITADO
-        if (($user->isCoop() || $user->isSeller()) && $user->can('orders.edit')) {
-            return $order->review_status === 'REJEITADO';
+        if (! $user->can('orders.edit')) return false;
+
+        if ($user->isAdmin()) return true;
+
+        // COOP/SELLER: só edita se REPROVADO
+        if ($user->isCoop() || $user->isSeller()) {
+            return $order->review_status === 'REPROVADO';
         }
 
         return false;
@@ -38,6 +56,8 @@ class OrderPolicy
 
     public function delete(User $user, Order $order): bool
     {
+        if (! $this->view($user, $order)) return false;
+
         return $user->can('orders.delete');
     }
 }
