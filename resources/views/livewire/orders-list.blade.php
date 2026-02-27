@@ -68,8 +68,10 @@
                                     <td>{{ $order->seller->name }}</td>
                                     <td>{{ $order->created_at->format('d/m/Y') }}</td>
                                     @can('view', $order)
-                                        <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-info">
-                                            Ver
+                                        <td class="text-center">
+                                            <a href="{{ route('admin.orders.view', $order) }}" class="btn btn-sm btn-info">
+                                                Ver
+                                            </a>
                                         </a>
                                     @endcan
                                     @can('orders.edit')
