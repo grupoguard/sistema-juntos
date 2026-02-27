@@ -8,60 +8,59 @@ use Illuminate\Support\Facades\DB;
 
 class DedupeUniodontoOrders extends Command
 {
-    protected $signature = 'orders:dedupe-uniodonto
+    protected $signature = 'orders:dedupe-by-client
         {--dry-run : Não grava no banco}
-        {--limit= : Limita quantos clientes com duplicidade processar}
-        {--client= : Processa apenas um client_id específico}
-        {--product=4 : Product id alvo (default 4)}';
+        {--limit= : Limita quantos clients processar}
+        {--only-client= : Processa apenas um client_id}
+        {--only-product= : Processa apenas um product_id específico (recomendado em produção)}';
 
-    protected $description = 'Remove pedidos duplicados do produto Uniodonto mantendo o mais antigo e migrando relações/financial';
+    protected $description = 'Deduplica orders por client_id mantendo o mais antigo e migrando relações/financial antes de remover o(s) mais novo(s)';
 
     public function handle(): int
     {
         $dryRun = (bool) $this->option('dry-run');
         $limit = $this->option('limit') ? (int) $this->option('limit') : null;
-        $clientId = $this->option('client') ? (int) $this->option('client') : null;
-        $productId = (int) $this->option('product');
+        $onlyClient = $this->option('only-client') ? (int) $this->option('only-client') : null;
+        $onlyProduct = $this->option('only-product') ? (int) $this->option('only-product') : null;
 
-        if ($dryRun) {
-            $this->warn('MODO DRY-RUN: nada será alterado.');
-        }
+        if ($dryRun) $this->warn('MODO DRY-RUN: nada será alterado.');
 
-        $dupesQuery = Order::query()
-            ->select('client_id', 'product_id', DB::raw('COUNT(*) as c'))
-            ->where('product_id', $productId)
-            ->groupBy('client_id', 'product_id')
+        $query = Order::query()
+            ->select('client_id', DB::raw('COUNT(*) as c'))
+            ->groupBy('client_id')
             ->having('c', '>', 1)
             ->orderBy('client_id');
 
-        if ($clientId) {
-            $dupesQuery->where('client_id', $clientId);
+        if ($onlyClient) {
+            $query->where('client_id', $onlyClient);
         }
 
-        $dupes = $dupesQuery->get();
-
-        if ($limit) {
-            $dupes = $dupes->take($limit);
+        if ($onlyProduct) {
+            $query->where('product_id', $onlyProduct);
         }
 
-        $this->info("Grupos com duplicidade encontrados: {$dupes->count()}");
+        $groups = $query->get();
 
-        $bar = $this->output->createProgressBar($dupes->count());
+        if ($limit) $groups = $groups->take($limit);
+
+        $this->info("Clients com duplicidade de orders encontrados: {$groups->count()}");
+
+        $bar = $this->output->createProgressBar($groups->count());
         $bar->start();
 
-        foreach ($dupes as $group) {
-            $cid = (int) $group->client_id;
+        foreach ($groups as $g) {
+            $clientId = (int) $g->client_id;
 
             try {
                 if ($dryRun) {
-                    $this->processClient($cid, $productId, true);
+                    $this->processClient($clientId, $onlyProduct, true);
                 } else {
-                    DB::transaction(function () use ($cid, $productId) {
-                        $this->processClient($cid, $productId, false);
+                    DB::transaction(function () use ($clientId, $onlyProduct) {
+                        $this->processClient($clientId, $onlyProduct, false);
                     });
                 }
             } catch (\Throwable $e) {
-                $this->error("Falha ao deduplicar client {$cid}: {$e->getMessage()}");
+                $this->error("Falha ao deduplicar client {$clientId}: {$e->getMessage()}");
             } finally {
                 $bar->advance();
             }
@@ -69,16 +68,16 @@ class DedupeUniodontoOrders extends Command
 
         $bar->finish();
         $this->newLine(2);
-
         $this->info('Deduplicação finalizada.');
+
         return self::SUCCESS;
     }
 
-    private function processClient(int $clientId, int $productId, bool $dryRun): void
+    private function processClient(int $clientId, ?int $onlyProduct, bool $dryRun): void
     {
         $orders = Order::query()
             ->where('client_id', $clientId)
-            ->where('product_id', $productId)
+            ->when($onlyProduct, fn($q) => $q->where('product_id', $onlyProduct))
             ->orderBy('created_at') // mais antigo primeiro
             ->orderBy('id')
             ->get();
@@ -88,38 +87,30 @@ class DedupeUniodontoOrders extends Command
         $keep = $orders->first();
         $toDelete = $orders->slice(1);
 
-        $this->line("Client {$clientId}: mantendo Order {$keep->id} e removendo " . $toDelete->count() . " duplicado(s)");
+        $this->line("Client {$clientId}: mantendo Order {$keep->id} e removendo {$toDelete->count()} mais novo(s)");
 
         foreach ($toDelete as $dup) {
-            // 1) Migrar financial -> order antigo
-            $finCount = DB::table('financial')
-                ->where('order_id', $dup->id)
-                ->count();
 
-            // 2) Migrar adicionais dependentes
-            $dupRows = DB::table('order_aditionals_dependents')
-                ->where('order_id', $dup->id)
-                ->get();
+            $finCount = DB::table('financial')->where('order_id', $dup->id)->count();
+            $dupAditionals = DB::table('order_aditionals_dependents')->where('order_id', $dup->id)->get();
 
-            // 3) Migrar order_price se o keep não tiver
             $keepHasPrice = DB::table('order_prices')->where('order_id', $keep->id)->exists();
             $dupPrice = DB::table('order_prices')->where('order_id', $dup->id)->first();
 
             if ($dryRun) {
-                $this->warn("DRY-RUN: Order dup {$dup->id} -> keep {$keep->id} | financial={$finCount} | aditionals=" . $dupRows->count() . " | copyPrice=" . (($dupPrice && !$keepHasPrice) ? 'yes' : 'no'));
+                $this->warn("DRY-RUN: dup {$dup->id} -> keep {$keep->id} | financial={$finCount} | aditionals={$dupAditionals->count()} | copyPrice=" . (($dupPrice && !$keepHasPrice) ? 'yes' : 'no'));
                 continue;
             }
 
-            // financial
+            // 1) migrar financial
             if ($finCount > 0) {
-                DB::table('financial')->where('order_id', $dup->id)->update([
-                    'order_id' => $keep->id,
-                    'updated_at' => now(),
-                ]);
+                DB::table('financial')
+                    ->where('order_id', $dup->id)
+                    ->update(['order_id' => $keep->id, 'updated_at' => now()]);
             }
 
-            // order_aditionals_dependents: inserir no keep evitando duplicar
-            foreach ($dupRows as $r) {
+            // 2) mesclar adicionais dependentes (evita duplicar)
+            foreach ($dupAditionals as $r) {
                 $exists = DB::table('order_aditionals_dependents')
                     ->where('order_id', $keep->id)
                     ->where('dependent_id', $r->dependent_id)
@@ -138,7 +129,7 @@ class DedupeUniodontoOrders extends Command
                 }
             }
 
-            // order_prices: se o keep não tiver, copiar do dup
+            // 3) copiar order_price se necessário
             if (!$keepHasPrice && $dupPrice) {
                 DB::table('order_prices')->insert([
                     'order_id' => $keep->id,
@@ -149,25 +140,24 @@ class DedupeUniodontoOrders extends Command
                 ]);
             }
 
-            // limpar dados do dup (relacionamentos) antes de deletar
+            // 4) limpar relações do dup e deletar dup
             DB::table('order_aditionals_dependents')->where('order_id', $dup->id)->delete();
             DB::table('order_prices')->where('order_id', $dup->id)->delete();
 
-            // deletar o order duplicado (o mais novo)
             $dupId = $dup->id;
             $dup->delete();
 
-            // log no order_logs (se existir tabela)
+            // 5) log
             DB::table('order_logs')->insert([
                 'user_id' => null,
                 'order_id' => $keep->id,
-                'table_ajust' => 'orders_dedupe',
+                'table_ajust' => 'orders_dedupe_by_client',
                 'obj_antes_alteracao' => json_encode([
                     'kept_order_id' => $keep->id,
                     'deleted_order_id' => $dupId,
                     'financial_moved' => $finCount,
-                    'aditionals_moved' => $dupRows->count(),
-                    'copied_price' => (!$keepHasPrice && (bool)$dupPrice),
+                    'aditionals_moved' => $dupAditionals->count(),
+                    'copied_price' => (!$keepHasPrice && (bool) $dupPrice),
                 ]),
                 'obj_depois_alteracao' => json_encode([
                     'kept_order_id' => $keep->id,
