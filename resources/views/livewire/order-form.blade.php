@@ -13,7 +13,7 @@
                             <div class="col-lg-5">
                                 <label for="client_id" class="form-label">Cliente</label>
                                 <select id="client_id" class="form-control" wire:model.change="client_id">
-                                    <option value="new">Cadastrar cliente</option>
+                                    <option value="">Cadastrar cliente</option>
                                     @foreach($clients as $client)
                                         <option value="{{ $client->id }}">{{ $client->name }} - {{ $client->cpf }}</option>
                                     @endforeach
