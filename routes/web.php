@@ -162,6 +162,7 @@ Route::group([
         ->middlewareFor(['create', 'store'], 'permission:orders.create')
         ->middlewareFor(['edit', 'update'], 'permission:orders.edit')
         ->middlewareFor(['destroy'], 'permission:orders.delete');
+    
 
     Route::get('orders/{order}/contract', [OrderController::class, 'contractPreview'])
     ->name('orders.contract.preview')
