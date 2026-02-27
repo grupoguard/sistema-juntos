@@ -332,20 +332,14 @@
                                 @if ($document_file)
                                     <label>Pré-visualização documento</label>
                                     <div class="border rounded p-2">
-
                                         @if (str_starts_with($document_file->getMimeType(), 'image/'))
-                                            <img src="{{ $document_file->temporaryUrl() }}" alt="Documento" class="img-fluid rounded">
+                                            <img src="{{ $document_file->temporaryUrl() }}" class="img-fluid rounded">
                                         @elseif ($document_file->getMimeType() === 'application/pdf')
-                                            <a href="{{ $document_file->temporaryUrl() }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                Abrir PDF para visualizar
-                                            </a>
-
-                                            {{-- opcional: embed/iframe --}}
-                                            <div class="mt-2" style="height: 500px;">
-                                                <iframe src="{{ $document_file->temporaryUrl() }}" style="width:100%; height:100%;" class="rounded border"></iframe>
+                                            <div class="text-muted">
+                                                PDF selecionado: <strong>{{ $document_file->getClientOriginalName() }}</strong><br>
+                                                Salve para visualizar.
                                             </div>
                                         @endif
-
                                     </div>
                                 @endif
                             </div>
@@ -368,23 +362,29 @@
                                     <div class="border rounded p-2">
 
                                         @if (str_starts_with($address_proof_file->getMimeType(), 'image/'))
-                                            <img src="{{ $address_proof_file->temporaryUrl() }}" alt="Comprovante" class="img-fluid rounded">
+                                            <img src="{{ $address_proof_file->temporaryUrl() }}"
+                                                alt="Comprovante"
+                                                class="img-fluid rounded">
                                         @elseif ($address_proof_file->getMimeType() === 'application/pdf')
-                                            <a href="{{ $address_proof_file->temporaryUrl() }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                Abrir PDF para visualizar
-                                            </a>
-
-                                            {{-- opcional (só se você liberar pdf em preview_mimes) --}}
-                                            <div class="mt-2" style="height: 500px;">
-                                                <iframe src="{{ $address_proof_file->temporaryUrl() }}" style="width:100%; height:100%;" class="rounded border"></iframe>
+                                            <div class="text-muted">
+                                                PDF selecionado: <strong>{{ $address_proof_file->getClientOriginalName() }}</strong><br>
+                                                Salve para visualizar.
+                                            </div>
+                                        @else
+                                            <div class="text-muted">
+                                                Arquivo selecionado: <strong>{{ $address_proof_file->getClientOriginalName() }}</strong><br>
+                                                Salve para visualizar.
                                             </div>
                                         @endif
 
                                     </div>
+
                                 @elseif(!empty($existing_address_proof_file))
                                     <label>Comprovante atual</label>
                                     <div class="border rounded p-2">
-                                        <a href="{{ Storage::url($existing_address_proof_file) }}" target="_blank">Visualizar comprovante atual</a>
+                                        <a href="{{ Storage::url($existing_address_proof_file) }}" target="_blank">
+                                            Visualizar comprovante atual
+                                        </a>
                                     </div>
                                 @endif
                             </div>
