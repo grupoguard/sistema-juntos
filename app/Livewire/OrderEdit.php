@@ -38,6 +38,9 @@ class OrderEdit extends Component
     public $existing_document_file; // path atual
     public $existing_document_file_type; // tipo atual
     public $existing_address_proof_file; // path atual
+    public $signed_contract_url = null;
+
+    public $signed_physical_contract_file;
 
     protected function rules()
     {
@@ -69,6 +72,8 @@ class OrderEdit extends Component
             'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
             'document_file_type' => 'nullable|in:RG,CNH',
             'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'signed_physical_contract_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'signed_contract_url' => 'nullable|url|max:2048',
         ];
 
         if ($this->discount_type === '%') {
@@ -96,6 +101,7 @@ class OrderEdit extends Component
     {
         $this->orderId = $orderId;
         $this->order = Order::findOrFail($orderId);
+        $this->signed_contract_url = $this->order->signed_contract_url;
 
         $user = auth()->user();
 
@@ -106,7 +112,6 @@ class OrderEdit extends Component
 
         // trava acesso ao pedido específico
         $this->authorize('view', $this->order);
-        $this->authorize('update', $this->order);
 
         $this->client = $this->order->client->toArray();
 
@@ -128,30 +133,32 @@ class OrderEdit extends Component
             ->orderBy('due_date', 'asc') // mais antigo -> mais novo
             ->get();
         // Carregar dependentes COM seus adicionais
-        $this->dependents = OrderDependent::where('order_id', $orderId)
+        $this->dependents = OrderAditionalDependent::query()
+            ->where('order_id', $orderId)
+            ->select('dependent_id')
+            ->distinct()
             ->get()
-            ->map(function ($item) {
-                // Buscar adicionais deste dependente
-                $dependentAdditionals = OrderAditionalDependent::where('order_id', $this->orderId)
-                    ->where('dependent_id', $item->dependent_id)
+            ->map(function ($row) use ($orderId) {
+
+                $depModel = Dependent::find($row->dependent_id);
+
+                // adicionais desse dependente no pedido
+                $dependentAdditionals = OrderAditionalDependent::query()
+                    ->where('order_id', $orderId)
+                    ->where('dependent_id', $row->dependent_id)
                     ->pluck('aditional_id')
                     ->toArray();
-                
+
                 return [
-                    'id' => $item->id,
-                    'dependent_id' => $item->dependent_id, // IMPORTANTE: adicionar o ID do dependente
-                    'name' => $item->dependent->name ?? '',
-                    'relationship' => isset($item->dependent->relationship)
-                        ? mb_strtolower($item->dependent->relationship)
-                        : '',
-                    'cpf' => $item->dependent->cpf ?? '',
-                    'rg' => $item->dependent->rg ?? '',
-                    'date_birth' => $item->dependent->date_birth ?? '',
-                    'marital_status' => $item->dependent->marital_status
-                        ? mb_strtolower($item->dependent->marital_status)
-                        : 'nao_informado',
-                    'mom_name' => $item->dependent->mom_name ?? '',
-                    'additionals' => $dependentAdditionals, // Adicionar os adicionais
+                    'dependent_id'   => $row->dependent_id,
+                    'name'           => $depModel->name ?? '',
+                    'relationship'   => $depModel?->relationship ? mb_strtolower($depModel->relationship) : '',
+                    'cpf'            => $depModel->cpf ?? '',
+                    'rg'             => $depModel->rg ?? '',
+                    'date_birth'     => $depModel->date_birth ?? '',
+                    'marital_status' => $depModel?->marital_status ? mb_strtolower($depModel->marital_status) : 'nao_informado',
+                    'mom_name'       => $depModel->mom_name ?? '',
+                    'additionals'    => $dependentAdditionals,
                 ];
             })
             ->toArray();
@@ -245,16 +252,9 @@ class OrderEdit extends Component
     {
         DB::beginTransaction();
 
-        \Log::info('updateOrder chamado', [
-            'orderId' => $this->orderId,
-            'product_id' => $this->product_id,
-            'client_name' => $this->client['name'],
-        ]);
-
         try {
             $this->validate($this->rules());
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Erro de validação:', $e->errors());
             session()->flash('error', 'Erro de validação: ' . json_encode($e->errors()));
             return;
         }
@@ -262,14 +262,10 @@ class OrderEdit extends Component
         try {
             $order = Order::findOrFail($this->orderId);
             $this->authorize('update', $order);
-            \Log::info('Order encontrado', ['order_id' => $order->id]);
             
             // Atualizar cliente
             $phone = preg_replace('/\D/', '', $this->client['phone']);
             $client = Client::findOrFail($order->client_id);
-            
-            \Log::info('Dados do cliente antes', $client->toArray());
-            \Log::info('Dados do cliente para atualizar', $this->client);
             
             $client->update([
                 'name' => $this->client['name'],
@@ -297,10 +293,8 @@ class OrderEdit extends Component
 
                 $documentPath = $this->document_file->store('orders/documents', 'public');
 
-                $order->update([
-                    'document_file' => $documentPath,
-                    'document_file_type' => $this->document_file_type ?: 'RG',
-                ]);
+                $order->document_file = $documentPath;
+                $order->document_file_type = $this->document_file_type ?: 'RG';
 
                 $this->existing_document_file = $documentPath;
                 $this->existing_document_file_type = $this->document_file_type ?: 'RG';
@@ -314,32 +308,28 @@ class OrderEdit extends Component
 
                 $addressProofPath = $this->address_proof_file->store('orders/address_proofs', 'public');
 
-                $order->update([
-                    'address_proof_file' => $addressProofPath,
-                ]);
+                $order->address_proof_file = $addressProofPath;
 
                 $this->existing_address_proof_file = $addressProofPath;
             }
-                        
-            \Log::info('Dados do cliente depois', $client->fresh()->toArray());
 
-            // LOGS DOS DEPENDENTES
-            \Log::info('=== INÍCIO PROCESSAMENTO DEPENDENTES ===');
-            \Log::info('Dependentes recebidos do formulário', ['dependents' => $this->dependents]);
-            \Log::info('Total de dependentes', ['count' => count($this->dependents)]);
+            // Substituir contrato físico assinado
+            if ($this->signed_physical_contract_file) {
+                if ($order->signed_physical_contract_file && Storage::disk('public')->exists($order->signed_physical_contract_file)) {
+                    Storage::disk('public')->delete($order->signed_physical_contract_file);
+                }
+
+                $path = $this->signed_physical_contract_file->store('orders/signed_physical_contracts', 'public');
+                $order->signed_physical_contract_file = $path;
+            }
 
             // Gerenciar dependentes
             $dependentsIds = [];
-            $currentDependentIds = [];
 
             if (!empty($this->dependents)) {
                 foreach ($this->dependents as $index => $dependent) {
-                    \Log::info("Processando dependente {$index}", ['dependent' => $dependent]);
-                    
                     $cpf = preg_replace('/\D/', '', $dependent['cpf']);
                     $rg = preg_replace('/\D/', '', $dependent['rg'] ?? '');
-
-                    \Log::info("CPF/RG limpos", ['cpf' => $cpf, 'rg' => $rg]);
 
                     $dep = Dependent::updateOrCreate(
                         ['cpf' => $cpf],
@@ -354,57 +344,44 @@ class OrderEdit extends Component
                             'relationship' => $dependent['relationship'],
                         ]
                     );
-                    
-                    \Log::info("Dependente salvo/atualizado", [
-                        'dependent_id' => $dep->id,
-                        'name' => $dep->name,
-                        'relationship' => $dep->relationship
-                    ]);
-                    
+
                     $additionals = $dependent['additionals'] ?? [];
-                    \Log::info("Adicionais do dependente {$index}", ['additionals' => $additionals]);
-                    
+
                     $dependentsIds[] = [
                         'id' => $dep->id,
                         'additionals' => $additionals
                     ];
-                    $currentDependentIds[] = $dep->id;
                 }
             }
 
-            \Log::info('Dependentes processados', [
-                'dependentsIds' => $dependentsIds,
-                'currentDependentIds' => $currentDependentIds
-            ]);
-
             // Remover dependentes que não estão mais no pedido
-            $previousDependentIds = OrderDependent::where('order_id', $order->id)
-                ->pluck('dependent_id')
-                ->toArray();
+            OrderAditionalDependent::where('order_id', $order->id)->delete();
 
-            \Log::info('Dependentes anteriores', ['previousDependentIds' => $previousDependentIds]);
+            foreach (($dependentsIds ?? []) as $depData) {
+                $depId = (int) ($depData['id'] ?? 0);
+                $additionals = $depData['additionals'] ?? [];
 
-            $dependentsToRemove = array_diff($previousDependentIds, $currentDependentIds);
-            
-            \Log::info('Dependentes para remover', ['dependentsToRemove' => $dependentsToRemove]);
-            
-            if (!empty($dependentsToRemove)) {
-                $removedOrderDeps = OrderDependent::where('order_id', $order->id)
-                    ->whereIn('dependent_id', $dependentsToRemove)
-                    ->delete();
-                
-                $removedAdditionals = OrderAditionalDependent::where('order_id', $order->id)
-                    ->whereIn('dependent_id', $dependentsToRemove)
-                    ->delete();
-                    
-                \Log::info('Dependentes removidos', [
-                    'order_dependents_deleted' => $removedOrderDeps,
-                    'additionals_deleted' => $removedAdditionals
-                ]);
+                if (!$depId) continue;
+                if (!is_array($additionals)) $additionals = [];
+
+                foreach ($additionals as $additionalId) {
+                    $additionalId = (int) $additionalId;
+
+                    $aditional = collect($this->additionals)->firstWhere('id', $additionalId);
+
+                    if ($aditional) {
+                        OrderAditionalDependent::create([
+                            'order_id'     => $order->id,
+                            'dependent_id' => $depId,
+                            'aditional_id' => $additionalId,
+                            'value'        => (float) ($aditional['value'] ?? 0),
+                        ]);
+                    }
+                }
             }
 
             // Atualizar pedido
-            $order->update([
+            $order->fill([
                 'product_id' => $this->product_id,
                 'seller_id' => $this->seller_id,
                 'charge_type' => $this->charge_type,
@@ -419,8 +396,6 @@ class OrderEdit extends Component
                 'discount_value' => $this->discount_value,
             ]);
 
-            \Log::info('Pedido atualizado');
-
             // Atualizar OrderPrice
             $product = Product::findOrFail($this->product_id);
             $product_value = $this->calculateTotalWithDiscount($product->value);
@@ -432,8 +407,6 @@ class OrderEdit extends Component
                     'product_value' => $product_value,
                 ]
             );
-
-            \Log::info('OrderPrice atualizado', ['product_value' => $product_value]);
 
             // Atualizar adicionais do titular
             OrderAditional::where('order_id', $order->id)->delete();
@@ -451,69 +424,9 @@ class OrderEdit extends Component
                 }
             }
 
-            \Log::info('Adicionais do titular atualizados', ['count' => count($this->selectedAdditionals)]);
-
-            // Recriar relações order_dependents
-            \Log::info('=== RECRIANDO ORDER_DEPENDENTS ===');
-            $deletedOrderDeps = OrderDependent::where('order_id', $order->id)->delete();
-            \Log::info('Order_dependents deletados', ['count' => $deletedOrderDeps]);
-            
-            foreach ($dependentsIds as $depData) {
-                $orderDep = OrderDependent::create([
-                    'order_id' => $order->id,
-                    'dependent_id' => $depData['id'],
-                ]);
-                \Log::info('Order_dependent criado', [
-                    'id' => $orderDep->id,
-                    'order_id' => $order->id,
-                    'dependent_id' => $depData['id']
-                ]);
-            }
-
-            // Atualizar adicionais dos dependentes
-            \Log::info('=== ATUALIZANDO ADICIONAIS DOS DEPENDENTES ===');
-            $deletedAdditionals = OrderAditionalDependent::where('order_id', $order->id)->delete();
-            \Log::info('Adicionais de dependentes deletados', ['count' => $deletedAdditionals]);
-            
-            foreach ($dependentsIds as $depData) {
-                \Log::info('Processando adicionais do dependente', [
-                    'dependent_id' => $depData['id'],
-                    'additionals' => $depData['additionals']
-                ]);
-                
-                if (!empty($depData['additionals'])) {
-                    foreach ($depData['additionals'] as $additionalId) {
-                        $aditional = collect($this->additionals)->firstWhere('id', $additionalId);
-                        \Log::info('Adicional encontrado?', [
-                            'additionalId' => $additionalId,
-                            'found' => $aditional ? 'SIM' : 'NÃO',
-                            'aditional' => $aditional
-                        ]);
-                        
-                        if ($aditional) {
-                            $orderAdditional = OrderAditionalDependent::create([
-                                'order_id' => $order->id,
-                                'dependent_id' => $depData['id'],
-                                'aditional_id' => $additionalId,
-                                'value' => $aditional['value']
-                            ]);
-                            \Log::info('OrderAditionalDependent criado', [
-                                'id' => $orderAdditional->id,
-                                'order_id' => $order->id,
-                                'dependent_id' => $depData['id'],
-                                'aditional_id' => $additionalId,
-                                'value' => $aditional['value']
-                            ]);
-                        }
-                    }
-                } else {
-                    \Log::info('Nenhum adicional para este dependente');
-                }
-            }
-
-            \Log::info('=== FIM PROCESSAMENTO ===');
-            
             $this->reset(['document_file', 'address_proof_file']);
+
+            $order->save();
 
             DB::commit();
 
@@ -522,9 +435,83 @@ class OrderEdit extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erro no updateOrder: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
             session()->flash('error', 'Erro ao atualizar pedido: ' . $e->getMessage());
+        }
+    }
+
+    public function saveDocuments()
+    {
+        $order = Order::findOrFail($this->orderId);
+
+        // ✅ só quem pode editar (ou quem pode editar quando REJEITADO) vai passar aqui
+        $this->authorize('update', $order);
+
+        $this->validate([
+            'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'document_file_type' => 'nullable|in:RG,CNH',
+            'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'signed_physical_contract_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'signed_contract_url' => 'nullable|url|max:2048',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // ====== RG/CNH ======
+            if ($this->document_file) {
+                if ($order->document_file && Storage::disk('public')->exists($order->document_file)) {
+                    Storage::disk('public')->delete($order->document_file);
+                }
+
+                $path = $this->document_file->store('orders/documents', 'public');
+
+                $order->document_file = $path;
+                $order->document_file_type = $this->document_file_type ?: 'RG';
+
+                $this->existing_document_file = $path;
+                $this->existing_document_file_type = $order->document_file_type;
+            }
+
+            // ====== Comprovante ======
+            if ($this->address_proof_file) {
+                if ($order->address_proof_file && Storage::disk('public')->exists($order->address_proof_file)) {
+                    Storage::disk('public')->delete($order->address_proof_file);
+                }
+
+                $path = $this->address_proof_file->store('orders/address_proofs', 'public');
+
+                $order->address_proof_file = $path;
+
+                $this->existing_address_proof_file = $path;
+            }
+
+            // ====== Contrato físico assinado ======
+            if ($this->signed_physical_contract_file) {
+                if ($order->signed_physical_contract_file && Storage::disk('public')->exists($order->signed_physical_contract_file)) {
+                    Storage::disk('public')->delete($order->signed_physical_contract_file);
+                }
+
+                $path = $this->signed_physical_contract_file->store('orders/signed_physical_contracts', 'public');
+                $order->signed_physical_contract_file = $path;
+            }
+
+            // ====== URL contrato assinado (digital) ======
+            // Se você quiser permitir limpar, deixa salvar null mesmo
+            $order->signed_contract_url = $this->signed_contract_url ?: null;
+
+            $order->save();
+
+            DB::commit();
+
+            // limpa uploads temporários
+            $this->reset(['document_file', 'address_proof_file', 'signed_physical_contract_file']);
+
+            session()->flash('message', 'Documentos atualizados com sucesso!');
+            return;
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            session()->flash('error', 'Erro ao salvar documentos: ' . $e->getMessage());
+            return;
         }
     }
 

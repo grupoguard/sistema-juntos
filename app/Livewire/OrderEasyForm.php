@@ -259,10 +259,13 @@ class OrderEasyForm extends Component
             // 6) Documento (OBRIGATÓRIO pra avançar)
             6 => [
                 'document_file_type' => 'required|in:RG,CNH',
+                'document_file' => $this->existing_document_file ? 'nullable' : 'required',
             ],
 
             // 7) Comprovante (OBRIGATÓRIO pra avançar)
-            7 => [],
+            7 => [
+                'address_proof_file' => $this->existing_address_proof_file ? 'nullable' : 'required',
+            ],
 
             // 8) Resumo (sem regras)
             8 => [],
@@ -603,11 +606,10 @@ class OrderEasyForm extends Component
     public function updatedDocumentFile()
     {
         $this->validate([
-            'document_file' => 'nullable|image|max:5120',
+            'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         if ($this->document_file) {
-            // remove arquivo anterior salvo no draft, se existir
             if ($this->existing_document_file && Storage::disk('public')->exists($this->existing_document_file)) {
                 Storage::disk('public')->delete($this->existing_document_file);
             }
@@ -620,11 +622,10 @@ class OrderEasyForm extends Component
     public function updatedAddressProofFile()
     {
         $this->validate([
-            'address_proof_file' => 'nullable|image|max:5120',
+            'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         if ($this->address_proof_file) {
-            // remove arquivo anterior salvo no draft, se existir
             if ($this->existing_address_proof_file && Storage::disk('public')->exists($this->existing_address_proof_file)) {
                 Storage::disk('public')->delete($this->existing_address_proof_file);
             }
@@ -648,6 +649,26 @@ class OrderEasyForm extends Component
         foreach ([1, 2, 3, 4, 5, 6, 7] as $stepToValidate) {
             $this->step = $stepToValidate;
             $this->validateStep();
+        }
+
+        $backup = $this->step;
+
+        $this->step = 6;
+        $this->validateStep();
+
+        if ($this->document_file) {
+            $this->validate([
+                'document_file' => 'mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            ], $this->messages());
+        }
+
+        $this->step = 7;
+        $this->validateStep();
+
+        if ($this->address_proof_file) {
+            $this->validate([
+                'address_proof_file' => 'mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            ], $this->messages());
         }
 
         $this->step = $currentStepBackup;

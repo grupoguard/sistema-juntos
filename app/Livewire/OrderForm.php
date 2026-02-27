@@ -69,6 +69,9 @@ class OrderForm extends Component
             'accession_payment' => 'required|string|max:20',
             'discount_type' => 'nullable|string|max:9',
             'discount_value' => 'nullable|numeric|regex:/^\d{1,8}(\.\d{1,2})?$/',
+            'document_file' => $this->orderId ? 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120' : 'required|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'document_file_type' => $this->orderId ? 'nullable|in:RG,CNH' : 'required|in:RG,CNH',
+            'address_proof_file' => $this->orderId ? 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120' : 'required|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ];
 
         if (!$this->client_id) {

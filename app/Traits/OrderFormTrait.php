@@ -197,6 +197,9 @@ trait OrderFormTrait
             'evidences.*.document.required' => 'É necessário adicionar um documento para cada evidência.',
             'evidences.*.document.required_if' => 'É necessário adicionar um documento (RG, CPF ou CNH) junto ao contrato.',
             'evidences.*.document.mimes' => 'O documento deve ser um arquivo do tipo: PDF, JPG, PNG, MP3 ou WAV.',
+
+            'document_file.required' => 'Envie o documento (RG/CNH).',
+            'address_proof_file.required' => 'Envie o comprovante de endereço.',
         ];
     }
 

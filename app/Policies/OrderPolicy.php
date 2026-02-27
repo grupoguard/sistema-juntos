@@ -24,7 +24,16 @@ class OrderPolicy
 
     public function update(User $user, Order $order): bool
     {
-        return $user->can('orders.edit');
+        if ($user->isAdmin()) {
+            return $user->can('orders.edit');
+        }
+
+        // COOP/SELLER só podem editar se estiver REJEITADO
+        if (($user->isCoop() || $user->isSeller()) && $user->can('orders.edit')) {
+            return $order->review_status === 'REJEITADO';
+        }
+
+        return false;
     }
 
     public function delete(User $user, Order $order): bool

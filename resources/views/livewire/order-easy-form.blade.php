@@ -326,10 +326,11 @@
                         <label>Pagamento da adesão</label>
                         <select class="form-control" wire:model.defer="orderData.accession_payment">
                             <option value="">Selecione</option>
-                            <option value="DINHEIRO">Dinheiro</option>
-                            <option value="PIX">Pix</option>
-                            <option value="CARTAO">Cartão</option>
-                            <option value="BOLETO">Boleto</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">Pix</option>
+                            <option value="cartao">Cartão</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="nao_cobrado">Não cobrado</option>
                         </select>
                         @error('orderData.accession_payment') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
@@ -546,9 +547,6 @@
                 <div class="alert alert-info">
                     Revise as informações abaixo e clique em <strong>Enviar pedido</strong>.
                     <br>
-                    <small>
-                        (Neste momento, o componente está pronto com rascunho + etapas. O envio final pode ser ligado ao seu fluxo atual via service.)
-                    </small>
                 </div>
 
                 <div class="row">
@@ -662,11 +660,11 @@
         {{-- Rodapé / Navegação --}}
         <div class="card-footer">
             <div class="d-flex flex-wrap justify-content-between">
-                <div class="mb-2">
+                {{-- <div class="mb-2">
                     <button type="button" class="btn btn-outline-secondary" wire:click="saveAndExit">
                         Salvar rascunho e sair
                     </button>
-                </div>
+                </div> --}}
 
                 <div class="mb-2">
                     @if($step > 1)

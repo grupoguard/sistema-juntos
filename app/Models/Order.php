@@ -36,6 +36,8 @@ class Order extends Model
         'reviewed_at',
         'reviewed_by',
         'review_notes',
+        'signed_contract_url',
+        'signed_physical_contract_file',
     ];
 
     /**
