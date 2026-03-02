@@ -28,11 +28,6 @@
                         >
                     </div>
                     <div class="col-md-9 text-end">
-                        @can('orders.create')
-                            <a href="{{ route('admin.orders.create') }}" class="btn bg-blue text-white">
-                                + Novo pedido
-                            </a>
-                        @endcan
                         <br>
                         @can('orders.create')
                             <a href="{{ route('admin.orders.easy-create') }}" class="btn btn-primary">
@@ -50,6 +45,9 @@
                                 <th>Produto</th>
                                 <th>Consultor</th>
                                 <th>Data</th>
+                                @can('view', $order)
+                                    Ver
+                                @endcan
                                 @can('orders.edit')
                                     <th class="text-center">Editar</th>
                                 @endcan
