@@ -427,7 +427,9 @@
                     <div class="col-md-4">
                         <label>Tipo de cobrança <span class="text-danger">*</span></label>
                         <select class="form-control" wire:model.defer="billing.charge_type">
-                            <option value="Boleto">Boleto</option>
+                            <option value="BOLETO">Boleto</option>
+                            <option value="CARTAO">Cartão</option>
+                            <option value="EDP">EDP</option>
                         </select>
                         @error('billing.charge_type') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
@@ -464,7 +466,7 @@
                         <input type="file"
                                class="form-control"
                                wire:model="document_file"
-                               accept="image/*"
+                               accept="image/*,application/pdf"
                                capture="environment">
                         @error('document_file') <small class="text-danger">{{ $message }}</small> @enderror
 
@@ -507,7 +509,7 @@
                         <input type="file"
                                class="form-control"
                                wire:model="address_proof_file"
-                               accept="image/*"
+                               accept="image/*,application/pdf"
                                capture="environment">
                         @error('address_proof_file') <small class="text-danger">{{ $message }}</small> @enderror
 
