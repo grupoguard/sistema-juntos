@@ -31,7 +31,7 @@
                         <br>
                         @can('orders.create')
                             <a href="{{ route('admin.orders.easy-create') }}" class="btn btn-primary">
-                                Cadastro Facilitado
+                                + Cadastro
                             </a>
                         @endcan
                     </div>
