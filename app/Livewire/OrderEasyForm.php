@@ -132,7 +132,7 @@ class OrderEasyForm extends Component
         ];
 
         $this->billing = [
-            'charge_type' => 'Boleto',
+            'charge_type' => 'BOLETO',
             'charge_date' => null, // dia de pagamento
         ];
 
@@ -252,7 +252,7 @@ class OrderEasyForm extends Component
 
             // 5) Cobrança
             5 => [
-                'billing.charge_type' => 'required|in:Boleto',
+                'billing.charge_type' => 'required|in:BOLETO, CARTAO,EDP',
                 'billing.charge_date' => 'required|in:10,20,30',
             ],
 
@@ -807,7 +807,7 @@ class OrderEasyForm extends Component
                 'group_id' => $groupId,
                 'seller_id' => $sellerId,
 
-                'charge_type' => $this->billing['charge_type'] ?? 'Boleto',
+                'charge_type' => $this->billing['charge_type'] ?? 'BOLETO',
                 'charge_date' => $this->billing['charge_date'] ?? null,
 
                 'accession' => $this->orderData['accession'] ?? null,
