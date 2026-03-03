@@ -12,11 +12,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('financial', function (Blueprint $table) {
-            $table->dropIndex(['asaas_payment_id']);
-            $table->dropIndex(['asaas_customer_id']);
-            $table->dropIndex(['external_reference']);
-        });
+        $databaseName = DB::getDatabaseName();
+
+        $indexes = DB::select("
+            SELECT INDEX_NAME
+            FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = ?
+              AND TABLE_NAME = 'financial'
+        ", [$databaseName]);
+
+        $indexNames = collect($indexes)->pluck('INDEX_NAME')->toArray();
+
+        $possibleIndexes = [
+            'financial_asaas_payment_id_index',
+            'financial_asaas_customer_id_index',
+            'financial_external_reference_index',
+        ];
+
+        foreach ($possibleIndexes as $indexName) {
+            if (in_array($indexName, $indexNames, true)) {
+                DB::statement("ALTER TABLE financial DROP INDEX {$indexName}");
+            }
+        }
 
         Schema::table('financial', function (Blueprint $table) {
             $table->dropColumn([
