@@ -20,17 +20,17 @@
         </div>
     </div>
 
-    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist" wire:ignore>
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home"
-                type="button" role="tab" aria-controls="pills-home" aria-selected="true">
+                type="button" role="tab" aria-controls="pills-home" aria-selected="true" wire:ignore>
                 Dados do pedido
             </button>
         </li>
 
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="pills-docs-tab" data-bs-toggle="pill" data-bs-target="#pills-docs"
-                type="button" role="tab" aria-controls="pills-docs" aria-selected="false">
+                type="button" role="tab" aria-controls="pills-docs" aria-selected="false" wire:ignore>
                 Documentos
             </button>
         </li>
@@ -38,7 +38,7 @@
         @if($charge_type == 'EDP')
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile"
-                    type="button" role="tab" aria-controls="pills-profile" aria-selected="false">
+                    type="button" role="tab" aria-controls="pills-profile" aria-selected="false" wire:ignore>
                     Evidências
                 </button>
             </li>
@@ -46,7 +46,7 @@
 
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact"
-                type="button" role="tab" aria-controls="pills-contact" aria-selected="false">
+                type="button" role="tab" aria-controls="pills-contact" aria-selected="false" wire:ignore>
                 Registro Financeiro
             </button>
         </li>
