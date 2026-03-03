@@ -12,7 +12,10 @@ class CreateFinancialsFromEdpProductionCommand extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'edp:create-financials-from-production {--limit=500 : Quantidade máxima de registros a processar por execução}';
+    protected $signature = 'edp:create-financials-from-production
+        {--limit=500 : Quantidade máxima de registros a processar por execução}
+        {--from-id= : Processar registros com ID maior ou igual a este valor}
+        {--to-id= : Processar registros com ID menor ou igual a este valor}';
 
     /**
      * The console command description.
@@ -25,9 +28,21 @@ class CreateFinancialsFromEdpProductionCommand extends Command
     public function handle(): int
     {
         $limit = (int) $this->option('limit');
+        $fromId = $this->option('from-id');
+        $toId = $this->option('to-id');
 
-        $records = DB::table('edp_production_records')
-            ->whereNull('financial_created_at')
+        $query = DB::table('edp_production_records')
+            ->whereNull('financial_created_at');
+
+        if ($fromId !== null) {
+            $query->where('id', '>=', (int) $fromId);
+        }
+
+        if ($toId !== null) {
+            $query->where('id', '<=', (int) $toId);
+        }
+
+        $records = $query
             ->orderBy('id')
             ->limit($limit)
             ->get();
