@@ -48,6 +48,13 @@ class Kernel extends ConsoleKernel
             ->dailyAt('17:00')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/edp-retornos.log'));
+
+        $schedule->command('edp:sync-financials')
+            ->name('edp-sync-financials-nightly')
+            ->timezone('America/Sao_Paulo')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/edp-sync-financials.log'));
     }
 
     /**

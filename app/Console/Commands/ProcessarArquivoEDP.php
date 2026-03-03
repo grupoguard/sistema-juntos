@@ -34,6 +34,10 @@ class ProcessarArquivoEDP extends Command
             return Command::FAILURE;
         }
 
+        $this->newLine();
+        $this->info('🔄 Sincronizando financials EDP...');
+        $this->call('edp:sync-financials');
+
         return Command::SUCCESS;
     }
 }
