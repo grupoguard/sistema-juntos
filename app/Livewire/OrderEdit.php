@@ -82,13 +82,13 @@ class OrderEdit extends Component
 
         if (!empty($this->dependents)) {
             foreach ($this->dependents as $index => $dependent) {
-                $rules["dependents.{$index}.cpf"] = 'required|string';
+                $rules["dependents.{$index}.cpf"] = 'required|string|min:14|max:14';
                 $rules["dependents.{$index}.name"] = 'required|string|max:100';
                 $rules["dependents.{$index}.mom_name"] = 'required|string|max:100';
                 $rules["dependents.{$index}.date_birth"] = 'required|date';
                 $rules["dependents.{$index}.marital_status"] = 'required|string|max:50';
                 $rules["dependents.{$index}.relationship"] = 'required|string|max:50';
-                $rules["dependents.{$index}.rg"] = 'nullable|string';
+                $rules["dependents.{$index}.rg"] = 'nullable|string|max:12';
                 $rules["dependents.{$index}.additionals"] = 'nullable|array';
                 $rules["dependents.{$index}.additionals.*"] = 'nullable|integer';
             }
@@ -394,6 +394,7 @@ class OrderEdit extends Component
                 'accession_payment' => $this->accession_payment,
                 'discount_type' => $this->discount_type,
                 'discount_value' => $this->discount_value,
+                'signed_contract_url' => $this->order['signed_contract_url'] ?? null,
             ]);
 
             // Atualizar OrderPrice

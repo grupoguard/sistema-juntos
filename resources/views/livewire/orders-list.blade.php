@@ -45,8 +45,8 @@
                                 <th>Produto</th>
                                 <th>Consultor</th>
                                 <th>Data</th>
-                                @can('orders.view')
-                                    Ver
+                                @can('view', $order)
+                                    <th class="text-center">Ver</th>
                                 @endcan
                                 @can('orders.edit')
                                     <th class="text-center">Editar</th>

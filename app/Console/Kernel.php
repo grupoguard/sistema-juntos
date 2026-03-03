@@ -26,25 +26,28 @@ class Kernel extends ConsoleKernel
     {
         $hour = config('app.hour');
         $min = config('app.min');
-        $scheduledInterval = $hour !== '' ? ( ($min !== '' && $min != 0) ?  $min .' */'. $hour .' * * *' : '0 */'. $hour .' * * *') : '*/'. $min .' * * * *';
-        if(env('IS_DEMO')) {
-            $schedule->command('migrate:fresh --seed')->cron($scheduledInterval);
-        }
+        $scheduledInterval = $hour !== '' ? (($min !== '' && $min != 0) ? $min . ' */' . $hour . ' * * *' : '0 */' . $hour . ' * * *') : '*/' . $min . ' * * * *';
 
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)
+        $schedule->command('edp:pegar-todos-retornos')
+            ->name('edp-retornos-08h')
             ->timezone('America/Sao_Paulo')
-            ->at('08:00')
-            ->withoutOverlapping();
+            ->dailyAt('08:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
 
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)
+        $schedule->command('edp:pegar-todos-retornos')
+            ->name('edp-retornos-12h30')
             ->timezone('America/Sao_Paulo')
-            ->at('12:30')
-            ->withoutOverlapping();
+            ->dailyAt('12:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
 
-        $schedule->job(new \App\Jobs\BaixarArquivoRetornoJob)
+        $schedule->command('edp:pegar-todos-retornos')
+            ->name('edp-retornos-17h')
             ->timezone('America/Sao_Paulo')
-            ->at('17:00')
-            ->withoutOverlapping();
+            ->dailyAt('17:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
     }
 
     /**

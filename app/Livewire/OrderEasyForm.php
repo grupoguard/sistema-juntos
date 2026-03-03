@@ -222,10 +222,10 @@ class OrderEasyForm extends Component
         $rules = match ($this->step) {
             // 1) Cliente
             1 => [
-                'client.cpf' => 'required|string|min:11|max:14',
+                'client.cpf' => 'required|string|min:14|max:14',
                 'client.name' => 'required|string|max:255',
                 'client.gender' => 'required|string|max:20',
-                'client.rg' => 'nullable|string|max:20',
+                'client.rg' => 'nullable|string|max:12',
                 'client.date_birth' => 'required|date',
                 'client.phone' => 'required|string|max:20',
                 'client.email' => 'nullable|email|max:255',
@@ -955,7 +955,7 @@ class OrderEasyForm extends Component
             DB::commit();
 
             session()->flash('message', 'Pedido criado com sucesso!');
-            return redirect()->route('admin.orders.edit', $order->id);
+            return redirect()->route('admin.orders.view', $order->id);
 
         } catch (\Throwable $e) {
             DB::rollBack();

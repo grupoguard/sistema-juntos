@@ -35,4 +35,19 @@ class Financial extends Model
     {
         return $this->belongsTo(Order::class, 'order_id');
     }
+
+    public function asaas()
+    {
+        return $this->hasOne(FinancialAsaas::class, 'financial_id');
+    }
+
+    public function edp()
+    {
+        return $this->hasOne(FinancialEdp::class, 'financial_id');
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(FinancialLog::class, 'financial_id')->orderBy('id');
+    }
 }

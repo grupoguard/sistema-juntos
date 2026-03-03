@@ -30,4 +30,24 @@ class LogMovement extends Model
     {
         return $this->belongsTo(ReturnCode::class, 'code_return', 'code');
     }
+
+    public function financialEdpFirst()
+    {
+        return $this->hasMany(FinancialEdp::class, 'first_log_movement_id');
+    }
+
+    public function financialEdpLast()
+    {
+        return $this->hasMany(FinancialEdp::class, 'last_log_movement_id');
+    }
+
+    public function financialEdpConfirmed()
+    {
+        return $this->hasMany(FinancialEdp::class, 'confirmed_log_movement_id');
+    }
+
+    public function financialEdpReceived()
+    {
+        return $this->hasMany(FinancialEdp::class, 'received_log_movement_id');
+    }
 }
