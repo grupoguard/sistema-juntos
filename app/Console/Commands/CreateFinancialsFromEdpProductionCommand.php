@@ -13,7 +13,6 @@ class CreateFinancialsFromEdpProductionCommand extends Command
      * The name and signature of the console command.
      */
     protected $signature = 'edp:create-financials-from-production
-        {--limit=500 : Quantidade máxima de registros a processar por execução}
         {--from-id= : Processar registros com ID maior ou igual a este valor}
         {--to-id= : Processar registros com ID menor ou igual a este valor}';
 
@@ -27,7 +26,6 @@ class CreateFinancialsFromEdpProductionCommand extends Command
      */
     public function handle(): int
     {
-        $limit = (int) $this->option('limit');
         $fromId = $this->option('from-id');
         $toId = $this->option('to-id');
 
@@ -44,7 +42,6 @@ class CreateFinancialsFromEdpProductionCommand extends Command
 
         $records = $query
             ->orderBy('id')
-            ->limit($limit)
             ->get();
 
         if ($records->isEmpty()) {
@@ -55,27 +52,31 @@ class CreateFinancialsFromEdpProductionCommand extends Command
         $createdCount = 0;
         $skippedCount = 0;
         $errorCount = 0;
+        $processedCount = 0;
 
         foreach ($records as $record) {
             try {
                 DB::beginTransaction();
 
+                $normalizedInstallationNumber = $this->normalizeInstallationNumber($record->installation_number);
+
                 $order = Order::query()
-                    ->where('installation_number', $record->installation_number)
+                    ->where('installation_number', $normalizedInstallationNumber)
                     ->first();
 
                 if (!$order) {
                     DB::table('edp_production_records')
                         ->where('id', $record->id)
                         ->update([
-                            'financial_error' => 'Pedido não encontrado para o installation_number informado.',
+                            'financial_error' => 'Pedido não encontrado para o installation_number informado. Valor original: ' . $record->installation_number . ' | Valor normalizado: ' . $normalizedInstallationNumber,
                             'updated_at' => now(),
                         ]);
 
                     DB::commit();
 
-                    $this->warn("Registro {$record->id} ignorado: pedido não encontrado para instalação {$record->installation_number}.");
+                    $this->warn("Registro {$record->id} ignorado: pedido não encontrado para instalação {$record->installation_number} (normalizada: {$normalizedInstallationNumber}).");
                     $skippedCount++;
+                    $processedCount++;
                     continue;
                 }
 
@@ -103,6 +104,7 @@ class CreateFinancialsFromEdpProductionCommand extends Command
 
                     $this->line("Registro {$record->id} já possuía financial compatível. Marcado como processado.");
                     $skippedCount++;
+                    $processedCount++;
                     continue;
                 }
 
@@ -140,6 +142,13 @@ class CreateFinancialsFromEdpProductionCommand extends Command
 
                 $this->info("Financial criado com sucesso para o registro {$record->id} e pedido {$order->id}.");
                 $createdCount++;
+                $processedCount++;
+
+                if ($createdCount > 0 && $createdCount % 200 === 0) {
+                    $this->newLine();
+                    $this->warn("Pausa de 5 segundos após {$createdCount} financials criados...");
+                    sleep(5);
+                }
             } catch (\Throwable $throwable) {
                 DB::rollBack();
 
@@ -152,15 +161,34 @@ class CreateFinancialsFromEdpProductionCommand extends Command
 
                 $this->error("Erro ao processar registro {$record->id}: {$throwable->getMessage()}");
                 $errorCount++;
+                $processedCount++;
             }
         }
 
         $this->newLine();
         $this->info('Processamento finalizado.');
+        $this->line("Registros processados: {$processedCount}");
         $this->line("Financials criados: {$createdCount}");
         $this->line("Registros ignorados: {$skippedCount}");
         $this->line("Registros com erro: {$errorCount}");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Normaliza o número da instalação removendo zeros à esquerda.
+     * Como o campo orders.installation_number é int, os zeros iniciais são perdidos no banco.
+     */
+    private function normalizeInstallationNumber($installationNumber): int
+    {
+        $installationNumber = (string) $installationNumber;
+        $installationNumber = trim($installationNumber);
+        $installationNumber = ltrim($installationNumber, '0');
+
+        if ($installationNumber === '') {
+            return 0;
+        }
+
+        return (int) $installationNumber;
     }
 }
