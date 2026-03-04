@@ -19,168 +19,18 @@ class SyncEdpFinancialsCommand extends Command
     protected $signature = 'edp:sync-financials
         {--from-financial-id= : Processar financials com ID maior ou igual a este valor}
         {--to-financial-id= : Processar financials com ID menor ou igual a este valor}
-        {--sleep-every=200 : Pausar a cada X atualizações}
-        {--sleep-seconds=5 : Quantidade de segundos da pausa}
-        {--create-missing : Criar financials faltantes a partir do log_movement}
-        {--from-movement-id= : Processar log_movement com ID maior ou igual a este valor ao criar faltantes}
-        {--to-movement-id= : Processar log_movement com ID menor ou igual a este valor ao criar faltantes}';
+        {--sleep-every=200 : Pausar a cada X registros processados}
+        {--sleep-seconds=5 : Quantidade de segundos da pausa}';
 
     /**
      * The console command description.
      */
-    protected $description = 'Sincroniza financials da EDP com base em log_movement, criando faltantes quando solicitado';
+    protected $description = 'Atualiza os financials da EDP usando installation_number + value + due_date(date_invoice)';
 
     /**
      * Execute the console command.
      */
     public function handle(): int
-    {
-        $this->info('Iniciando sincronização dos financials EDP...');
-
-        $createdMissing = 0;
-
-        if ($this->option('create-missing')) {
-            $createdMissing = $this->createMissingFinancialsFromMovements();
-            $this->newLine();
-        }
-
-        $updated = $this->syncExistingFinancials();
-
-        $this->newLine();
-        $this->info('Sincronização finalizada.');
-        $this->line("Financials faltantes criados: {$createdMissing}");
-        $this->line("Financials atualizados: {$updated}");
-
-        return self::SUCCESS;
-    }
-
-    /**
-     * Cria financials faltantes a partir de log_movement.
-     */
-    private function createMissingFinancialsFromMovements(): int
-    {
-        $fromMovementId = $this->option('from-movement-id');
-        $toMovementId = $this->option('to-movement-id');
-
-        $query = LogMovement::query()
-            ->whereIn('code_return', ['01', '03', '04', '05', '06', '07']);
-
-        if ($fromMovementId !== null) {
-            $query->where('id', '>=', (int) $fromMovementId);
-        }
-
-        if ($toMovementId !== null) {
-            $query->where('id', '<=', (int) $toMovementId);
-        }
-
-        $movements = $query->orderBy('id')->get();
-
-        if ($movements->isEmpty()) {
-            $this->info('Nenhum log_movement encontrado para criação de financials faltantes.');
-            return 0;
-        }
-
-        $createdCount = 0;
-
-        foreach ($movements as $movement) {
-            try {
-                DB::beginTransaction();
-
-                $normalizedInstallationNumber = $this->normalizeInstallationNumber($movement->installation_number);
-                $movementValueDecimal = $this->parseMovementValueToDecimal($movement->value);
-
-                $order = Order::query()
-                    ->where('installation_number', (int) $normalizedInstallationNumber)
-                    ->first();
-
-                if (!$order) {
-                    DB::commit();
-                    continue;
-                }
-
-                $existingFinancial = Financial::query()
-                    ->where('order_id', $order->id)
-                    ->where('payment_method', 'EDP')
-                    ->where('value', $movementValueDecimal)
-                    ->where(function ($query) use ($movement) {
-                        $query->where('description', 'like', 'EDP arquivo retorno%')
-                            ->orWhere('description', 'like', 'EDP cobrança criada automaticamente%');
-                    })
-                    ->first();
-
-                if ($existingFinancial) {
-                    DB::commit();
-                    continue;
-                }
-
-                $status = $this->resolveStatusByReturnCode($movement->code_return);
-                $movementDate = $this->parseMovementDate($movement->date_movement);
-
-                $financial = Financial::query()->create([
-                    'order_id' => $order->id,
-                    'value' => $movementValueDecimal,
-                    'paid_value' => $movement->code_return === '06' ? $movementValueDecimal : null,
-                    'charge_date' => null,
-                    'due_date' => $movement->code_return === '01' ? $movementDate : null,
-                    'payment_method' => 'EDP',
-                    'description' => 'EDP cobrança criada automaticamente a partir do log_movement ID ' . $movement->id,
-                    'obs' => $this->buildObsForReturnCode($movement),
-                    'charge_paid' => $movement->code_return === '06' ? 1 : null,
-                    'status' => $status,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $financialEdp = FinancialEdp::query()->create([
-                    'financial_id' => $financial->id,
-                    'first_log_movement_id' => $movement->id,
-                    'last_log_movement_id' => $movement->id,
-                    'confirmed_log_movement_id' => $movement->code_return === '01' ? $movement->id : null,
-                    'received_log_movement_id' => $movement->code_return === '06' ? $movement->id : null,
-                    'last_return_code' => $movement->code_return,
-                    'last_status' => $status,
-                    'last_event_at' => $movementDate ? Carbon::parse($movementDate) : now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                FinancialLog::query()->create([
-                    'financial_id' => $financial->id,
-                    'provider' => 'EDP',
-                    'source_type' => 'LOG_MOVEMENT',
-                    'source_id' => $movement->id,
-                    'event_name' => $this->resolveEventNameByReturnCode($movement->code_return),
-                    'old_status' => null,
-                    'new_status' => $status,
-                    'message' => 'Financial EDP criado automaticamente a partir do log_movement ID ' . $movement->id,
-                    'payload' => [
-                        'financial_edp_id' => $financialEdp->id,
-                        'code_return' => $movement->code_return,
-                        'date_movement' => $movement->date_movement,
-                        'value' => $movement->value,
-                    ],
-                    'event_date' => $movementDate ? Carbon::parse($movementDate) : now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                DB::commit();
-
-                $this->line("Financial {$financial->id} criado automaticamente a partir do log_movement {$movement->id}.");
-                $createdCount++;
-            } catch (\Throwable $throwable) {
-                DB::rollBack();
-                $this->error("Erro ao criar financial faltante a partir do log_movement {$movement->id}: {$throwable->getMessage()}");
-            }
-        }
-
-        return $createdCount;
-    }
-
-    /**
-     * Atualiza financials EDP existentes.
-     */
-    private function syncExistingFinancials(): int
     {
         $fromFinancialId = $this->option('from-financial-id');
         $toFinancialId = $this->option('to-financial-id');
@@ -201,12 +51,14 @@ class SyncEdpFinancialsCommand extends Command
         $financials = $query->orderBy('id')->get();
 
         if ($financials->isEmpty()) {
-            $this->info('Nenhum financial EDP encontrado para sincronização.');
-            return 0;
+            $this->info('Nenhum financial EDP encontrado.');
+            return self::SUCCESS;
         }
 
-        $updatedCount = 0;
         $processedCount = 0;
+        $updatedCount = 0;
+        $skippedCount = 0;
+        $errorCount = 0;
 
         foreach ($financials as $financial) {
             try {
@@ -216,22 +68,46 @@ class SyncEdpFinancialsCommand extends Command
 
                 if (!$order) {
                     DB::commit();
+                    $skippedCount++;
+                    $processedCount++;
+                    continue;
+                }
+
+                if (empty($financial->due_date)) {
+                    DB::commit();
+                    $this->line("Financial {$financial->id} ignorado: due_date vazio.");
+                    $skippedCount++;
+                    $processedCount++;
                     continue;
                 }
 
                 $normalizedInstallationNumber = $this->normalizeInstallationNumber($order->installation_number);
                 $financialValueField = $this->formatMovementValueFromFinancial($financial->value);
+                $competenceYm = Carbon::parse($financial->due_date)->format('Ym');
 
                 $movements = LogMovement::query()
                     ->whereRaw('CAST(installation_number AS UNSIGNED) = ?', [(int) $normalizedInstallationNumber])
                     ->where('value', $financialValueField)
+                    ->where('date_invoice', $competenceYm)
                     ->whereIn('code_return', ['01', '03', '04', '05', '06', '07'])
+                    ->orderByRaw("
+                        CASE code_return
+                            WHEN '01' THEN 1
+                            WHEN '03' THEN 2
+                            WHEN '04' THEN 3
+                            WHEN '05' THEN 4
+                            WHEN '07' THEN 5
+                            WHEN '06' THEN 6
+                            ELSE 99
+                        END
+                    ")
                     ->orderBy('date_movement')
                     ->orderBy('id')
                     ->get();
 
                 if ($movements->isEmpty()) {
                     DB::commit();
+                    $skippedCount++;
                     $processedCount++;
                     continue;
                 }
@@ -266,22 +142,17 @@ class SyncEdpFinancialsCommand extends Command
                     $oldStatus = $financial->status;
                     $newStatus = $this->resolveStatusByReturnCode($movement->code_return);
                     $movementDate = $this->parseMovementDate($movement->date_movement);
+                    $obsMessage = $this->buildObsForReturnCode($movement);
 
                     $updateFinancial = [
                         'status' => $newStatus,
                         'updated_at' => now(),
                     ];
 
-                    if ($movement->code_return === '01') {
-                        $updateFinancial['due_date'] = $movementDate;
-                    }
-
                     if ($movement->code_return === '06') {
                         $updateFinancial['paid_value'] = $this->parseMovementValueToDecimal($movement->value);
                         $updateFinancial['charge_paid'] = 1;
                     }
-
-                    $obsMessage = $this->buildObsForReturnCode($movement);
 
                     if ($obsMessage) {
                         $updateFinancial['obs'] = $this->appendObs($financial->obs, $obsMessage);
@@ -295,7 +166,7 @@ class SyncEdpFinancialsCommand extends Command
 
                     $financialEdp->last_log_movement_id = $movement->id;
                     $financialEdp->last_return_code = $movement->code_return;
-                    $financialEdp->last_status = $newStatus;
+                    $financialEdp->last_status = $movement->code_return === '06' ? 'RECEIVED' : $newStatus;
                     $financialEdp->last_event_at = $movementDate ? Carbon::parse($movementDate) : now();
 
                     if ($movement->code_return === '01') {
@@ -315,10 +186,11 @@ class SyncEdpFinancialsCommand extends Command
                         'source_id' => $movement->id,
                         'event_name' => $this->resolveEventNameByReturnCode($movement->code_return),
                         'old_status' => $oldStatus,
-                        'new_status' => $newStatus,
+                        'new_status' => $movement->code_return === '06' ? 'RECEIVED' : $newStatus,
                         'message' => $obsMessage ?: 'Atualização EDP aplicada a partir do log_movement ID ' . $movement->id,
                         'payload' => [
                             'code_return' => $movement->code_return,
+                            'date_invoice' => $movement->date_invoice,
                             'date_movement' => $movement->date_movement,
                             'value' => $movement->value,
                             'financial_edp_id' => $financialEdp->id,
@@ -341,10 +213,19 @@ class SyncEdpFinancialsCommand extends Command
             } catch (\Throwable $throwable) {
                 DB::rollBack();
                 $this->error("Erro ao sincronizar financial {$financial->id}: {$throwable->getMessage()}");
+                $errorCount++;
+                $processedCount++;
             }
         }
 
-        return $updatedCount;
+        $this->newLine();
+        $this->info('Sincronização finalizada.');
+        $this->line("Financials processados: {$processedCount}");
+        $this->line("Financials atualizados: {$updatedCount}");
+        $this->line("Financials ignorados: {$skippedCount}");
+        $this->line("Financials com erro: {$errorCount}");
+
+        return self::SUCCESS;
     }
 
     private function resolveStatusByReturnCode(?string $codeReturn): string
