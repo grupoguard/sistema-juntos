@@ -60,7 +60,7 @@ class RebuildEdpFinancialsCommand extends Command
                 ->where('provider', 'EDP')
                 ->delete();
 
-            DB::table('financial_edp')->truncate();
+            DB::table('financial_edp')->delete();
 
             Financial::query()
                 ->where('payment_method', 'EDP')
