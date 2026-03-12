@@ -605,8 +605,10 @@ class OrderEasyForm extends Component
 
     public function updatedDocumentFile()
     {
+        $this->resetErrorBag('document_file');
+
         $this->validate([
-            'document_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'document_file' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         if ($this->document_file) {
@@ -621,8 +623,10 @@ class OrderEasyForm extends Component
 
     public function updatedAddressProofFile()
     {
+        $this->resetErrorBag('address_proof_file');
+
         $this->validate([
-            'address_proof_file' => 'nullable|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'address_proof_file' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         if ($this->address_proof_file) {

@@ -481,7 +481,20 @@
                         @if($document_file)
                             <div class="border rounded p-2">
                                 <label class="d-block">Pré-visualização</label>
-                                <img src="{{ $document_file->temporaryUrl() }}" class="img-fluid rounded" style="max-height: 420px;">
+
+                                @php $mime = $document_file->getMimeType(); @endphp
+
+                                @if($mime && str_starts_with($mime, 'image/'))
+                                    <img src="{{ $document_file->temporaryUrl() }}" class="img-fluid rounded" style="max-height: 420px;">
+                                @elseif($mime === 'application/pdf')
+                                    <div class="alert alert-secondary mb-0">
+                                        PDF selecionado: {{ $document_file->getClientOriginalName() }}
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning mb-0">
+                                        Tipo de arquivo não suportado para pré-visualização.
+                                    </div>
+                                @endif
                             </div>
                         @elseif($existing_document_file)
                             <div class="border rounded p-2">
@@ -524,13 +537,26 @@
                         @if($address_proof_file)
                             <div class="border rounded p-2">
                                 <label class="d-block">Pré-visualização</label>
-                                <img src="{{ $address_proof_file->temporaryUrl() }}" class="img-fluid rounded" style="max-height: 420px;">
+
+                                @php $mime = $address_proof_file->getMimeType(); @endphp
+
+                                @if($mime && str_starts_with($mime, 'image/'))
+                                    <img src="{{ $address_proof_file->temporaryUrl() }}" class="img-fluid rounded" style="max-height: 420px;">
+                                @elseif($mime === 'application/pdf')
+                                    <div class="alert alert-secondary mb-0">
+                                        PDF selecionado: {{ $address_proof_file->getClientOriginalName() }}
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning mb-0">
+                                        Tipo de arquivo não suportado para pré-visualização.
+                                    </div>
+                                @endif
                             </div>
                         @elseif($existing_address_proof_file)
                             <div class="border rounded p-2">
-                                <label class="d-block">Comprovante já salvo no rascunho</label>
+                                <label class="d-block">Documento já salvo no rascunho</label>
                                 <a href="{{ Storage::url($existing_address_proof_file) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    Visualizar comprovante
+                                    Visualizar documento
                                 </a>
                             </div>
                         @else
