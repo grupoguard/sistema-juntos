@@ -257,7 +257,7 @@ class ImportAssociadosCsv extends Command
             'neighborhood' => $this->cleanString((string)($row['Bairro'] ?? '')) ?: 'Não informado',
             'city' => $this->cleanString((string)($row['Cidade'] ?? '')) ?: 'Não informado',
             'state' => $state,
-            'status' => 1,
+            'status' => 0,
         ];
 
         $existing = Client::where('cpf', $cpf)->first();
@@ -361,7 +361,7 @@ class ImportAssociadosCsv extends Command
             'group_id' => self::DEFAULT_GROUP_ID,
             'seller_id' => self::DEFAULT_SELLER_ID,
             'charge_type' => $chargeType, // BOLETO/CARTAO/EDP
-            'status' => 'ativo',
+            'status' => 'inativo',
             'charge_date' => $chargeDate,
             'accession' => 0,
             'accession_payment' => 'Não cobrada',
