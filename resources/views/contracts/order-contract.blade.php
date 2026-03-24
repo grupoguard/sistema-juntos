@@ -504,6 +504,7 @@
     <p>6.2. A taxa de adesão será cobrada no ato da inscrição e não é reembolsável.</p>
     <p>6.3. A manutenção da adesão será efetiva enquanto o ASSOCIADO estiver em dia com o pagamento das mensalidades.</p>
     <p>6.4. O não pagamento das mensalidades implicará na suspensão temporária dos benefícios até que a situação seja regularizada.</p>
+    <p>6.5. Os valores das mensalidades poderão ser reajustados anualmente, sempre no mês de junho, com base na variação acumulada do IPCA ou outro índice oficial que venha a substituí-lo, visando à recomposição do valor do serviço prestado.</p>
 
     <h4>CLÁUSULA SÉTIMA: DAS OBRIGAÇÕES DO ASSOCIADO</h4>
     <p>7.1. O ASSOCIADO compromete-se a utilizar o CLUBE DE BENEFÍCIOS JUNTOS de acordo com as normas estabelecidas e a respeitar os prestadores de serviços.</p>
