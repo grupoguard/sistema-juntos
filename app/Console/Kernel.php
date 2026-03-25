@@ -24,37 +24,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $hour = config('app.hour');
-        $min = config('app.min');
-        $scheduledInterval = $hour !== '' ? (($min !== '' && $min != 0) ? $min . ' */' . $hour . ' * * *' : '0 */' . $hour . ' * * *') : '*/' . $min . ' * * * *';
-
-        $schedule->command('edp:pegar-todos-retornos')
-            ->name('edp-retornos-08h')
-            ->timezone('America/Sao_Paulo')
-            ->dailyAt('08:00')
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
-
-        $schedule->command('edp:pegar-todos-retornos')
-            ->name('edp-retornos-12h30')
-            ->timezone('America/Sao_Paulo')
-            ->dailyAt('12:30')
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
-
-        $schedule->command('edp:pegar-todos-retornos')
-            ->name('edp-retornos-17h')
-            ->timezone('America/Sao_Paulo')
-            ->dailyAt('17:00')
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/edp-retornos.log'));
-
-        $schedule->command('edp:sync-financials')
-            ->name('edp-sync-financials-nightly')
-            ->timezone('America/Sao_Paulo')
-            ->dailyAt('02:00')
-            ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/edp-sync-financials.log'));
+       
     }
 
     /**

@@ -1,19 +1,33 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-/*
-|--------------------------------------------------------------------------
-| Console Routes
-|--------------------------------------------------------------------------
-|
-| This file is where you may define all of your Closure based console
-| commands. Each Closure is bound to a command instance allowing a
-| simple approach to interacting with each command's IO methods.
-|
-*/
+// Retornos EDP
+Schedule::command('edp:pegar-todos-retornos')
+    ->name('edp-retornos-08h')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('08:00')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/edp-retornos.log'));
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+Schedule::command('edp:pegar-todos-retornos')
+    ->name('edp-retornos-12h30')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('12:30')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/edp-retornos.log'));
+
+Schedule::command('edp:pegar-todos-retornos')
+    ->name('edp-retornos-17h')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('17:00')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/edp-retornos.log'));
+
+// Sync nightly
+Schedule::command('edp:sync-financials')
+    ->name('edp-sync-financials-nightly')
+    ->timezone('America/Sao_Paulo')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/edp-sync-financials.log'));
