@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\SendSellerAccessEmailJob;
 use App\Models\Group;
 use App\Models\Seller;
 use App\Services\UserManagementService;
@@ -87,7 +88,6 @@ class SellerForm extends Component
     public function storeOrUpdate()
     {
         logger('SellerForm storeOrUpdate FOI CHAMADO');
-        session()->flash('message', 'Entrou no método storeOrUpdate');
 
         $user = auth()->user();
 
@@ -119,6 +119,8 @@ class SellerForm extends Component
 
         $this->validate($rules);
 
+        $emailJobData = null;
+
         try {
             DB::beginTransaction();
 
@@ -130,16 +132,32 @@ class SellerForm extends Component
             } else {
                 $sellerModel = Seller::create($this->seller);
 
-                $userService = app(\App\Services\UserManagementService::class);
-                $result = $userService->createUserForSeller($sellerModel, true);
+                $userService = app(UserManagementService::class);
+                $result = $userService->createUserForSeller($sellerModel);
 
-                session()->flash('message', 'Consultor e usuário criados com sucesso!');
+                $emailJobData = [
+                    'name' => $result['user']->name,
+                    'email' => $result['user']->email,
+                    'password' => $result['password'],
+                    'loginUrl' => config('app.url') . '/login',
+                ];
+
+                session()->flash('message', 'Consultor e usuário criados com sucesso! O email de acesso será enviado em segundo plano.');
                 session()->flash('user_created', true);
                 session()->flash('user_email', $result['user']->email);
                 session()->flash('user_password', $result['password']);
             }
 
             DB::commit();
+
+            if ($emailJobData) {
+                SendSellerAccessEmailJob::dispatch(
+                    $emailJobData['name'],
+                    $emailJobData['email'],
+                    $emailJobData['password'],
+                    $emailJobData['loginUrl']
+                );
+            }
 
             return redirect()->route('admin.sellers.edit', ['seller' => $sellerModel->id]);
         } catch (\Throwable $e) {

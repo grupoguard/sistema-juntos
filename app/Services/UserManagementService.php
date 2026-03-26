@@ -46,7 +46,7 @@ class UserManagementService
 
     public function createUserForSeller(Seller $seller, bool $sendEmail = false)
     {
-        return DB::transaction(function () use ($seller, $sendEmail) {
+        return DB::transaction(function () use ($seller) {
             $generatedPassword = Str::random(12);
 
             $user = User::create([
@@ -57,16 +57,8 @@ class UserManagementService
             ]);
 
             $user->assignRole('SELLER');
-            $this->assignSellerPermissions($user, $seller);
 
-            if ($sendEmail && !empty($user->email)) {
-                Mail::to($user->email)->send(new SellerAccessMail(
-                    name: $user->name,
-                    email: $user->email,
-                    password: $generatedPassword,
-                    loginUrl: config('app.url') . '/login'
-                ));
-            }
+            $this->assignSellerPermissions($user, $seller);
 
             return [
                 'user' => $user,
