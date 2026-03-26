@@ -1,112 +1,100 @@
 <?php
 
-// Service para gerenciar usuários
 namespace App\Services;
 
-use App\Models\User;
+use App\Mail\SellerAccessMail;
 use App\Models\Group;
 use App\Models\Seller;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 
 class UserManagementService
 {
-    /**
-     * Cria usuário para um Group (COOP)
-     */
-    public function createUserForGroup(Group $group, ?string $password = null)
+    public function createUserForGroup(Group $group, bool $sendEmail = false)
     {
-        return DB::transaction(function () use ($group, $password) {
-            // Gerar senha aleatória se não fornecida
-            $generatedPassword = $password ?: Str::random(12);
-            
-            // Criar usuário
+        return DB::transaction(function () use ($group, $sendEmail) {
+            $generatedPassword = Str::random(12);
+
             $user = User::create([
                 'name' => $group->name,
                 'email' => $group->email,
                 'password' => Hash::make($generatedPassword),
-                'status' => true
+                'status' => true,
             ]);
 
-            // Atribuir role COOP
             $user->assignRole('COOP');
-
-            // Adicionar permissões específicas do grupo
             $this->assignGroupPermissions($user, $group);
+
+            if ($sendEmail && !empty($user->email)) {
+                Mail::to($user->email)->send(new SellerAccessMail(
+                    name: $user->name,
+                    email: $user->email,
+                    password: $generatedPassword,
+                    loginUrl: config('app.url') . '/login'
+                ));
+            }
 
             return [
                 'user' => $user,
-                'password' => $generatedPassword // Retornar para mostrar ao criador
+                'password' => $generatedPassword,
             ];
         });
     }
 
-    /**
-     * Cria usuário para um Seller
-     */
-    public function createUserForSeller(Seller $seller, ?string $password = null)
+    public function createUserForSeller(Seller $seller, bool $sendEmail = false)
     {
-        return DB::transaction(function () use ($seller, $password) {
-            // Gerar senha aleatória se não fornecida
-            $generatedPassword = $password ?: Str::random(12);
-            
-            // Criar usuário
+        return DB::transaction(function () use ($seller, $sendEmail) {
+            $generatedPassword = Str::random(12);
+
             $user = User::create([
                 'name' => $seller->name,
                 'email' => $seller->email,
                 'password' => Hash::make($generatedPassword),
-                'status' => true
+                'status' => (bool) ($seller->status ?? true),
             ]);
 
-            // Atribuir role SELLER
             $user->assignRole('SELLER');
-
-            // Adicionar permissões específicas do vendedor
             $this->assignSellerPermissions($user, $seller);
+
+            if ($sendEmail && !empty($user->email)) {
+                Mail::to($user->email)->send(new SellerAccessMail(
+                    name: $user->name,
+                    email: $user->email,
+                    password: $generatedPassword,
+                    loginUrl: config('app.url') . '/login'
+                ));
+            }
 
             return [
                 'user' => $user,
-                'password' => $generatedPassword
+                'password' => $generatedPassword,
             ];
         });
     }
 
-    /**
-     * Atribui permissões específicas ao grupo
-     */
     private function assignGroupPermissions($user, $group)
     {
-        // COOP já tem permissões padrão pela role
-        // Aqui você pode adicionar permissões específicas se necessário
-        
-        // Salvar vínculo do user com o group
-        $user->groups()->attach($group->id);
+        $user->groups()->syncWithoutDetaching([$group->id]);
     }
 
-    /**
-     * Atribui permissões específicas ao vendedor
-     */
     private function assignSellerPermissions($user, $seller)
     {
-        // SELLER já tem permissões padrão pela role
-        // Salvar vínculo do user com o seller
-        $user->sellers()->attach($seller->id);
+        $user->sellers()->syncWithoutDetaching([$seller->id]);
     }
 
     public function createUser(array $userData, array $accessData = [])
     {
         return DB::transaction(function () use ($userData, $accessData) {
-            // Criar usuário
             $user = User::create([
                 'name' => $userData['name'],
                 'email' => $userData['email'],
                 'password' => Hash::make($userData['password']),
-                'status' => $userData['status'] ?? true
+                'status' => $userData['status'] ?? true,
             ]);
 
-            // Adicionar role se fornecida
             if (isset($userData['role'])) {
                 $user->assignRole($userData['role']);
             }
@@ -122,7 +110,7 @@ class UserManagementService
                 'user_id' => $user->id,
                 'group_id' => $access['group_id'],
                 'userable_type' => $access['userable_type'],
-                'role_id' => $access['role_id']
+                'role_id' => $access['role_id'],
             ]);
         }
     }
@@ -130,12 +118,9 @@ class UserManagementService
     public function updateUserAccess(User $user, array $newAccessData)
     {
         return DB::transaction(function () use ($user, $newAccessData) {
-            // Remove acessos existentes
             $user->userAccesses()->delete();
-            
-            // Adiciona novos acessos
             $this->assignUserAccess($user, $newAccessData);
-            
+
             return $user->load(['userAccesses.role']);
         });
     }
@@ -144,8 +129,8 @@ class UserManagementService
     {
         return [
             'App\Models\Admin' => \App\Models\Admin::all(),
-            'App\Models\Seller' => \App\Models\Seller::all(), 
-            'App\Models\Partner' => \App\Models\Partner::all()
+            'App\Models\Seller' => \App\Models\Seller::all(),
+            'App\Models\Partner' => \App\Models\Partner::all(),
         ];
     }
 

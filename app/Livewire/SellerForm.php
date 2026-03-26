@@ -17,9 +17,6 @@ class SellerForm extends Component
 
     public $seller = [];
     public $sellerId;
-    public $createUser = true;
-    public $userPassword;
-    public $generatedPassword;
 
     // Ouvindo o evento vindo do SelectGroup
     protected $listeners = ['groupSelected'];
@@ -44,7 +41,6 @@ class SellerForm extends Component
         'seller.state' => 'required|string|max:2',
         'seller.obs' => 'nullable|string',
         'seller.status' => 'nullable|integer',
-        'userPassword'              => 'nullable|string|min:8',
     ];
 
     public function mount($sellerId = null)
@@ -109,17 +105,14 @@ class SellerForm extends Component
                 throw new \Exception('Usuário COOP sem cooperativa vinculada.');
             }
 
-            // Se coop trabalha com 1 grupo
             $this->seller['group_id'] = (int) $allowedGroupIds[0];
         }
 
-        // Limpar campos
         $this->seller['cpf'] = preg_replace('/\D/', '', $this->seller['cpf']);
         $this->seller['rg'] = preg_replace('/\D/', '', $this->seller['rg'] ?? '');
         $this->seller['phone'] = preg_replace('/\D/', '', $this->seller['phone'] ?? '');
         $this->seller['zipcode'] = preg_replace('/\D/', '', $this->seller['zipcode']);
 
-        // Atualizar regras para edição
         $rules = $this->rules;
         $rules['seller.cpf'] = 'required|string|size:11|unique:sellers,cpf,' . ($this->sellerId ?: 'NULL') . ',id';
         $rules['seller.email'] = 'required|email|max:50|unique:sellers,email,' . ($this->sellerId ?: 'NULL') . ',id';
@@ -130,35 +123,25 @@ class SellerForm extends Component
             DB::beginTransaction();
 
             if ($this->sellerId) {
-                // Atualizar
                 $sellerModel = Seller::findOrFail($this->sellerId);
                 $sellerModel->update($this->seller);
-                
-                session()->flash('message', 'Vendedor atualizado com sucesso!');
-                
+
+                session()->flash('message', 'Consultor atualizado com sucesso!');
             } else {
-                // Criar
                 $sellerModel = Seller::create($this->seller);
-                
-                // Criar usuário se solicitado
-                if ($this->createUser) {
-                    $userService = app(UserManagementService::class);
-                    $result = $userService->createUserForSeller($sellerModel, $this->userPassword);
-                    
-                    $this->generatedPassword = $result['password'];
-                    
-                    session()->flash('message', 'Vendedor cadastrado com sucesso!');
-                    session()->flash('user_created', true);
-                    session()->flash('user_email', $result['user']->email);
-                    session()->flash('user_password', $this->generatedPassword);
-                } else {
-                    session()->flash('message', 'Vendedor cadastrado com sucesso!');
-                }
+
+                $userService = app(\App\Services\UserManagementService::class);
+                $result = $userService->createUserForSeller($sellerModel, true);
+
+                session()->flash('message', 'Consultor e usuário criados com sucesso!');
+                session()->flash('user_created', true);
+                session()->flash('user_email', $result['user']->email);
+                session()->flash('user_password', $result['password']);
             }
 
             DB::commit();
+
             return redirect()->route('admin.sellers.edit', ['seller' => $sellerModel->id]);
-            
         } catch (\Throwable $e) {
             DB::rollBack();
 
