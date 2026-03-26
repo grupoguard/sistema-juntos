@@ -99,44 +99,31 @@
                 </div>
 
                 @if(!$sellerId)
-                <hr class="my-5">
+                    <hr class="my-5">
 
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h5 class="mb-0">Dados de acesso</h5>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                       <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" wire:model="createUser" id="createUser">
-                            <label class="form-check-label" for="createUser">
-                                <strong>Criar usuário para este consultor</strong>
-                            </label>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h5 class="mb-0">Dados de acesso</h5>
+                            <small class="text-muted">
+                                Um usuário será criado automaticamente para este consultor ao finalizar o cadastro.
+                            </small>
                         </div>
-                        <small class="text-muted">
-                            O usuário terá acesso ao sistema como vendedor e poderá gerenciar seus pedidos.
-                        </small>
                     </div>
-                    @if($createUser)
+
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="alert alert-info">
                                 <i class="fa fa-info-circle"></i>
-                                <strong>Email do usuário:</strong> {{ $group['email'] ?? 'Preencha o email acima' }}
+                                <strong>Email do usuário:</strong> {{ $seller['email'] ?? 'Preencha o email acima' }}
                             </div>
                         </div>
+
                         <div class="col-md-6">
-                            <label class="form-label">Senha Customizada (Opcional)</label>
-                            <input type="password" wire:model="userPassword" class="form-control @error('userPassword') is-invalid @enderror" 
-                                placeholder="Deixe vazio para gerar automaticamente">
-                            @error('userPassword') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             <small class="text-muted">
-                                Se deixar vazio, uma senha aleatória será gerada e exibida após o cadastro.
+                                Uma senha aleatória será gerada e exibida após o cadastro.
                             </small>
                         </div>
-                    @endif 
-                </div>
+                    </div>
                 @endif
 
                 <hr class="my-5">

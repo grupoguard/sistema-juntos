@@ -36,9 +36,15 @@ class Seller extends Model
         'status',
     ];
 
-     public function group()
+    public function group()
     {
         return $this->belongsTo(Group::class, 'group_id');
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_sellers')
+            ->withTimestamps();
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
