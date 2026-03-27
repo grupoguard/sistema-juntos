@@ -252,7 +252,7 @@ class OrderEasyForm extends Component
 
             // 5) Cobrança
             5 => [
-                'billing.charge_type' => 'required|in:BOLETO, CARTAO,EDP',
+                'billing.charge_type' => 'required|in:BOLETO,CARTAO,EDP',
                 'billing.charge_date' => 'required|in:10,20,30',
             ],
 
