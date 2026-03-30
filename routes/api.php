@@ -15,7 +15,7 @@ use App\Http\Controllers\AsaasWebhookController;
 |
 */
 
-Route::post('/webhook-asaas', [AsaasWebhookController::class, 'handle']);
+Route::post('/webhook-asaas', [AsaasWebhookController::class, 'handle'])->middleware('asaas.webhook');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
