@@ -252,7 +252,7 @@ class OrderEdit extends Component
         session()->flash('message', 'Pedido rejeitado com sucesso!');
     }
         
-    public function updateOrder(EdpService $edpService)
+    public function updateOrder()
     {
         DB::beginTransaction();
 
