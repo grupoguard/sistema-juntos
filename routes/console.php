@@ -32,20 +32,20 @@ Schedule::command('edp:sync-financials')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/edp-sync-financials.log'));
 
-Schedule::command('asaas:create-missing-charges --days=30')
-    ->timezone('America/Sao_Paulo')
-    ->dailyAt('07:00')
-    ->withoutOverlapping()
-    ->appendOutputTo(storage_path('logs/asaas-create-missing.log'));
+// Schedule::command('asaas:create-missing-charges --days=30')
+//     ->timezone('America/Sao_Paulo')
+//     ->dailyAt('07:00')
+//     ->withoutOverlapping()
+//     ->appendOutputTo(storage_path('logs/asaas-create-missing.log'));
 
-Schedule::command('asaas:create-missing-charges --days=30')
-    ->timezone('America/Sao_Paulo')
-    ->dailyAt('21:00')
-    ->withoutOverlapping()
-    ->appendOutputTo(storage_path('logs/asaas-create-missing.log'));
+// Schedule::command('asaas:create-missing-charges --days=30')
+//     ->timezone('America/Sao_Paulo')
+//     ->dailyAt('21:00')
+//     ->withoutOverlapping()
+//     ->appendOutputTo(storage_path('logs/asaas-create-missing.log'));
 
-Schedule::command('asaas:reconcile --days=120')
-    ->timezone('America/Sao_Paulo')
-    ->dailyAt('03:00')
-    ->withoutOverlapping()
-    ->appendOutputTo(storage_path('logs/asaas-reconcile.log'));
+// Schedule::command('asaas:reconcile --days=120')
+//     ->timezone('America/Sao_Paulo')
+//     ->dailyAt('03:00')
+//     ->withoutOverlapping()
+//     ->appendOutputTo(storage_path('logs/asaas-reconcile.log'));
