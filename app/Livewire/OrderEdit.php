@@ -42,9 +42,12 @@ class OrderEdit extends Component
 
     public $signed_physical_contract_file;
 
+    public $order_status; // ativo | inadimplente | cancelado
+
     protected function rules()
     {
         $rules = [
+            'order_status' => 'required|in:ativo,inadimplente,cancelado',
             'client.name' => 'required|string|max:100',
             'client.mom_name' => 'required|string|max:100',
             'client.date_birth' => 'required|date',
@@ -102,6 +105,7 @@ class OrderEdit extends Component
         $this->orderId = $orderId;
         $this->order = Order::findOrFail($orderId);
         $this->signed_contract_url = $this->order->signed_contract_url;
+        $this->order_status = $this->order->status;
 
         $user = auth()->user();
 
@@ -385,6 +389,7 @@ class OrderEdit extends Component
                 'product_id' => $this->product_id,
                 'seller_id' => $this->seller_id,
                 'charge_type' => $this->charge_type,
+                'status' => $this->order_status,
                 'installation_number' => $this->installation_number,
                 'approval_name' => $this->approval_name,
                 'approval_by' => $this->approval_by,
@@ -396,6 +401,12 @@ class OrderEdit extends Component
                 'discount_value' => $this->discount_value,
                 'signed_contract_url' => $this->order['signed_contract_url'] ?? null,
             ]);
+
+            if ($this->order_status === 'cancelado') {
+                $order->canceled_at = $order->canceled_at ?: now();
+            } else {
+                $order->canceled_at = null;
+            }
 
             // Atualizar OrderPrice
             $product = Product::findOrFail($this->product_id);
