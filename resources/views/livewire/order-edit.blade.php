@@ -54,7 +54,7 @@
                                 <div class="col-2 text-end">
                                     <div class="row mb-3">
                                         <label>Status do pedido<span class="text-danger">*</span></label>
-                                        <select class="form-control" wire:model.change="order_status">
+                                        <select class="form-control" wire:model="order_status">
                                             <option value="ativo">Ativo</option>
                                             <option value="inadimplente">Inadimplente</option>
                                             <option value="cancelado">Cancelado</option>
