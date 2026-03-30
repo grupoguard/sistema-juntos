@@ -58,9 +58,8 @@ class AsaasWebhookController extends Controller
                         'cpf' => null,
                         'reason' => 'webhook_payment_not_found',
                         'payload' => json_encode($payload),
-                        'created_at' => now(),
                         'updated_at' => now(),
-                    ]
+                    ] + (DB::table('asaas_unmatched_payments')->where('asaas_payment_id',$asaasPaymentId)->exists() ? [] : ['created_at'=>now()])
                 );
                 return;
             }
@@ -120,24 +119,45 @@ class AsaasWebhookController extends Controller
                 $updates['paid_value'] = $desiredPaidValue;
             }
 
+            $oldStatus = (string) $current->status;
+            $incomingStatus = (string) $newStatus;
+
+            $changedAnything = !empty($updates);
+            $eventName = $this->eventNameForAsaas($oldStatus, $incomingStatus, $changedAnything);
+
             if (!empty($updates)) {
+                $changedFields = implode(', ', array_keys($updates));
+
+                $updatesForLog = $updates;  // antes de adicionar updated_at
                 $updates['updated_at'] = now();
                 DB::table('financial')->where('id', $financialId)->update($updates);
-            }
 
-            // financial_history só quando o status mudou
-            if ($current->status !== $newStatus) {
-                DB::table('financial_history')->insert([
+                $msg = $oldStatus !== $incomingStatus
+                    ? "Webhook Asaas: status {$oldStatus} → {$incomingStatus} (campos: {$changedFields})"
+                    : "Webhook Asaas: atualização (campos: {$changedFields})";
+
+                DB::table('financial_logs')->insert([
                     'financial_id' => $financialId,
-                    'old_status' => $current->status,
-                    'new_status' => $newStatus,
-                    'reason' => 'Webhook Asaas',
-                    'changed_by' => 'ASAAS',
-                    'metadata' => json_encode([
+                    'provider' => 'ASAAS',
+                    'source_type' => 'WEBHOOK',
+                    'source_id' => null,
+                    'event_name' => $eventName,
+                    'old_status' => $oldStatus !== $incomingStatus ? $oldStatus : null,
+                    'new_status' => $oldStatus !== $incomingStatus ? $incomingStatus : null,
+                    'message' => $msg,
+                    'payload' => json_encode([
                         'event_id' => $eventId,
                         'event_type' => $eventType,
                         'asaas_payment_id' => $asaasPaymentId,
+                        'financial_updates' => $updatesForLog,
+                        'payment' => [
+                            'status' => data_get($payment, 'status'),
+                            'value' => data_get($payment, 'value'),
+                            'billingType' => data_get($payment, 'billingType'),
+                            'dueDate' => data_get($payment, 'dueDate'),
+                        ],
                     ]),
+                    'event_date' => now(),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -180,5 +200,21 @@ class AsaasWebhookController extends Controller
             'BOLETO' => 'BOLETO',
             default => 'BOLETO',
         };
+    }
+
+    private function eventNameForAsaas(string $oldStatus, string $newStatus, bool $changedAnything): string
+    {
+        if (!$changedAnything) return 'UPDATED';
+
+        if ($oldStatus !== $newStatus) {
+            return match ($newStatus) {
+                'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH' => 'ASAAS_PAYMENT_RECEIVED',
+                'OVERDUE' => 'ASAAS_PAYMENT_OVERDUE',
+                'REFUNDED' => 'ASAAS_PAYMENT_REFUNDED',
+                default => 'STATUS_CHANGED',
+            };
+        }
+
+        return 'UPDATED';
     }
 }
