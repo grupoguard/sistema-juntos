@@ -17,6 +17,7 @@ class Order extends Model
         'group_id',
         'seller_id',
         'charge_type',
+        'status',
         'installation_number',
         'approval_name',
         'approval_by',
