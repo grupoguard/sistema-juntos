@@ -52,15 +52,18 @@
                                     <h5 class="mb-0">Dados do Cliente</h5>
                                 </div>
                                 <div class="col-2 text-end">
-                                    @if($charge_type == 'EDP')
-                                        <span class="badge bg-warning text-dark">
-                                            {{ $charge_type }}
-                                        </span>
-                                    @else
-                                        <span class="badge bg-info text-dark">
-                                            {{ $charge_type }}
-                                        </span>
-                                    @endif
+                                    <div class="row mb-3">
+                                        <label>Status do pedido<span class="text-danger">*</span></label>
+                                        <select class="form-control" wire:model.change="order_status">
+                                            <option value="ativo">Ativo</option>
+                                            <option value="inadimplente">Inadimplente</option>
+                                            <option value="cancelado">Cancelado</option>
+                                        </select>
+                                        @error('order_status') <span class="text-danger">{{ $message }}</span> @enderror
+                                        <small class="text-muted d-block mt-1">
+                                            Cancelado não gera novas cobranças.
+                                        </small>
+                                    </div>
                                 </div>
 
                                 <!-- Dados do Cliente -->
