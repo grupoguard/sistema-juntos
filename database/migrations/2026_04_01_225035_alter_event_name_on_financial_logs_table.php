@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        DB::statement("
+            ALTER TABLE financial_logs
+            MODIFY event_name VARCHAR(100) NOT NULL
+        ");
+    }
+
+    public function down(): void
+    {
+        DB::statement("
+            ALTER TABLE financial_logs
+            MODIFY event_name ENUM(
+                'CREATED',
+                'UPDATED',
+                'STATUS_CHANGED',
+                'ASAAS_CREATED',
+                'ASAAS_UPDATED',
+                'ASAAS_STATUS_CHANGED',
+                'ASAAS_WEBHOOK_RECEIVED'
+            ) NOT NULL
+        ");
+    }
+};
