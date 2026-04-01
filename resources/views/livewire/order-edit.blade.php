@@ -704,269 +704,269 @@
                         </div>
                     </div>
                 </div>
-                <div wire:ignore.self class="modal fade" id="financialManageModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    Gerenciar cobrança #{{ data_get($selectedFinancial, 'id') }}
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    <div wire:ignore.self class="modal fade" id="financialManageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Gerenciar cobrança #{{ data_get($selectedFinancial, 'id') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if(session()->has('message'))
+                        <div class="alert alert-success">{{ session('message') }}</div>
+                    @endif
+
+                    @if(session()->has('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
+
+                    @php
+                        $selectedStatus = data_get($selectedFinancial, 'status');
+                        $hasAsaas = filled(data_get($selectedFinancial, 'asaas_payment_id')) || filled(data_get($selectedFinancial, 'asaas_data.asaas_payment_id'));
+                        $canEditRemote = in_array($selectedStatus, ['PENDING', 'OVERDUE']);
+                        $canCancelRemote = !in_array($selectedStatus, ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH', 'REFUNDED', 'CANCELED']);
+                        $canRestoreRemote = in_array($selectedStatus, ['CANCELED']);
+                        $canUndoCash = in_array($selectedStatus, ['RECEIVED_IN_CASH']);
+                    @endphp
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <strong>Status</strong><br>
+                                {{ data_get($selectedFinancial, 'status', '-') }}
                             </div>
-
-                            <div class="modal-body">
-                                @if(session()->has('message'))
-                                    <div class="alert alert-success">{{ session('message') }}</div>
-                                @endif
-
-                                @if(session()->has('error'))
-                                    <div class="alert alert-danger">{{ session('error') }}</div>
-                                @endif
-
-                                @php
-                                    $selectedStatus = data_get($selectedFinancial, 'status');
-                                    $hasAsaas = filled(data_get($selectedFinancial, 'asaas_payment_id')) || filled(data_get($selectedFinancial, 'asaas_data.asaas_payment_id'));
-                                    $canEditRemote = in_array($selectedStatus, ['PENDING', 'OVERDUE']);
-                                    $canCancelRemote = !in_array($selectedStatus, ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH', 'REFUNDED', 'CANCELED']);
-                                    $canRestoreRemote = in_array($selectedStatus, ['CANCELED']);
-                                    $canUndoCash = in_array($selectedStatus, ['RECEIVED_IN_CASH']);
-                                @endphp
-
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-3">
-                                        <div class="border rounded p-3">
-                                            <strong>Status</strong><br>
-                                            {{ data_get($selectedFinancial, 'status', '-') }}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="border rounded p-3">
-                                            <strong>Valor</strong><br>
-                                            R$ {{ number_format((float) data_get($selectedFinancial, 'value', 0), 2, ',', '.') }}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="border rounded p-3">
-                                            <strong>Vencimento</strong><br>
-                                            {{ data_get($selectedFinancial, 'due_date') ? \Carbon\Carbon::parse(data_get($selectedFinancial, 'due_date'))->format('d/m/Y') : '-' }}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="border rounded p-3">
-                                            <strong>Asaas ID</strong><br>
-                                            {{ data_get($selectedRemotePayment, 'id', data_get($selectedFinancial, 'asaas_data.asaas_payment_id', '-')) }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <div class="border rounded p-3 h-100">
-                                            <h6 class="mb-3">Visualização pelo cliente</h6>
-                                            <div><strong>Fatura visualizada em:</strong> {{ data_get($selectedFinancialViewingInfo, 'invoiceViewedDate', '-') }}</div>
-                                            <div><strong>Boleto visualizado em:</strong> {{ data_get($selectedFinancialViewingInfo, 'boletoViewedDate', '-') }}</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="border rounded p-3 h-100">
-                                            <h6 class="mb-3">Links</h6>
-                                            <div class="d-flex flex-wrap gap-2">
-                                                @if(data_get($selectedFinancial, 'invoice_url'))
-                                                    <a href="{{ data_get($selectedFinancial, 'invoice_url') }}" target="_blank" class="btn btn-sm btn-primary">Fatura</a>
-                                                @endif
-
-                                                @if(data_get($selectedFinancial, 'bank_slip_url'))
-                                                    <a href="{{ data_get($selectedFinancial, 'bank_slip_url') }}" target="_blank" class="btn btn-sm btn-warning">Boleto</a>
-                                                @endif
-
-                                                @if(data_get($selectedFinancial, 'pix_qr_code_url'))
-                                                    <a href="{{ data_get($selectedFinancial, 'pix_qr_code_url') }}" target="_blank" class="btn btn-sm btn-success">Pix</a>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                @if($hasAsaas)
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Editar cobrança</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row g-3">
-                                                <div class="col-md-3">
-                                                    <label>Forma de pagamento</label>
-                                                    <select class="form-control" wire:model="financialEdit.billing_type" {{ $canEditRemote ? '' : 'disabled' }}>
-                                                        <option value="BOLETO">Boleto</option>
-                                                        <option value="PIX">Pix</option>
-                                                        <option value="CREDIT_CARD">Cartão</option>
-                                                        <option value="UNDEFINED">Indefinido</option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label>Vencimento</label>
-                                                    <input type="date" class="form-control" wire:model="financialEdit.due_date" {{ $canEditRemote ? '' : 'disabled' }}>
-                                                    @error('financialEdit.due_date') <small class="text-danger">{{ $message }}</small> @enderror
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label>Valor</label>
-                                                    <input type="number" step="0.01" class="form-control" wire:model="financialEdit.value" {{ $canEditRemote ? '' : 'disabled' }}>
-                                                    @error('financialEdit.value') <small class="text-danger">{{ $message }}</small> @enderror
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label>Dias para cancelamento do registro</label>
-                                                    <input type="number" class="form-control" wire:model="financialEdit.days_after_due_date_to_registration_cancellation" {{ $canEditRemote ? '' : 'disabled' }}>
-                                                </div>
-
-                                                <div class="col-md-12">
-                                                    <label>Descrição</label>
-                                                    <input type="text" class="form-control" wire:model="financialEdit.description" {{ $canEditRemote ? '' : 'disabled' }}>
-                                                    @error('financialEdit.description') <small class="text-danger">{{ $message }}</small> @enderror
-                                                </div>
-                                            </div>
-
-                                            @if($canEditRemote)
-                                                <div class="mt-3">
-                                                    <button type="button" class="btn btn-primary" wire:click="saveFinancialChanges">
-                                                        Salvar alterações
-                                                    </button>
-                                                </div>
-                                            @else
-                                                <div class="alert alert-warning mt-3 mb-0">
-                                                    Esta cobrança só pode ser alterada quando estiver pendente ou vencida.
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Baixa manual</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row g-3">
-                                                <div class="col-md-4">
-                                                    <label>Data do pagamento</label>
-                                                    <input type="date" class="form-control" wire:model="financialReceive.payment_date">
-                                                    @error('financialReceive.payment_date') <small class="text-danger">{{ $message }}</small> @enderror
-                                                </div>
-
-                                                <div class="col-md-4">
-                                                    <label>Valor pago</label>
-                                                    <input type="number" step="0.01" class="form-control" wire:model="financialReceive.value">
-                                                    @error('financialReceive.value') <small class="text-danger">{{ $message }}</small> @enderror
-                                                </div>
-
-                                                <div class="col-md-4 d-flex align-items-end">
-                                                    <div class="form-check">
-                                                        <input type="checkbox" class="form-check-input" id="notify_customer" wire:model="financialReceive.notify_customer">
-                                                        <label class="form-check-label" for="notify_customer">
-                                                            Notificar cliente
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="mt-3 d-flex gap-2">
-                                                <button type="button" class="btn btn-success" wire:click="receiveSelectedFinancialInCash">
-                                                    Dar baixa manual
-                                                </button>
-
-                                                @if($canUndoCash)
-                                                    <button type="button" class="btn btn-outline-danger" wire:click="undoSelectedFinancialInCash">
-                                                        Desfazer baixa manual
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="card mb-4">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Cancelar / restaurar cobrança</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <label>Justificativa do cancelamento</label>
-                                            <textarea class="form-control" rows="3" wire:model="financialCancelJustification"></textarea>
-                                            @error('financialCancelJustification') <small class="text-danger">{{ $message }}</small> @enderror
-
-                                            <div class="mt-3 d-flex gap-2">
-                                                @if($canCancelRemote)
-                                                    <button type="button" class="btn btn-danger" wire:click="cancelSelectedFinancial">
-                                                        Cancelar cobrança
-                                                    </button>
-                                                @endif
-
-                                                @if($canRestoreRemote)
-                                                    <button type="button" class="btn btn-outline-primary" wire:click="restoreSelectedFinancial">
-                                                        Restaurar cobrança
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="alert alert-warning">
-                                        Esta cobrança não possui vínculo com o Asaas. O histórico local ainda pode ser consultado abaixo.
-                                    </div>
-                                @endif
-
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Histórico da cobrança</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        @if(!empty($selectedFinancialLogs))
-                                            <div class="timeline">
-                                                @foreach($selectedFinancialLogs as $log)
-                                                    <div class="border rounded p-3 mb-3">
-                                                        <div class="d-flex justify-content-between">
-                                                            <strong>{{ $log['event_name'] }}</strong>
-                                                            <small>{{ $log['event_date'] }}</small>
-                                                        </div>
-
-                                                        <div class="mt-2">
-                                                            <span class="badge bg-secondary">{{ $log['provider'] }}</span>
-                                                            <span class="badge bg-light text-dark">{{ $log['source_type'] }}</span>
-                                                        </div>
-
-                                                        @if($log['old_status'] || $log['new_status'])
-                                                            <div class="mt-2">
-                                                                <strong>Status:</strong>
-                                                                {{ $log['old_status'] ?? '-' }} → {{ $log['new_status'] ?? '-' }}
-                                                            </div>
-                                                        @endif
-
-                                                        @if($log['message'])
-                                                            <div class="mt-2">
-                                                                {{ $log['message'] }}
-                                                            </div>
-                                                        @endif
-
-                                                        @if(!empty($log['payload']))
-                                                            <details class="mt-2">
-                                                                <summary>Ver payload</summary>
-                                                                <pre class="mt-2 mb-0" style="white-space: pre-wrap;">{{ json_encode($log['payload'], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
-                                                            </details>
-                                                        @endif
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <div class="alert alert-info mb-0">
-                                                Nenhum log encontrado para esta cobrança.
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <strong>Valor</strong><br>
+                                R$ {{ number_format((float) data_get($selectedFinancial, 'value', 0), 2, ',', '.') }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <strong>Vencimento</strong><br>
+                                {{ data_get($selectedFinancial, 'due_date') ? \Carbon\Carbon::parse(data_get($selectedFinancial, 'due_date'))->format('d/m/Y') : '-' }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3">
+                                <strong>Asaas ID</strong><br>
+                                {{ data_get($selectedRemotePayment, 'id', data_get($selectedFinancial, 'asaas_data.asaas_payment_id', '-')) }}
                             </div>
                         </div>
                     </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-3">Visualização pelo cliente</h6>
+                                <div><strong>Fatura visualizada em:</strong> {{ data_get($selectedFinancialViewingInfo, 'invoiceViewedDate', '-') }}</div>
+                                <div><strong>Boleto visualizado em:</strong> {{ data_get($selectedFinancialViewingInfo, 'boletoViewedDate', '-') }}</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-3">Links</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @if(data_get($selectedFinancial, 'invoice_url'))
+                                        <a href="{{ data_get($selectedFinancial, 'invoice_url') }}" target="_blank" class="btn btn-sm btn-primary">Fatura</a>
+                                    @endif
+
+                                    @if(data_get($selectedFinancial, 'bank_slip_url'))
+                                        <a href="{{ data_get($selectedFinancial, 'bank_slip_url') }}" target="_blank" class="btn btn-sm btn-warning">Boleto</a>
+                                    @endif
+
+                                    @if(data_get($selectedFinancial, 'pix_qr_code_url'))
+                                        <a href="{{ data_get($selectedFinancial, 'pix_qr_code_url') }}" target="_blank" class="btn btn-sm btn-success">Pix</a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($hasAsaas)
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Editar cobrança</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label>Forma de pagamento</label>
+                                        <select class="form-control" wire:model="financialEdit.billing_type" {{ $canEditRemote ? '' : 'disabled' }}>
+                                            <option value="BOLETO">Boleto</option>
+                                            <option value="PIX">Pix</option>
+                                            <option value="CREDIT_CARD">Cartão</option>
+                                            <option value="UNDEFINED">Indefinido</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label>Vencimento</label>
+                                        <input type="date" class="form-control" wire:model="financialEdit.due_date" {{ $canEditRemote ? '' : 'disabled' }}>
+                                        @error('financialEdit.due_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label>Valor</label>
+                                        <input type="number" step="0.01" class="form-control" wire:model="financialEdit.value" {{ $canEditRemote ? '' : 'disabled' }}>
+                                        @error('financialEdit.value') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label>Dias para cancelamento do registro</label>
+                                        <input type="number" class="form-control" wire:model="financialEdit.days_after_due_date_to_registration_cancellation" {{ $canEditRemote ? '' : 'disabled' }}>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label>Descrição</label>
+                                        <input type="text" class="form-control" wire:model="financialEdit.description" {{ $canEditRemote ? '' : 'disabled' }}>
+                                        @error('financialEdit.description') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+                                </div>
+
+                                @if($canEditRemote)
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-primary" wire:click="saveFinancialChanges">
+                                            Salvar alterações
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        Esta cobrança só pode ser alterada quando estiver pendente ou vencida.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Baixa manual</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label>Data do pagamento</label>
+                                        <input type="date" class="form-control" wire:model="financialReceive.payment_date">
+                                        @error('financialReceive.payment_date') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label>Valor pago</label>
+                                        <input type="number" step="0.01" class="form-control" wire:model="financialReceive.value">
+                                        @error('financialReceive.value') <small class="text-danger">{{ $message }}</small> @enderror
+                                    </div>
+
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="notify_customer" wire:model="financialReceive.notify_customer">
+                                            <label class="form-check-label" for="notify_customer">
+                                                Notificar cliente
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 d-flex gap-2">
+                                    <button type="button" class="btn btn-success" wire:click="receiveSelectedFinancialInCash">
+                                        Dar baixa manual
+                                    </button>
+
+                                    @if($canUndoCash)
+                                        <button type="button" class="btn btn-outline-danger" wire:click="undoSelectedFinancialInCash">
+                                            Desfazer baixa manual
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Cancelar / restaurar cobrança</h6>
+                            </div>
+                            <div class="card-body">
+                                <label>Justificativa do cancelamento</label>
+                                <textarea class="form-control" rows="3" wire:model="financialCancelJustification"></textarea>
+                                @error('financialCancelJustification') <small class="text-danger">{{ $message }}</small> @enderror
+
+                                <div class="mt-3 d-flex gap-2">
+                                    @if($canCancelRemote)
+                                        <button type="button" class="btn btn-danger" wire:click="cancelSelectedFinancial">
+                                            Cancelar cobrança
+                                        </button>
+                                    @endif
+
+                                    @if($canRestoreRemote)
+                                        <button type="button" class="btn btn-outline-primary" wire:click="restoreSelectedFinancial">
+                                            Restaurar cobrança
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            Esta cobrança não possui vínculo com o Asaas. O histórico local ainda pode ser consultado abaixo.
+                        </div>
+                    @endif
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Histórico da cobrança</h6>
+                        </div>
+                        <div class="card-body">
+                            @if(!empty($selectedFinancialLogs))
+                                <div class="timeline">
+                                    @foreach($selectedFinancialLogs as $log)
+                                        <div class="border rounded p-3 mb-3">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>{{ $log['event_name'] }}</strong>
+                                                <small>{{ $log['event_date'] }}</small>
+                                            </div>
+
+                                            <div class="mt-2">
+                                                <span class="badge bg-secondary">{{ $log['provider'] }}</span>
+                                                <span class="badge bg-light text-dark">{{ $log['source_type'] }}</span>
+                                            </div>
+
+                                            @if($log['old_status'] || $log['new_status'])
+                                                <div class="mt-2">
+                                                    <strong>Status:</strong>
+                                                    {{ $log['old_status'] ?? '-' }} → {{ $log['new_status'] ?? '-' }}
+                                                </div>
+                                            @endif
+
+                                            @if($log['message'])
+                                                <div class="mt-2">
+                                                    {{ $log['message'] }}
+                                                </div>
+                                            @endif
+
+                                            @if(!empty($log['payload']))
+                                                <details class="mt-2">
+                                                    <summary>Ver payload</summary>
+                                                    <pre class="mt-2 mb-0" style="white-space: pre-wrap;">{{ json_encode($log['payload'], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
+                                                </details>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">
+                                    Nenhum log encontrado para esta cobrança.
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
