@@ -615,12 +615,13 @@
                                             <thead class="table-light">
                                                 <tr>
                                                     <th>#</th>
-                                                    <th>Data Vencimento</th>
+                                                    <th>Vencimento</th>
                                                     <th>Valor</th>
                                                     <th>Pago</th>
                                                     <th>Método</th>
                                                     <th>Status</th>
-                                                    <th>Link</th>
+                                                    <th>Links</th>
+                                                    <th width="180">Ações</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -649,28 +650,45 @@
                                                         </td>
 
                                                         <td>
-                                                            <span class="badge 
-                                                                {{ $isPaid ? 'bg-success' : 'bg-danger' }}">
+                                                            <span class="badge {{ $isPaid ? 'bg-success' : 'bg-danger' }}">
                                                                 {{ $fin->status }}
                                                             </span>
                                                         </td>
 
                                                         <td class="text-center">
-                                                            @if($fin->invoice_url)
-                                                                <a href="{{ $fin->invoice_url }}" target="_blank" class="btn btn-sm btn-primary">
-                                                                    Ver
-                                                                </a>
-                                                            @elseif($fin->bank_slip_url)
-                                                                <a href="{{ $fin->bank_slip_url }}" target="_blank" class="btn btn-sm btn-warning">
-                                                                    Boleto
-                                                                </a>
-                                                            @elseif($fin->pix_qr_code_url)
-                                                                <a href="{{ $fin->pix_qr_code_url }}" target="_blank" class="btn btn-sm btn-success">
-                                                                    Pix
-                                                                </a>
-                                                            @else
-                                                                -
-                                                            @endif
+                                                            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                                                @if($fin->invoice_url)
+                                                                    <a href="{{ $fin->invoice_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                                                        Fatura
+                                                                    </a>
+                                                                @endif
+
+                                                                @if($fin->bank_slip_url)
+                                                                    <a href="{{ $fin->bank_slip_url }}" target="_blank" class="btn btn-sm btn-warning">
+                                                                        Boleto
+                                                                    </a>
+                                                                @endif
+
+                                                                @if($fin->pix_qr_code_url)
+                                                                    <a href="{{ $fin->pix_qr_code_url }}" target="_blank" class="btn btn-sm btn-success">
+                                                                        Pix
+                                                                    </a>
+                                                                @endif
+
+                                                                @if(!$fin->invoice_url && !$fin->bank_slip_url && !$fin->pix_qr_code_url)
+                                                                    -
+                                                                @endif
+                                                            </div>
+                                                        </td>
+
+                                                        <td class="text-center">
+                                                            <button
+                                                                type="button"
+                                                                class="btn btn-sm btn-dark"
+                                                                wire:click="openFinancialModal({{ $fin->id }})"
+                                                            >
+                                                                Gerenciar
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 @endforeach
