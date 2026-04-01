@@ -696,7 +696,7 @@ class OrderEdit extends Component
 
     public function openFinancialModal(int $financialId): void
     {
-        $this->runFinancialAction(function () use ($financialId) {
+        try {
             $order = Order::findOrFail($this->orderId);
             $this->authorize('view', $order);
 
@@ -708,8 +708,17 @@ class OrderEdit extends Component
             $viewingInfo = [];
 
             if ($financial->asaas_payment_id) {
-                $remotePayment = $this->asaas()->getPayment($financial->asaas_payment_id);
-                $viewingInfo = $this->asaas()->getViewingInfo($financial->asaas_payment_id);
+                $paymentId = trim((string) $financial->asaas_payment_id);
+
+                $remotePayment = $this->asaas()->getPayment($paymentId);
+
+                try {
+                    $viewingInfo = $this->asaas()->getViewingInfo($paymentId);
+                } catch (\Throwable $e) {
+                    report($e);
+                    $viewingInfo = [];
+                    session()->flash('error', 'Cobrança carregada, mas não foi possível buscar as visualizações no Asaas.');
+                }
 
                 $this->syncFinancialFromAsaasResponse($financial, $remotePayment);
                 $financial->refresh();
@@ -718,7 +727,10 @@ class OrderEdit extends Component
             $this->fillSelectedFinancialState($financial, $remotePayment, $viewingInfo);
 
             $this->dispatch('financial-modal-open');
-        });
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', $e->getMessage());
+        }
     }
 
     public function saveFinancialChanges(): void

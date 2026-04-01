@@ -22,23 +22,42 @@ class AsaasPaymentService
 
     protected function request(string $method, string $uri, array $payload = []): array
     {
-        $response = Http::timeout(30)
+        $method = strtoupper($method);
+        $url = $this->baseUrl . '/' . ltrim($uri, '/');
+
+        $client = Http::timeout(30)
             ->acceptJson()
             ->withHeaders([
                 'access_token' => $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])
-            ->send($method, $this->baseUrl . '/' . ltrim($uri, '/'), [
-                'json' => $payload,
             ]);
 
+        $options = [];
+
+        if (in_array($method, ['GET', 'DELETE'], true)) {
+            if (!empty($payload)) {
+                $options['query'] = $payload;
+            }
+        } else {
+            $options['json'] = $payload;
+        }
+
+        $response = $client->send($method, $url, $options);
+
         if ($response->failed()) {
+            \Log::error('Erro Asaas', [
+                'method' => $method,
+                'url' => $url,
+                'payload' => $payload,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
             $errors = collect($response->json('errors', []))
                 ->pluck('description')
                 ->filter()
                 ->implode(' | ');
 
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 $errors ?: ($response->json('message') ?? $response->body() ?? 'Erro ao comunicar com o Asaas.')
             );
         }
