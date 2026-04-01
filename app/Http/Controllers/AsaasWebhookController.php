@@ -117,7 +117,7 @@ class AsaasWebhookController extends Controller
                 $updates['due_date'] = $newDueDate;
             }
 
-            if ($newChargeDate && (int) $current->charge_date !== $newChargeDate) {
+            if ($newChargeDate && (int) $current->charge_date !== (int) $newChargeDate) {
                 $updates['charge_date'] = $newChargeDate;
             }
 
@@ -168,18 +168,12 @@ class AsaasWebhookController extends Controller
                 $faUpdates['bank_slip_url'] = $bankSlipUrl;
             }
 
-            $pixQrCode =
-                data_get($payment, 'pixQrCode')
-                ?? data_get($payment, 'pix.payload');
-
+            $pixQrCode = data_get($payment, 'pixQrCode') ?? data_get($payment, 'pix.payload');
             if ($pixQrCode && $fa->pix_qr_code !== $pixQrCode) {
                 $faUpdates['pix_qr_code'] = $pixQrCode;
             }
 
-            $pixQrCodeUrl =
-                data_get($payment, 'pixQrCodeUrl')
-                ?? data_get($payment, 'pix.qrCode.url');
-
+            $pixQrCodeUrl = data_get($payment, 'pixQrCodeUrl') ?? data_get($payment, 'pix.qrCode.url');
             if ($pixQrCodeUrl && $fa->pix_qr_code_url !== $pixQrCodeUrl) {
                 $faUpdates['pix_qr_code_url'] = $pixQrCodeUrl;
             }
