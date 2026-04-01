@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FinancialAsaas extends Model
 {
@@ -22,7 +23,7 @@ class FinancialAsaas extends Model
         'pix_qr_code_url',
     ];
 
-    public function financial()
+    public function financial(): BelongsTo
     {
         return $this->belongsTo(Financial::class, 'financial_id');
     }

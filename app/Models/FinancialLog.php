@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FinancialLog extends Model
 {
@@ -27,9 +28,11 @@ class FinancialLog extends Model
     protected $casts = [
         'payload' => 'array',
         'event_date' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    public function financial()
+    public function financial(): BelongsTo
     {
         return $this->belongsTo(Financial::class, 'financial_id');
     }

@@ -12,32 +12,46 @@ class AsaasWebhookController extends Controller
 
     public function handle(Request $request)
     {
+        $expectedToken = (string) config('services.asaas.webhook_token');
+        $incomingToken = (string) $request->header('asaas-access-token');
+
+        if ($expectedToken !== '' && !hash_equals($expectedToken, $incomingToken)) {
+            return response()->json(['ok' => false, 'error' => 'invalid_token'], 401);
+        }
+
         $payload = $request->all();
 
-        // formato típico:
-        // { "id": "...eventId...", "event": "PAYMENT_UPDATED", "payment": { ... } }
-        $eventId   = data_get($payload, 'id');
+        $eventId = data_get($payload, 'id');
         $eventType = data_get($payload, 'event');
-        $payment   = data_get($payload, 'payment', []);
-        $asaasPaymentId  = data_get($payment, 'id');
+        $payment = data_get($payload, 'payment', []);
+        $asaasPaymentId = data_get($payment, 'id');
         $asaasCustomerId = data_get($payment, 'customer');
 
         if (!$eventId || !$eventType) {
             return response()->json(['ok' => false, 'error' => 'invalid_event'], 400);
         }
 
-        // Dedup de evento (at least once)
-        $already = DB::table('asaas_webhook_events')->where('event_id', $eventId)->exists();
+        $already = DB::table('asaas_webhook_events')
+            ->where('event_id', $eventId)
+            ->exists();
+
         if ($already) {
             return response()->json(['ok' => true, 'duplicated' => true], 200);
         }
 
-        DB::transaction(function () use ($eventId, $eventType, $asaasPaymentId, $payload, $payment, $asaasCustomerId) {
+        DB::transaction(function () use (
+            $eventId,
+            $eventType,
+            $asaasPaymentId,
+            $asaasCustomerId,
+            $payload,
+            $payment
+        ) {
             DB::table('asaas_webhook_events')->insert([
                 'event_id' => $eventId,
                 'event_type' => $eventType,
                 'asaas_payment_id' => $asaasPaymentId,
-                'payload' => json_encode($payload),
+                'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -46,29 +60,39 @@ class AsaasWebhookController extends Controller
                 return;
             }
 
-            // Busca o financial pelo asaas_payment_id (na sua nova modelagem)
-            $fa = DB::table('financial_asaas')->where('asaas_payment_id', $asaasPaymentId)->first();
+            $fa = DB::table('financial_asaas')
+                ->where('asaas_payment_id', $asaasPaymentId)
+                ->first();
 
             if (!$fa) {
-                // Se não existe no seu sistema ainda, guarda para você tratar depois
+                $exists = DB::table('asaas_unmatched_payments')
+                    ->where('asaas_payment_id', $asaasPaymentId)
+                    ->exists();
+
                 DB::table('asaas_unmatched_payments')->updateOrInsert(
                     ['asaas_payment_id' => $asaasPaymentId],
                     [
                         'asaas_customer_id' => $asaasCustomerId,
                         'cpf' => null,
                         'reason' => 'webhook_payment_not_found',
-                        'payload' => json_encode($payload),
+                        'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE),
                         'updated_at' => now(),
-                    ] + (DB::table('asaas_unmatched_payments')->where('asaas_payment_id',$asaasPaymentId)->exists() ? [] : ['created_at'=>now()])
+                    ] + ($exists ? [] : ['created_at' => now()])
                 );
+
                 return;
             }
 
             $financialId = (int) $fa->financial_id;
 
-            // Monta campos vindos do Asaas
-            $newStatus = (string) (data_get($payment, 'status') ?? 'PENDING');
-            $newValue  = (float)  (data_get($payment, 'value') ?? 0);
+            $current = DB::table('financial')->where('id', $financialId)->first();
+            if (!$current) {
+                return;
+            }
+
+            $newStatus = (string) (data_get($payment, 'status') ?? $current->status ?? 'PENDING');
+            $newValue = data_get($payment, 'value');
+            $paidValueFromAsaas = data_get($payment, 'paidValue');
 
             $dueDateStr = data_get($payment, 'dueDate');
             $newDueDate = $dueDateStr ? Carbon::parse($dueDateStr)->format('Y-m-d') : null;
@@ -79,142 +103,166 @@ class AsaasWebhookController extends Controller
 
             $isPaid = in_array($newStatus, $this->paidStatuses, true);
 
-            // Carrega estado atual do financial
-            $current = DB::table('financial')->where('id', $financialId)->first();
-            if (!$current) return;
-
             $updates = [];
 
-            // Só atualiza o que mudou
             if ($current->status !== $newStatus) {
                 $updates['status'] = $newStatus;
             }
 
-            if ((float)$current->value !== $newValue && $newValue > 0) {
-                $updates['value'] = $newValue;
+            if ($newValue !== null && (float) $current->value !== (float) $newValue) {
+                $updates['value'] = (float) $newValue;
             }
 
             if ($newDueDate && $current->due_date !== $newDueDate) {
                 $updates['due_date'] = $newDueDate;
             }
 
-            if ($newChargeDate && (int)$current->charge_date !== $newChargeDate) {
+            if ($newChargeDate && (int) $current->charge_date !== $newChargeDate) {
                 $updates['charge_date'] = $newChargeDate;
             }
 
-            if ($newPaymentMethod && $current->payment_method !== $newPaymentMethod) {
+            if ($newPaymentMethod !== null && $current->payment_method !== $newPaymentMethod) {
                 $updates['payment_method'] = $newPaymentMethod;
             }
 
-            $newChargePaid = $isPaid ? 1 : 0;
-            if ((int)$current->charge_paid !== $newChargePaid) {
-                $updates['charge_paid'] = $newChargePaid;
+            $desiredChargePaid = $isPaid ? 1 : 0;
+            if ((int) $current->charge_paid !== $desiredChargePaid) {
+                $updates['charge_paid'] = $desiredChargePaid;
             }
 
-            // paid_value: só preenche quando pago
-            $currentPaidValue = $current->paid_value !== null ? (float)$current->paid_value : null;
-            $desiredPaidValue = $isPaid ? $newValue : null;
+            $desiredPaidValue = $isPaid
+                ? (float) ($paidValueFromAsaas ?? $newValue ?? $current->value)
+                : null;
 
+            $currentPaidValue = $current->paid_value !== null ? (float) $current->paid_value : null;
             if ($currentPaidValue !== $desiredPaidValue) {
                 $updates['paid_value'] = $desiredPaidValue;
             }
 
-            $oldStatus = (string) $current->status;
-            $incomingStatus = (string) $newStatus;
-
-            $changedAnything = !empty($updates);
-            $eventName = $this->eventNameForAsaas($oldStatus, $incomingStatus, $changedAnything);
-
-            if (!empty($updates)) {
-                $changedFields = implode(', ', array_keys($updates));
-
-                $updatesForLog = $updates;  // antes de adicionar updated_at
-                $updates['updated_at'] = now();
-                DB::table('financial')->where('id', $financialId)->update($updates);
-
-                $msg = $oldStatus !== $incomingStatus
-                    ? "Webhook Asaas: status {$oldStatus} → {$incomingStatus} (campos: {$changedFields})"
-                    : "Webhook Asaas: atualização (campos: {$changedFields})";
-
-                DB::table('financial_logs')->insert([
-                    'financial_id' => $financialId,
-                    'provider' => 'ASAAS',
-                    'source_type' => 'WEBHOOK',
-                    'source_id' => null,
-                    'event_name' => $eventName,
-                    'old_status' => $oldStatus !== $incomingStatus ? $oldStatus : null,
-                    'new_status' => $oldStatus !== $incomingStatus ? $incomingStatus : null,
-                    'message' => $msg,
-                    'payload' => json_encode([
-                        'event_id' => $eventId,
-                        'event_type' => $eventType,
-                        'asaas_payment_id' => $asaasPaymentId,
-                        'financial_updates' => $updatesForLog,
-                        'payment' => [
-                            'status' => data_get($payment, 'status'),
-                            'value' => data_get($payment, 'value'),
-                            'billingType' => data_get($payment, 'billingType'),
-                            'dueDate' => data_get($payment, 'dueDate'),
-                        ],
-                    ]),
-                    'event_date' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+            if (array_key_exists('description', $payment) && $current->description !== data_get($payment, 'description')) {
+                $updates['description'] = data_get($payment, 'description');
             }
 
-            // Atualiza também o financial_asaas (links/pix/externalReference) só se vier
+            $oldStatus = (string) $current->status;
+            $changedAnything = !empty($updates);
+
+            if ($changedAnything) {
+                $updates['updated_at'] = now();
+                DB::table('financial')->where('id', $financialId)->update($updates);
+            }
+
             $faUpdates = [];
-            $extRef = data_get($payment, 'externalReference');
-            if ($extRef && $fa->external_reference !== $extRef) $faUpdates['external_reference'] = $extRef;
 
-            $inv = data_get($payment, 'invoiceUrl');
-            if ($inv && $fa->invoice_url !== $inv) $faUpdates['invoice_url'] = $inv;
+            $externalReference = data_get($payment, 'externalReference');
+            if ($externalReference && $fa->external_reference !== $externalReference) {
+                $faUpdates['external_reference'] = $externalReference;
+            }
 
-            $bs = data_get($payment, 'bankSlipUrl');
-            if ($bs && $fa->bank_slip_url !== $bs) $faUpdates['bank_slip_url'] = $bs;
+            $invoiceUrl = data_get($payment, 'invoiceUrl');
+            if ($invoiceUrl && $fa->invoice_url !== $invoiceUrl) {
+                $faUpdates['invoice_url'] = $invoiceUrl;
+            }
 
-            $pixPayload = data_get($payment, 'pix.payload');
-            if ($pixPayload && $fa->pix_qr_code !== $pixPayload) $faUpdates['pix_qr_code'] = $pixPayload;
+            $bankSlipUrl = data_get($payment, 'bankSlipUrl');
+            if ($bankSlipUrl && $fa->bank_slip_url !== $bankSlipUrl) {
+                $faUpdates['bank_slip_url'] = $bankSlipUrl;
+            }
 
-            $pixUrl = data_get($payment, 'pix.qrCode.url');
-            if ($pixUrl && $fa->pix_qr_code_url !== $pixUrl) $faUpdates['pix_qr_code_url'] = $pixUrl;
+            $pixQrCode =
+                data_get($payment, 'pixQrCode')
+                ?? data_get($payment, 'pix.payload');
 
-            if ($asaasCustomerId && $fa->asaas_customer_id !== $asaasCustomerId) $faUpdates['asaas_customer_id'] = $asaasCustomerId;
+            if ($pixQrCode && $fa->pix_qr_code !== $pixQrCode) {
+                $faUpdates['pix_qr_code'] = $pixQrCode;
+            }
+
+            $pixQrCodeUrl =
+                data_get($payment, 'pixQrCodeUrl')
+                ?? data_get($payment, 'pix.qrCode.url');
+
+            if ($pixQrCodeUrl && $fa->pix_qr_code_url !== $pixQrCodeUrl) {
+                $faUpdates['pix_qr_code_url'] = $pixQrCodeUrl;
+            }
+
+            if ($asaasCustomerId && $fa->asaas_customer_id !== $asaasCustomerId) {
+                $faUpdates['asaas_customer_id'] = $asaasCustomerId;
+            }
 
             if (!empty($faUpdates)) {
                 $faUpdates['updated_at'] = now();
                 DB::table('financial_asaas')->where('id', $fa->id)->update($faUpdates);
             }
+
+            DB::table('financial_logs')->insert([
+                'financial_id' => $financialId,
+                'provider' => 'ASAAS',
+                'source_type' => 'WEBHOOK',
+                'source_id' => null,
+                'event_name' => $this->eventNameForWebhook($eventType, $oldStatus, $newStatus, $changedAnything),
+                'old_status' => $oldStatus !== $newStatus ? $oldStatus : null,
+                'new_status' => $oldStatus !== $newStatus ? $newStatus : null,
+                'message' => $this->messageForWebhook($eventType, $oldStatus, $newStatus, $changedAnything),
+                'payload' => json_encode([
+                    'event_id' => $eventId,
+                    'event_type' => $eventType,
+                    'asaas_payment_id' => $asaasPaymentId,
+                    'financial_updates' => $updates,
+                    'financial_asaas_updates' => $faUpdates,
+                    'payment' => $payment,
+                ], JSON_UNESCAPED_UNICODE),
+                'event_date' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         });
 
         return response()->json(['ok' => true], 200);
     }
 
-    private function mapPaymentMethod(?string $billingType): string
+    private function mapPaymentMethod(?string $billingType): ?string
     {
         return match ($billingType) {
             'PIX' => 'PIX',
             'CREDIT_CARD' => 'CREDIT_CARD',
             'DEBIT_CARD' => 'DEBIT_CARD',
             'BOLETO' => 'BOLETO',
-            default => 'BOLETO',
+            'UNDEFINED' => 'BOLETO',
+            default => null,
         };
     }
 
-    private function eventNameForAsaas(string $oldStatus, string $newStatus, bool $changedAnything): string
-    {
-        if (!$changedAnything) return 'UPDATED';
+    private function eventNameForWebhook(
+        string $eventType,
+        string $oldStatus,
+        string $newStatus,
+        bool $changedAnything
+    ): string {
+        return match ($eventType) {
+            'PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED' => 'ASAAS_PAYMENT_RECEIVED',
+            'PAYMENT_OVERDUE' => 'ASAAS_PAYMENT_OVERDUE',
+            'PAYMENT_DELETED' => 'ASAAS_PAYMENT_DELETED',
+            'PAYMENT_RESTORED' => 'ASAAS_PAYMENT_RESTORED',
+            'PAYMENT_REFUNDED', 'PAYMENT_PARTIALLY_REFUNDED', 'PAYMENT_REFUND_IN_PROGRESS', 'PAYMENT_REFUND_DENIED' => 'ASAAS_PAYMENT_REFUNDED',
+            'PAYMENT_RECEIVED_IN_CASH_UNDONE' => 'ASAAS_PAYMENT_RECEIVED_IN_CASH_UNDONE',
+            'PAYMENT_BANK_SLIP_CANCELLED' => 'ASAAS_PAYMENT_BANK_SLIP_CANCELLED',
+            default => $oldStatus !== $newStatus ? 'STATUS_CHANGED' : ($changedAnything ? 'UPDATED' : 'WEBHOOK_RECEIVED'),
+        };
+    }
 
+    private function messageForWebhook(
+        string $eventType,
+        string $oldStatus,
+        string $newStatus,
+        bool $changedAnything
+    ): string {
         if ($oldStatus !== $newStatus) {
-            return match ($newStatus) {
-                'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH' => 'ASAAS_PAYMENT_RECEIVED',
-                'OVERDUE' => 'ASAAS_PAYMENT_OVERDUE',
-                'REFUNDED' => 'ASAAS_PAYMENT_REFUNDED',
-                default => 'STATUS_CHANGED',
-            };
+            return "Webhook Asaas: {$eventType} | status {$oldStatus} → {$newStatus}";
         }
 
-        return 'UPDATED';
+        if ($changedAnything) {
+            return "Webhook Asaas: {$eventType} | atualização de cobrança";
+        }
+
+        return "Webhook Asaas: {$eventType} | evento recebido sem alteração material local";
     }
 }

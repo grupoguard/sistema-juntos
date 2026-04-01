@@ -626,7 +626,7 @@
                                             <tbody>
                                                 @foreach($financials as $fin)
                                                     @php
-                                                        $isPaid = in_array($fin->status, ['RECEIVED', 'CONFIRMED']);
+                                                        $isPaid = in_array($fin->status, ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH']);
                                                     @endphp
 
                                                     <tr style="background-color: {{ $isPaid ? '#e8f5e9' : '#fdecea' }};">
