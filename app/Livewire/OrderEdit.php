@@ -913,6 +913,16 @@ class OrderEdit extends Component
         session()->flash('message', 'Baixa manual realizada com sucesso.');
     }
 
+    protected function runFinancialAction(callable $callback): void
+    {
+        try {
+            $callback();
+        } catch (\Throwable $e) {
+            report($e);
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
     public function undoSelectedFinancialInCash(): void
     {
         $order = Order::findOrFail($this->orderId);
