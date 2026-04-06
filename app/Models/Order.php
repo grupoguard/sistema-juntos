@@ -78,8 +78,12 @@ class Order extends Model
      */
     public function dependents()
     {
-        return $this->belongsToMany(Dependent::class, 'order_dependents')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            Dependent::class,
+            'order_dependents',
+            'order_id',
+            'dependent_id'
+        )->withTimestamps();
     }
 
     public function orderPrice()

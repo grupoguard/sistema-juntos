@@ -39,4 +39,14 @@ class Dependent extends Model
     {
         return $this->belongsTo(Client::class, 'client_id');
     }
+
+    public function orders()
+    {
+        return $this->belongsToMany(
+            Order::class,
+            'order_dependents',
+            'dependent_id',
+            'order_id'
+        )->withTimestamps();
+    }
 }

@@ -80,12 +80,33 @@ class OrdersList extends Component
     public function render()
     {
         $user = auth()->user();
+        $search = trim($this->search);
+        $searchDigits = preg_replace('/\D/', '', $search);
 
         $orders = Order::query()
             ->with(['client', 'product', 'seller'])
             ->visibleTo($user)
-            ->whereHas('client', function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
+            ->when($search !== '', function ($query) use ($search, $searchDigits) {
+                $query->where(function ($q) use ($search, $searchDigits) {
+                    $q->whereHas('client', function ($clientQuery) use ($search, $searchDigits) {
+                        $clientQuery->where(function ($cq) use ($search, $searchDigits) {
+                            $cq->where('name', 'like', '%' . $search . '%');
+
+                            if ($searchDigits !== '') {
+                                $cq->orWhere('cpf', 'like', '%' . $searchDigits . '%');
+                            }
+                        });
+                    })
+                    ->orWhereHas('orderAditionalDependents.dependent', function ($dependentQuery) use ($search, $searchDigits) {
+                        $dependentQuery->where(function ($dq) use ($search, $searchDigits) {
+                            $dq->where('name', 'like', '%' . $search . '%');
+
+                            if ($searchDigits !== '') {
+                                $dq->orWhere('cpf', 'like', '%' . $searchDigits . '%');
+                            }
+                        });
+                    });
+                });
             })
             ->orderBy('created_at', 'desc')
             ->paginate($this->perPage);
