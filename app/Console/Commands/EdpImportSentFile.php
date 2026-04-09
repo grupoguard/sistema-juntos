@@ -103,9 +103,11 @@ class EdpImportSentFile extends Command
                 continue;
             }
 
+            $normalizedInstallation = $this->normalizeInstallationNumber($parsed['installation_number']);
+
             $order = Order::query()
                 ->where('charge_type', 'EDP')
-                ->where('installation_number', $parsed['installation_number'])
+                ->whereRaw('CAST(installation_number AS UNSIGNED) = ?', [(int) $normalizedInstallation])
                 ->first();
 
             if (!$order) {
@@ -258,7 +260,8 @@ class EdpImportSentFile extends Command
         $skipped = 0;
 
         foreach ($movements as $movement) {
-            $installation = trim((string) $movement->installation_number);
+            $installation = $this->normalizeInstallationNumber((string) $movement->installation_number);
+
             if ($installation === '') {
                 $skipped++;
                 continue;
@@ -266,7 +269,7 @@ class EdpImportSentFile extends Command
 
             $order = Order::query()
                 ->where('charge_type', 'EDP')
-                ->where('installation_number', $installation)
+                ->whereRaw('CAST(installation_number AS UNSIGNED) = ?', [(int) $installation])
                 ->first();
 
             if (!$order) {
@@ -378,7 +381,7 @@ class EdpImportSentFile extends Command
         $codeMove = trim(substr($line, 159, 1));
 
         return [
-            'installation_number' => $installation !== '' ? $installation : null,
+            'installation_number' => $this->normalizeInstallationNumber($installation),
             'extra_value' => $extraValue !== '' ? $extraValue : null,
             'product_cod' => $productCod !== '' ? $productCod : null,
             'number_installment' => $numberInstallment !== '' ? $numberInstallment : null,
@@ -458,5 +461,27 @@ class EdpImportSentFile extends Command
                 'event_name' => 'UPDATED',
             ],
         };
+    }
+
+    private function normalizeInstallationNumber(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        // mantém só dígitos
+        $value = preg_replace('/\D/', '', $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        // remove zeros à esquerda
+        $value = ltrim($value, '0');
+
+        // se virar vazio, assume 0
+        return $value === '' ? '0' : $value;
     }
 }
