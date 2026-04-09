@@ -106,9 +106,10 @@ class EdpImportSentFile extends Command
             $normalizedInstallation = $this->normalizeInstallationNumber($parsed['installation_number']);
 
             $order = Order::query()
-                ->where('charge_type', 'EDP')
                 ->whereRaw('CAST(installation_number AS UNSIGNED) = ?', [(int) $normalizedInstallation])
+                ->orderByRaw("CASE WHEN charge_type = 'EDP' THEN 0 ELSE 1 END")
                 ->first();
+                
 
             if (!$order) {
                 $this->warn("Sem pedido EDP para instalação {$parsed['installation_number']}");
@@ -250,7 +251,7 @@ class EdpImportSentFile extends Command
 
     private function reconcileMovements(string $fromDate, bool $test): void
     {
-        $movements = DB::table('log_movements')
+        $movements = DB::table('log_movement')
             ->whereDate('arquivo_data', '>=', $fromDate)
             ->orderBy('arquivo_data')
             ->orderBy('id')
@@ -268,8 +269,8 @@ class EdpImportSentFile extends Command
             }
 
             $order = Order::query()
-                ->where('charge_type', 'EDP')
                 ->whereRaw('CAST(installation_number AS UNSIGNED) = ?', [(int) $installation])
+                ->orderByRaw("CASE WHEN charge_type = 'EDP' THEN 0 ELSE 1 END")
                 ->first();
 
             if (!$order) {
