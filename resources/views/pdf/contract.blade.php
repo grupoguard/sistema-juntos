@@ -606,7 +606,7 @@
 <p>6.1. O ASSOCIADO pagará a JUNTOS BENEFÍCIOS a taxa de adesão e mensalidades conforme estipulado na Ficha de Inscrição.</p>
 <p>6.2. A taxa de adesão será cobrada no ato da inscrição e não é reembolsável.</p>
 <p>6.3. A manutenção da adesão será efetiva enquanto o ASSOCIADO estiver em dia com o pagamento das mensalidades.</p>
-<p>6.4. O não pagamento das mensalidades implicará na suspensão imediata dos benefícios.</p>]
+<p>6.4. O não pagamento das mensalidades implicará na suspensão imediata dos benefícios.</p>
 <p>6.4.1. Permanecendo a inadimplência por período superior a 60 (sessenta) dias, o contrato será automaticamente cancelado, independentemente de notificação prévia.</p>
 <p>6.4.2. Em caso de cancelamento por inadimplência, será aplicada multa de 30% (trinta por cento) sobre o valor restante do contrato vigente, conforme previsto na Cláusula 8.5.</p>
 <p>6.4.3. O ASSOCIADO será responsável pelo pagamento da última mensalidade em atraso, acrescida da multa contratual prevista, não sendo devidas as mensalidades anteriores ao período considerado.</p>
