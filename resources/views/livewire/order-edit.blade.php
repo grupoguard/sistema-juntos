@@ -348,8 +348,8 @@
                                                 @if(!empty($additionals))
                                                     <label class="form-label">Adicionais</label>
                                                     @foreach($additionals as $additional)
-                                                        <div class="form-check">
-                                                            <input type="checkbox" class="form-check-input" wire:model.change="dependents.{{ $index }}.additionals" value="{{ $additional['id'] }}">
+                                                        <div class="form-check" wire:model.change="dependents.{{ $index }}.additionals">
+                                                            <input type="checkbox" class="form-check-input" wire:model="dependents.{{ $index }}.additionals" value="{{ $additional['id'] }}">
                                                             <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                         </div>
                                                     @endforeach

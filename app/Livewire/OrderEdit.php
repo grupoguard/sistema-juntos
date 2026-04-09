@@ -117,8 +117,8 @@ class OrderEdit extends Component
                 $rules["dependents.{$index}.marital_status"] = 'required|string|max:50';
                 $rules["dependents.{$index}.relationship"] = 'required|string|max:50';
                 $rules["dependents.{$index}.rg"] = 'nullable|string|max:12';
-                $rules["dependents.{$index}.additionals"] = 'nullable|array';
-                $rules["dependents.{$index}.additionals.*"] = 'nullable|integer';
+                $rules["dependents.{$index}.additionals"] = 'required|array|min:1';
+                $rules["dependents.{$index}.additionals.*"] = 'required|integer';
             }
         }
 
@@ -275,14 +275,14 @@ class OrderEdit extends Component
         
     public function updateOrder()
     {
-        DB::beginTransaction();
-
         try {
             $this->validate($this->rules());
         } catch (\Illuminate\Validation\ValidationException $e) {
             session()->flash('error', 'Erro de validação: ' . json_encode($e->errors()));
             return;
         }
+        
+        DB::beginTransaction();
 
         try {
             $order = Order::findOrFail($this->orderId);
@@ -379,8 +379,7 @@ class OrderEdit extends Component
                 }
             }
 
-            // Remover dependentes que não estão mais no pedido
-            OrderAditionalDependent::where('order_id', $order->id)->delete();
+            $desiredRows = [];
 
             foreach (($dependentsIds ?? []) as $depData) {
                 $depId = (int) ($depData['id'] ?? 0);
@@ -395,14 +394,44 @@ class OrderEdit extends Component
                     $aditional = collect($this->additionals)->firstWhere('id', $additionalId);
 
                     if ($aditional) {
-                        OrderAditionalDependent::create([
+                        $desiredRows[] = [
                             'order_id'     => $order->id,
                             'dependent_id' => $depId,
                             'aditional_id' => $additionalId,
                             'value'        => (float) ($aditional['value'] ?? 0),
-                        ]);
+                        ];
                     }
                 }
+            }
+
+            // chave única lógica: dependent_id + aditional_id
+            $desiredKeys = collect($desiredRows)->map(function ($row) {
+                return $row['dependent_id'] . '-' . $row['aditional_id'];
+            })->toArray();
+
+            // apagar apenas vínculos que saíram
+            $existing = OrderAditionalDependent::where('order_id', $order->id)->get();
+
+            foreach ($existing as $row) {
+                $key = $row->dependent_id . '-' . $row->aditional_id;
+
+                if (!in_array($key, $desiredKeys, true)) {
+                    $row->delete();
+                }
+            }
+
+            // criar ou atualizar o que deve existir
+            foreach ($desiredRows as $row) {
+                OrderAditionalDependent::updateOrCreate(
+                    [
+                        'order_id'     => $row['order_id'],
+                        'dependent_id' => $row['dependent_id'],
+                        'aditional_id' => $row['aditional_id'],
+                    ],
+                    [
+                        'value' => $row['value'],
+                    ]
+                );
             }
 
             // Atualizar pedido

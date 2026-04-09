@@ -348,9 +348,11 @@ class OrderEasyForm extends Component
             $rules["dependents.{$index}.relationship"] = 'required|string|max:50';
             $rules["dependents.{$index}.mom_name"] = 'required|string|max:255';
             $rules["dependents.{$index}.marital_status"] = 'required|string|max:50';
+            $rules["dependents.{$index}.rg"] = 'nullable|string|max:20';
 
             // opcionais
-            $rules["dependents.{$index}.rg"] = 'nullable|string|max:20';
+            $rules["dependents.{$index}.additionals"] = 'required|array|min:1';
+            $rules["dependents.{$index}.additionals.*"] = 'required|integer';
         }
 
         return $rules;
@@ -852,6 +854,12 @@ class OrderEasyForm extends Component
             $dependentIds = [];
 
             foreach ($dependentsToSave as $dep) {
+                $depAdditionals = $dep['additionals'] ?? [];
+
+                if (empty($depAdditionals) || !is_array($depAdditionals)) {
+                    throw new \Exception('Todo dependente deve possuir ao menos um adicional.');
+                }
+
                 $depCpf = preg_replace('/\D/', '', $dep['cpf'] ?? '');
                 $depRg  = preg_replace('/\D/', '', $dep['rg'] ?? '');
 
