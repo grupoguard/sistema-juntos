@@ -10,3 +10,103 @@
 #7 /var/www/html/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
 #8 {main}
 "} 
+[2026-04-09 05:02:01] local.ERROR: Command "edp:import-sent-file" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"edp:import-sent-file\" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials at /home/vinicius/projects/juntos/vendor/symfony/console/Application.php:726)
+[stacktrace]
+#0 /home/vinicius/projects/juntos/vendor/symfony/console/Application.php(284): Symfony\\Component\\Console\\Application->find()
+#1 /home/vinicius/projects/juntos/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#2 /home/vinicius/projects/juntos/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#3 /home/vinicius/projects/juntos/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#4 {main}
+"} 
+[2026-04-09 05:02:39] local.ERROR: Command "edp:import-sent-file" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"edp:import-sent-file\" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials at /var/www/html/vendor/symfony/console/Application.php:726)
+[stacktrace]
+#0 /var/www/html/vendor/symfony/console/Application.php(284): Symfony\\Component\\Console\\Application->find()
+#1 /var/www/html/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#2 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#3 /var/www/html/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#4 {main}
+"} 
+[2026-04-09 05:04:43] local.ERROR: Command "edp:import-sent-file" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"edp:import-sent-file\" is not defined.
+
+Did you mean one of these?
+    edp:pegar-todos-retornos
+    edp:sync-financials at /var/www/html/vendor/symfony/console/Application.php:726)
+[stacktrace]
+#0 /var/www/html/vendor/symfony/console/Application.php(284): Symfony\\Component\\Console\\Application->find()
+#1 /var/www/html/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#2 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#3 /var/www/html/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#4 {main}
+"} 
+[2026-04-09 05:07:03] local.ERROR: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'laravel.log_movements' doesn't exist (Connection: mysql, SQL: select * from `log_movements` where date(`arquivo_data`) >= 2026-03-01 order by `arquivo_data` asc, `id` asc) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42S02): SQLSTATE[42S02]: Base table or view not found: 1146 Table 'laravel.log_movements' doesn't exist (Connection: mysql, SQL: select * from `log_movements` where date(`arquivo_data`) >= 2026-03-01 order by `arquivo_data` asc, `id` asc) at /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:825)
+[stacktrace]
+#0 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate\\Database\\Connection->runQueryCallback()
+#1 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(398): Illuminate\\Database\\Connection->run()
+#2 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3106): Illuminate\\Database\\Connection->select()
+#3 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3091): Illuminate\\Database\\Query\\Builder->runSelect()
+#4 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3676): Illuminate\\Database\\Query\\Builder->Illuminate\\Database\\Query\\{closure}()
+#5 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3090): Illuminate\\Database\\Query\\Builder->onceWithColumns()
+#6 /var/www/html/app/Console/Commands/EdpImportSentFile.php(255): Illuminate\\Database\\Query\\Builder->get()
+#7 /var/www/html/app/Console/Commands/EdpImportSentFile.php(56): App\\Console\\Commands\\EdpImportSentFile->reconcileMovements()
+#8 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\\Console\\Commands\\EdpImportSentFile->handle()
+#9 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#10 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate\\Container\\Util::unwrapIfClosure()
+#11 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod()
+#12 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate\\Container\\BoundMethod::call()
+#13 /var/www/html/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate\\Container\\Container->call()
+#14 /var/www/html/vendor/symfony/console/Command/Command.php(279): Illuminate\\Console\\Command->execute()
+#15 /var/www/html/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run()
+#16 /var/www/html/vendor/symfony/console/Application.php(1094): Illuminate\\Console\\Command->run()
+#17 /var/www/html/vendor/symfony/console/Application.php(342): Symfony\\Component\\Console\\Application->doRunCommand()
+#18 /var/www/html/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#19 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#20 /var/www/html/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#21 {main}
+
+[previous exception] [object] (PDOException(code: 42S02): SQLSTATE[42S02]: Base table or view not found: 1146 Table 'laravel.log_movements' doesn't exist at /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php:407)
+[stacktrace]
+#0 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(407): PDO->prepare()
+#1 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(812): Illuminate\\Database\\Connection->Illuminate\\Database\\{closure}()
+#2 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(779): Illuminate\\Database\\Connection->runQueryCallback()
+#3 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Connection.php(398): Illuminate\\Database\\Connection->run()
+#4 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3106): Illuminate\\Database\\Connection->select()
+#5 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3091): Illuminate\\Database\\Query\\Builder->runSelect()
+#6 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3676): Illuminate\\Database\\Query\\Builder->Illuminate\\Database\\Query\\{closure}()
+#7 /var/www/html/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3090): Illuminate\\Database\\Query\\Builder->onceWithColumns()
+#8 /var/www/html/app/Console/Commands/EdpImportSentFile.php(255): Illuminate\\Database\\Query\\Builder->get()
+#9 /var/www/html/app/Console/Commands/EdpImportSentFile.php(56): App\\Console\\Commands\\EdpImportSentFile->reconcileMovements()
+#10 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\\Console\\Commands\\EdpImportSentFile->handle()
+#11 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#12 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(95): Illuminate\\Container\\Util::unwrapIfClosure()
+#13 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod()
+#14 /var/www/html/vendor/laravel/framework/src/Illuminate/Container/Container.php(696): Illuminate\\Container\\BoundMethod::call()
+#15 /var/www/html/vendor/laravel/framework/src/Illuminate/Console/Command.php(213): Illuminate\\Container\\Container->call()
+#16 /var/www/html/vendor/symfony/console/Command/Command.php(279): Illuminate\\Console\\Command->execute()
+#17 /var/www/html/vendor/laravel/framework/src/Illuminate/Console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run()
+#18 /var/www/html/vendor/symfony/console/Application.php(1094): Illuminate\\Console\\Command->run()
+#19 /var/www/html/vendor/symfony/console/Application.php(342): Symfony\\Component\\Console\\Application->doRunCommand()
+#20 /var/www/html/vendor/symfony/console/Application.php(193): Symfony\\Component\\Console\\Application->doRun()
+#21 /var/www/html/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#22 /var/www/html/artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle()
+#23 {main}
+"} 
