@@ -94,7 +94,14 @@
                                 <div class="row mb-3">
                                     <div class="col-md-3">
                                         <label>CPF<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="cpf" wire:model.defer.live="client.cpf" disabled>
+                                        <input
+                                            type="text"
+                                            class="form-control js-cpf-mask"
+                                            id="client_cpf"
+                                            wire:model.defer="client.cpf"
+                                            maxlength="14"
+                                            disabled
+                                        >
                                         @error('client.cpf') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-3">
@@ -109,7 +116,13 @@
                                     </div>
                                     <div class="col-md-3">
                                         <label>Celular/Whatsapp</label>
-                                        <input type="tel" class="form-control" id="phone" wire:model.defer="client.phone">
+                                        <input
+                                            type="tel"
+                                            class="form-control js-phone-mask"
+                                            id="client_phone"
+                                            wire:model.defer="client.phone"
+                                            maxlength="15"
+                                        >
                                         @error('client.phone') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -297,7 +310,7 @@
                                     </div>
 
                                     @foreach($dependents as $index => $dependent)
-                                        <div class="row align-items-end mt-4" wire:key="dep-{{ $dependent['dependent_id'] ?? $index }}">
+                                        <div class="row align-items-end mt-4"wire:key="dep-{{ $dependent['dependent_id'] ?? 'new-'.$index }}">
                                             <div class="col-md-12 mb-3">
                                                 <label>Nome do dependente<span class="text-danger">*</span></label>
                                                 <input type="text" class="form-control" placeholder="Nome do Dependente" wire:model="dependents.{{ $index }}.name">
@@ -312,11 +325,19 @@
                                                     <option value="filho">Filho</option>
                                                     <option value="outro">Outro</option>
                                                 </select>
-                                                @error('dependents.{{ $index }}.relationship') <span class="text-danger">{{ $message }}</span> @enderror
+                                                @error("dependents.{{ $index }}.relationship") <span class="text-danger">{{ $message }}</span> @enderror
                                             </div>
                                             <div class="col-md-3 mb-3">
                                                 <label>CPF<span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" wire:model="dependents.{{ $index }}.cpf">
+                                                <input
+                                                    type="text"
+                                                    class="form-control js-cpf-mask"
+                                                    wire:model.defer="dependents.{{ $index }}.cpf"
+                                                    maxlength="14"
+                                                >
+                                                @error("dependents.{$index}.cpf")
+                                                    <span class="text-danger">{{ $message }}</span>
+                                                @enderror
                                             </div>
                                             <div class="col-md-3 mb-3">
                                                 <label>RG</label>
@@ -338,7 +359,7 @@
                                                     <option value="outro">Outro</option>
                                                     <option value="nao_informado">Não informado</option>
                                                 </select>
-                                                @error('dependents.{{ $index }}.marital_status') <span class="text-danger">{{ $message }}</span> @enderror
+                                                @error("dependents.{{ $index }}.marital_status") <span class="text-danger">{{ $message }}</span> @enderror
                                             </div>
                                             <div class="col-md-5 mb-3">
                                                 <label>Nome da mãe<span class="text-danger">*</span></label>
@@ -348,7 +369,7 @@
                                                 @if(!empty($additionals))
                                                     <label class="form-label">Adicionais</label>
                                                     @foreach($additionals as $additional)
-                                                        <div class="form-check" wire:model.change="dependents.{{ $index }}.additionals">
+                                                        <div class="form-check">
                                                             <input type="checkbox" class="form-check-input" wire:model="dependents.{{ $index }}.additionals" value="{{ $additional['id'] }}">
                                                             <label class="form-check-label">{{ $additional['name'] }} - R$ {{ number_format($additional['value'], 2, ',', '.') }}</label>
                                                         </div>
@@ -358,7 +379,13 @@
                                                 @endif
                                             </div>
                                             <div class="col-md-2 text-end">
-                                                <button type="button" class="btn btn-danger" wire:click="removeDependent({{ $index }})">X</button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-danger btn-sm"
+                                                    wire:click="removeDependent({{ $index }})"
+                                                >
+                                                    Excluir dependente
+                                                </button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -974,7 +1001,89 @@
 </div>
 @push('scripts')
 <script>
+function onlyDigits(value) {
+    return (value || '').replace(/\D/g, '');
+}
+
+function maskCpf(value) {
+    value = onlyDigits(value).slice(0, 11);
+
+    if (value.length > 9) {
+        return value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+    }
+
+    if (value.length > 6) {
+        return value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    }
+
+    if (value.length > 3) {
+        return value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    }
+
+    return value;
+}
+
+function maskPhone(value) {
+    value = onlyDigits(value).slice(0, 11);
+
+    if (value.length > 10) {
+        return value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    }
+
+    if (value.length > 6) {
+        return value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    }
+
+    if (value.length > 2) {
+        return value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    }
+
+    return value;
+}
+
+function applyMasks() {
+    document.querySelectorAll('.js-cpf-mask').forEach((input) => {
+        input.value = maskCpf(input.value);
+
+        if (input.dataset.maskReady === '1') {
+            return;
+        }
+
+        input.dataset.maskReady = '1';
+
+        input.addEventListener('input', function () {
+            this.value = maskCpf(this.value);
+            this.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    document.querySelectorAll('.js-phone-mask').forEach((input) => {
+        input.value = maskPhone(input.value);
+
+        if (input.dataset.maskReady === '1') {
+            return;
+        }
+
+        input.dataset.maskReady = '1';
+
+        input.addEventListener('input', function () {
+            this.value = maskPhone(this.value);
+            this.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+}
+
 document.addEventListener('livewire:initialized', () => {
+    applyMasks();
+
+    Livewire.hook('morph.updated', () => {
+        applyMasks();
+    });
+
+    Livewire.on('order-loaded', () => {
+        setTimeout(applyMasks, 50);
+    });
+
     Livewire.on('financial-modal-open', () => {
         const el = document.getElementById('financialManageModal');
         const modal = bootstrap.Modal.getOrCreateInstance(el);

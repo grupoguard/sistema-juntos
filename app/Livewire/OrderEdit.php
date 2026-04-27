@@ -53,6 +53,8 @@ class OrderEdit extends Component
     public $selectedFinancialViewingInfo = [];
     public $selectedRemotePayment = [];
 
+    public $deletedDependentIds = [];
+
     public $financialEdit = [
         'billing_type' => 'BOLETO',
         'due_date' => null,
@@ -87,6 +89,11 @@ class OrderEdit extends Component
             'client.neighborhood' => 'required|string|max:50',
             'client.city' => 'required|string|max:50',
             'client.state' => 'required|string|max:2',
+
+            'dependents' => 'nullable|array',
+            'deletedDependentIds' => 'nullable|array',
+            'deletedDependentIds.*' => 'integer',
+
             'product_id' => 'required|integer',
             'seller_id' => 'required|integer',
             'accession' => 'required|numeric|min:0',
@@ -110,7 +117,7 @@ class OrderEdit extends Component
 
         if (!empty($this->dependents)) {
             foreach ($this->dependents as $index => $dependent) {
-                $rules["dependents.{$index}.cpf"] = 'required|string|min:14|max:14';
+                $rules["dependents.{$index}.cpf"] = 'required|string|size:14';
                 $rules["dependents.{$index}.name"] = 'required|string|max:100';
                 $rules["dependents.{$index}.mom_name"] = 'required|string|max:100';
                 $rules["dependents.{$index}.date_birth"] = 'required|date';
@@ -178,7 +185,7 @@ class OrderEdit extends Component
                     'dependent_id'   => $row->dependent_id,
                     'name'           => $depModel->name ?? '',
                     'relationship'   => $depModel?->relationship ? mb_strtolower($depModel->relationship) : '',
-                    'cpf'            => $depModel->cpf ?? '',
+                    'cpf'            => $this->formatCpf($depModel->cpf ?? ''),
                     'rg'             => $depModel->rg ?? '',
                     'date_birth'     => $depModel->date_birth ?? '',
                     'marital_status' => $depModel?->marital_status ? mb_strtolower($depModel->marital_status) : 'nao_informado',
@@ -188,9 +195,13 @@ class OrderEdit extends Component
             })
             ->toArray();
 
+        $this->deletedDependentIds = [];
+
         // Cliente
         $this->client_id = $this->order->client_id;
         $this->client = $this->order->client->toArray();
+        $this->client['cpf'] = $this->formatCpf($this->client['cpf'] ?? '');
+        $this->client['phone'] = $this->formatPhone($this->client['phone'] ?? '');
         $this->client['gender'] = isset($this->client['gender'])
             ? mb_strtolower($this->client['gender'])
             : null;
@@ -275,6 +286,8 @@ class OrderEdit extends Component
         
     public function updateOrder()
     {
+        $this->normalizeMaskedFieldsBeforeValidation();
+
         try {
             $this->validate($this->rules());
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -348,92 +361,9 @@ class OrderEdit extends Component
                 $order->signed_physical_contract_file = $path;
             }
 
-            // Gerenciar dependentes
-            $dependentsIds = [];
-
-            if (!empty($this->dependents)) {
-                foreach ($this->dependents as $index => $dependent) {
-                    $cpf = preg_replace('/\D/', '', $dependent['cpf']);
-                    $rg = preg_replace('/\D/', '', $dependent['rg'] ?? '');
-
-                    $dep = Dependent::updateOrCreate(
-                        ['cpf' => $cpf],
-                        [
-                            'client_id' => $client->id,
-                            'name' => $dependent['name'],
-                            'mom_name' => $dependent['mom_name'],
-                            'date_birth' => $dependent['date_birth'],
-                            'cpf' => $cpf,
-                            'rg' => $rg,
-                            'marital_status' => $dependent['marital_status'],
-                            'relationship' => $dependent['relationship'],
-                        ]
-                    );
-
-                    $additionals = $dependent['additionals'] ?? [];
-
-                    $dependentsIds[] = [
-                        'id' => $dep->id,
-                        'additionals' => $additionals
-                    ];
-                }
-            }
-
-            $desiredRows = [];
-
-            foreach (($dependentsIds ?? []) as $depData) {
-                $depId = (int) ($depData['id'] ?? 0);
-                $additionals = $depData['additionals'] ?? [];
-
-                if (!$depId) continue;
-                if (!is_array($additionals)) $additionals = [];
-
-                foreach ($additionals as $additionalId) {
-                    $additionalId = (int) $additionalId;
-
-                    $aditional = collect($this->additionals)->firstWhere('id', $additionalId);
-
-                    if ($aditional) {
-                        $desiredRows[] = [
-                            'order_id'     => $order->id,
-                            'dependent_id' => $depId,
-                            'aditional_id' => $additionalId,
-                            'value'        => (float) ($aditional['value'] ?? 0),
-                        ];
-                    }
-                }
-            }
-
-            // chave única lógica: dependent_id + aditional_id
-            $desiredKeys = collect($desiredRows)->map(function ($row) {
-                return $row['dependent_id'] . '-' . $row['aditional_id'];
-            })->toArray();
-
-            // apagar apenas vínculos que saíram
-            $existing = OrderAditionalDependent::where('order_id', $order->id)->get();
-
-            foreach ($existing as $row) {
-                $key = $row->dependent_id . '-' . $row->aditional_id;
-
-                if (!in_array($key, $desiredKeys, true)) {
-                    $row->delete();
-                }
-            }
-
-            // criar ou atualizar o que deve existir
-            foreach ($desiredRows as $row) {
-                OrderAditionalDependent::updateOrCreate(
-                    [
-                        'order_id'     => $row['order_id'],
-                        'dependent_id' => $row['dependent_id'],
-                        'aditional_id' => $row['aditional_id'],
-                    ],
-                    [
-                        'value' => $row['value'],
-                    ]
-                );
-            }
-
+            // Gerenciar dependentes de forma segura
+            $this->syncOrderDependents($order, $client);
+            
             // Atualizar pedido
             $order->fill([
                 'product_id' => $this->product_id,
@@ -499,6 +429,224 @@ class OrderEdit extends Component
             DB::rollBack();
             session()->flash('error', 'Erro ao atualizar pedido: ' . $e->getMessage());
         }
+    }
+
+    public function removeDependent($index): void
+    {
+        if (!isset($this->dependents[$index])) {
+            return;
+        }
+
+        $dependentId = (int) ($this->dependents[$index]['dependent_id'] ?? 0);
+
+        // Se já existe no banco, marca para exclusão explícita.
+        // Se for dependente novo ainda não salvo, apenas remove da tela.
+        if ($dependentId > 0) {
+            $this->deletedDependentIds[] = $dependentId;
+
+            $this->deletedDependentIds = array_values(array_unique(
+                array_map('intval', $this->deletedDependentIds)
+            ));
+        }
+
+        unset($this->dependents[$index]);
+
+        // Reindexa para evitar buracos no array do Livewire
+        $this->dependents = array_values($this->dependents);
+
+        $this->recalculateTotal();
+    }
+
+    protected function syncOrderDependents(Order $order, Client $client): void
+    {
+        $existingDependentIds = OrderAditionalDependent::query()
+            ->where('order_id', $order->id)
+            ->select('dependent_id')
+            ->distinct()
+            ->pluck('dependent_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values()
+            ->all();
+
+        $submittedDependents = collect($this->dependents ?? [])
+            ->filter(function ($dependent) {
+                return !empty($dependent['dependent_id'])
+                    || !empty($dependent['cpf'])
+                    || !empty($dependent['name']);
+            })
+            ->values();
+
+        $deletedDependentIds = collect($this->deletedDependentIds ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        /*
+        * Proteção principal:
+        * Se o pedido já tinha dependentes e o Livewire chegou aqui com dependents vazio,
+        * não sincroniza nem apaga nada. Isso evita o problema de zerar todos os dependentes
+        * por falha de estado, reload parcial, JS, select2, modal, etc.
+        */
+        if (!empty($existingDependentIds) && $submittedDependents->isEmpty() && empty($deletedDependentIds)) {
+            throw new \RuntimeException(
+                'Os dependentes do pedido não foram recebidos corretamente. Nenhum dependente foi removido. Recarregue a página e tente novamente.'
+            );
+        }
+
+        $processedDependentIds = [];
+
+        foreach ($submittedDependents as $index => $dependent) {
+            $dep = $this->upsertOrderDependent($dependent, $client);
+
+            $processedDependentIds[] = (int) $dep->id;
+
+            $selectedAdditionalIds = collect($dependent['additionals'] ?? [])
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            /*
+            * Pelo seu modelo atual, não existe dependente sem adicional.
+            * Então, se veio dependente sem adicional, é melhor bloquear do que apagar vínculos.
+            */
+            if (empty($selectedAdditionalIds)) {
+                throw new \RuntimeException(
+                    'O dependente ' . ($dep->name ?? 'informado') . ' precisa ter pelo menos um adicional selecionado.'
+                );
+            }
+
+            /*
+            * Aqui pode apagar vínculos de adicionais, mas SOMENTE do dependente que veio
+            * corretamente no payload.
+            *
+            * Exemplo:
+            * Dependente João tinha adicionais 1 e 2.
+            * Usuário removeu adicional 2.
+            * O sistema apaga apenas o vínculo João + adicional 2.
+            */
+            OrderAditionalDependent::query()
+                ->where('order_id', $order->id)
+                ->where('dependent_id', $dep->id)
+                ->whereNotIn('aditional_id', $selectedAdditionalIds)
+                ->delete();
+
+            foreach ($selectedAdditionalIds as $aditionalId) {
+                $aditional = collect($this->additionals)->firstWhere('id', $aditionalId)
+                    ?? Aditional::find($aditionalId);
+
+                if (!$aditional) {
+                    throw new \RuntimeException(
+                        "O adicional ID {$aditionalId} é inválido para o dependente {$dep->name}."
+                    );
+                }
+
+                OrderAditionalDependent::updateOrCreate(
+                    [
+                        'order_id'     => $order->id,
+                        'dependent_id' => $dep->id,
+                        'aditional_id' => $aditionalId,
+                    ],
+                    [
+                        'value' => (float) data_get($aditional, 'value', 0),
+                    ]
+                );
+            }
+        }
+
+        /*
+        * Exclusão real de dependentes:
+        * Agora só remove dependente que foi explicitamente marcado pelo método removeDependent().
+        * Ausência no array NÃO significa exclusão.
+        */
+        foreach ($deletedDependentIds as $dependentId) {
+            if (in_array($dependentId, $processedDependentIds, true)) {
+                continue;
+            }
+
+            OrderAditionalDependent::query()
+                ->where('order_id', $order->id)
+                ->where('dependent_id', $dependentId)
+                ->delete();
+        }
+
+        /*
+        * Proteção final:
+        * Mesmo que todos tenham sido marcados por engano para exclusão,
+        * o pedido não pode terminar com todos os dependentes apagados se já tinha dependentes.
+        */
+        $remainingDependentIds = OrderAditionalDependent::query()
+            ->where('order_id', $order->id)
+            ->select('dependent_id')
+            ->distinct()
+            ->pluck('dependent_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values()
+            ->all();
+
+        if (!empty($existingDependentIds) && empty($remainingDependentIds)) {
+            throw new \RuntimeException(
+                'A atualização foi bloqueada porque removeria todos os dependentes do pedido.'
+            );
+        }
+
+        $this->deletedDependentIds = [];
+    }
+
+    protected function upsertOrderDependent(array $dependent, Client $client): Dependent
+    {
+        $dependentId = (int) ($dependent['dependent_id'] ?? 0);
+
+        $cpf = preg_replace('/\D/', '', (string) ($dependent['cpf'] ?? ''));
+        $rg = preg_replace('/\D/', '', (string) ($dependent['rg'] ?? ''));
+
+        if (empty($cpf)) {
+            throw new \RuntimeException('CPF do dependente é obrigatório.');
+        }
+
+        $payload = [
+            'client_id'       => $client->id,
+            'name'            => $dependent['name'] ?? null,
+            'mom_name'        => $dependent['mom_name'] ?? null,
+            'date_birth'      => $dependent['date_birth'] ?? null,
+            'cpf'             => $cpf,
+            'rg'              => $rg,
+            'marital_status'  => $dependent['marital_status'] ?? null,
+            'relationship'    => $dependent['relationship'] ?? null,
+        ];
+
+        /*
+        * Se o dependente já existe no pedido, atualiza pelo ID.
+        * Isso evita criar um novo dependente caso o CPF tenha sido corrigido na edição.
+        */
+        if ($dependentId > 0) {
+            $dep = Dependent::query()
+                ->where('client_id', $client->id)
+                ->where('id', $dependentId)
+                ->first();
+
+            if (!$dep) {
+                throw new \RuntimeException("Dependente ID {$dependentId} não pertence a este cliente.");
+            }
+
+            $dep->update($payload);
+
+            return $dep;
+        }
+
+        /*
+        * Novo dependente.
+        * Mantém a lógica parecida com a sua atual, mas de forma mais controlada.
+        */
+        return Dependent::updateOrCreate(
+            ['cpf' => $cpf],
+            $payload
+        );
     }
 
     public function saveDocuments()
@@ -997,6 +1145,82 @@ class OrderEdit extends Component
         $this->openFinancialModal($financial->id);
 
         session()->flash('message', 'Baixa manual desfeita com sucesso.');
+    }
+
+    protected function onlyDigits(?string $value): string
+    {
+        return preg_replace('/\D/', '', (string) $value);
+    }
+
+    protected function formatCpf(?string $value): string
+    {
+        $digits = $this->onlyDigits($value);
+
+        if (strlen($digits) !== 11) {
+            return $value ?? '';
+        }
+
+        return preg_replace(
+            '/(\d{3})(\d{3})(\d{3})(\d{2})/',
+            '$1.$2.$3-$4',
+            $digits
+        );
+    }
+
+    protected function formatPhone(?string $value): string
+    {
+        $digits = $this->onlyDigits($value);
+
+        if (strlen($digits) === 11) {
+            return preg_replace(
+                '/(\d{2})(\d{5})(\d{4})/',
+                '($1) $2-$3',
+                $digits
+            );
+        }
+
+        if (strlen($digits) === 10) {
+            return preg_replace(
+                '/(\d{2})(\d{4})(\d{4})/',
+                '($1) $2-$3',
+                $digits
+            );
+        }
+
+        if (strlen($digits) === 9) {
+            return preg_replace(
+                '/(\d{5})(\d{4})/',
+                '$1-$2',
+                $digits
+            );
+        }
+
+        if (strlen($digits) === 8) {
+            return preg_replace(
+                '/(\d{4})(\d{4})/',
+                '$1-$2',
+                $digits
+            );
+        }
+
+        return $value ?? '';
+    }
+
+    protected function normalizeMaskedFieldsBeforeValidation(): void
+    {
+        if (isset($this->client['cpf'])) {
+            $this->client['cpf'] = $this->formatCpf($this->client['cpf']);
+        }
+
+        if (isset($this->client['phone'])) {
+            $this->client['phone'] = $this->formatPhone($this->client['phone']);
+        }
+
+        foreach (($this->dependents ?? []) as $index => $dependent) {
+            if (isset($dependent['cpf'])) {
+                $this->dependents[$index]['cpf'] = $this->formatCpf($dependent['cpf']);
+            }
+        }
     }
 
     public function render()
